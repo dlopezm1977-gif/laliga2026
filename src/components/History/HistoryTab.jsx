@@ -101,11 +101,10 @@ export default function HistoryTab() {
 
   if (loading || matchLoading) return <div className="loading">Cargando historial…</div>;
 
-  const totalPoints   = score?.totalPoints   ?? 0;
-  const exactCount    = score?.exactCount    ?? 0;
-  const signCount     = score?.signCount     ?? 0;
-  const streak        = score?.currentStreak ?? 0;
-  const totalMatches  = (exactCount + signCount + (score?.matchdaysPlayed ?? 0));
+  const totalPoints  = score?.totalPoints ?? 0;
+  const exactCount   = score?.exactCount  ?? 0;
+  const signCount    = score?.signCount   ?? 0;
+  const totalMatches = (exactCount + signCount + (score?.matchdaysPlayed ?? 0));
   const accuracy      = totalMatches > 0
     ? Math.round((exactCount + signCount) / totalMatches * 100)
     : 0;

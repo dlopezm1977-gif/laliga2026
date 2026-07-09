@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { getCachedMatchday } from '../lib/firestore';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 

@@ -10,26 +10,26 @@ const FD_TOKEN = defineSecret('FD_TOKEN');
 
 // ── Short team names ───────────────────────────────────────────────────────
 const SHORT_NAMES = {
-  'Real Madrid CF':          'Real Madrid',
-  'FC Barcelona':            'Barcelona',
-  'Club Atlético de Madrid': 'Atlético',
-  'Sevilla FC':              'Sevilla',
-  'Real Betis Balompié':     'Betis',
-  'Real Sociedad de Fútbol': 'Real Sociedad',
-  'Villarreal CF':           'Villarreal',
-  'Athletic Club':           'Athletic',
-  'Valencia CF':             'Valencia',
-  'CA Osasuna':              'Osasuna',
-  'RC Celta de Vigo':        'Celta',
-  'Getafe CF':               'Getafe',
-  'Rayo Vallecano de Madrid':'Rayo',
-  'RCD Mallorca':            'Mallorca',
-  'Girona FC':               'Girona',
-  'Deportivo Alavés':        'Alavés',
-  'RCD Espanyol de Barcelona':'Espanyol',
-  'Real Valladolid CF':      'Valladolid',
-  'UD Las Palmas':           'Las Palmas',
-  'CD Leganés':              'Leganés',
+  'Real Madrid CF':                'Real Madrid',
+  'FC Barcelona':                  'Barcelona',
+  'Club Atlético de Madrid':       'Atlético',
+  'Sevilla FC':                    'Sevilla',
+  'Real Betis Balompié':           'Betis',
+  'Real Sociedad de Fútbol':       'Real Sociedad',
+  'Villarreal CF':                 'Villarreal',
+  'Athletic Club':                 'Athletic',
+  'Valencia CF':                   'Valencia',
+  'CA Osasuna':                    'Osasuna',
+  'RC Celta de Vigo':              'Celta',
+  'Getafe CF':                     'Getafe',
+  'Rayo Vallecano de Madrid':      'Rayo',
+  'Deportivo Alavés':              'Alavés',
+  'RCD Espanyol de Barcelona':     'Espanyol',
+  'Real Racing Club de Santander': 'Racing',
+  'Levante UD':                    'Levante',
+  'RC Deportivo La Coruña':        'Deportivo',
+  'Elche CF':                      'Elche',
+  'Málaga CF':                     'Málaga',
 };
 const short = name => SHORT_NAMES[name] || name;
 
@@ -102,16 +102,6 @@ exports.calculateScores = onDocumentUpdated(
     }
 
     // Load all user predictions for this matchday
-    const predsSnap = await db
-      .collectionGroup('matchdays')
-      .where(admin.firestore.FieldPath.documentId(), '>=', `predictions/`)
-      .get()
-      // collectionGroup doesn't filter by sub-path easily; use a manual filter
-      .catch(() => ({ docs: [] }));
-
-    // Alternative: query predictions/{uid}/matchdays/{matchday} for each user
-    // Since collectionGroup('matchdays') returns all matchday docs,
-    // we filter by id to only get the current matchday
     const allMatchdaySnap = await db
       .collectionGroup('matchdays')
       .get();

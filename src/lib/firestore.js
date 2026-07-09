@@ -4,20 +4,6 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 
-// ── matches cache ──────────────────────────────────────────────────────────
-
-export async function getCachedMatchday(matchday) {
-  const snap = await getDoc(doc(db, 'matches_cache', String(matchday)));
-  return snap.exists() ? snap.data() : null;
-}
-
-export async function setCachedMatchday(matchday, matches) {
-  await setDoc(doc(db, 'matches_cache', String(matchday)), {
-    updatedAt: serverTimestamp(),
-    matches,
-  });
-}
-
 // ── predictions ────────────────────────────────────────────────────────────
 
 export async function getPrediction(uid, matchday) {
