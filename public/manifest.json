@@ -1,0 +1,19 @@
+{
+  "name": "Quiniela LaLiga 26/27",
+  "short_name": "Quiniela",
+  "description": "Predice los resultados de LaLiga 26/27",
+  "start_url": "/laliga2026/",
+  "scope": "/laliga2026/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0e1a",
+  "theme_color": "#0a0e1a",
+  "icons": [
+    {
+      "src": "/laliga2026/app-icon.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

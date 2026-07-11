@@ -1,4 +1,5 @@
 import { useAuth } from '../../contexts/AuthContext';
+import { useInstallPrompt } from '../../hooks/useInstallPrompt';
 
 function initials(name) {
   if (!name) return '?';
@@ -7,6 +8,7 @@ function initials(name) {
 
 export default function Header({ onLogin }) {
   const { profile, isGuest, logout } = useAuth();
+  const { canInstall, install } = useInstallPrompt();
 
   return (
     <header className="app-header">
@@ -18,6 +20,9 @@ export default function Header({ onLogin }) {
         />
         <span>Quiniela 26/27</span>
       </div>
+      {canInstall && (
+        <button className="btn-install" onClick={install} title="Instalar app">⬇ Instalar</button>
+      )}
       {isGuest ? (
         <button className="btn-login" onClick={onLogin}>Iniciar sesión</button>
       ) : (

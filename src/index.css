@@ -97,6 +97,17 @@ input  { font-family: inherit; }
   font-family: var(--mono);
 }
 .btn-logout:hover { border-color: var(--accent); color: var(--accent); }
+.btn-install {
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: 5px;
+  padding: .3rem .65rem;
+  font-size: .72rem;
+  font-family: var(--mono);
+  cursor: pointer;
+}
+.btn-install:hover { background: var(--accent); color: #fff; }
 .btn-login {
   background: var(--accent);
   border: 1px solid var(--accent);
