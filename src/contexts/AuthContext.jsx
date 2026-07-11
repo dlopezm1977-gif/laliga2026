@@ -4,6 +4,7 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
+  sendPasswordResetEmail,
 } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { createUser, getUser } from '../lib/firestore';
@@ -40,11 +41,15 @@ export function AuthProvider({ children }) {
     await signOut(auth);
   }
 
+  async function resetPassword(email) {
+    await sendPasswordResetEmail(auth, email);
+  }
+
   const isLoading = user === undefined;
   const isGuest   = !isLoading && !user;
 
   return (
-    <AuthContext.Provider value={{ user, profile, isLoading, isGuest, login, register, logout }}>
+    <AuthContext.Provider value={{ user, profile, isLoading, isGuest, login, register, logout, resetPassword }}>
       {children}
     </AuthContext.Provider>
   );

@@ -5,18 +5,21 @@ function initials(name) {
   return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
 }
 
-export default function Header() {
+export default function Header({ onLogin }) {
   const { profile, isGuest, logout } = useAuth();
 
   return (
     <header className="app-header">
       <div className="logo">
-        LALIGA <span>Quiniela 26/27</span>
+        <img
+          src={`${import.meta.env.BASE_URL}laliga-logo.png`}
+          alt="LaLiga"
+          className="logo-laliga"
+        />
+        <span>Quiniela 26/27</span>
       </div>
       {isGuest ? (
-        <span style={{ fontSize: '.75rem', color: 'var(--muted)', fontFamily: 'var(--mono)' }}>
-          Invitado
-        </span>
+        <button className="btn-login" onClick={onLogin}>Iniciar sesión</button>
       ) : (
         <>
           <div className="avatar" title={profile?.username}>

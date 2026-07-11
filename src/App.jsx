@@ -31,7 +31,7 @@ function AppShell() {
 
   return (
     <div className="app-shell">
-      <Header />
+      <Header onLogin={() => setShowAuth(true)} />
       <TabBar activeTab={tab} onTabChange={handleTabChange} />
       <main className="main-content">
         {tab === 'calendar'  && <CalendarTab  />}
