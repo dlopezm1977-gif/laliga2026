@@ -1,13 +1,24 @@
 // Sync La Liga matches from football-data.org → Firestore matches_cache
-// Run via GitHub Actions every 30 min
-// Required env vars:
-//   FOOTBALL_DATA_TOKEN  — football-data.org API token
-//   FIREBASE_SERVICE_ACCOUNT — Firebase service account JSON (stringified)
+// Uso local:  node sync-laliga.js   (lee FOOTBALL_DATA_TOKEN de .env)
+// Uso CI/CD:  FOOTBALL_DATA_TOKEN=xxx FIREBASE_SERVICE_ACCOUNT='{...}' node sync-laliga.js
 
+const fs    = require('fs');
+const path  = require('path');
 const admin = require('firebase-admin');
 
+// Cargar .env local si no hay variable de entorno ya definida
+if (!process.env.FOOTBALL_DATA_TOKEN) {
+  try {
+    const envPath = path.join(__dirname, '.env');
+    fs.readFileSync(envPath, 'utf8').split('\n').forEach(line => {
+      const [k, ...rest] = line.split('=');
+      if (k && rest.length) process.env[k.trim()] = rest.join('=').trim();
+    });
+  } catch {}
+}
+
 const FD_TOKEN = process.env.FOOTBALL_DATA_TOKEN;
-if (!FD_TOKEN) { console.error('Missing FOOTBALL_DATA_TOKEN'); process.exit(1); }
+if (!FD_TOKEN) { console.error('Missing FOOTBALL_DATA_TOKEN (añádelo en scripts/.env)'); process.exit(1); }
 
 // GitHub Actions: env var; local: file
 const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT

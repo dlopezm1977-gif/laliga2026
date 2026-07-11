@@ -2,6 +2,9 @@
   "name": "laliga-sync-scripts",
   "private": true,
   "type": "commonjs",
+  "scripts": {
+    "sync": "node sync-laliga.js"
+  },
   "dependencies": {
     "firebase-admin": "^12.0.0"
   }

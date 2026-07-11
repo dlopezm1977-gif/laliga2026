@@ -9,11 +9,17 @@ function buildStandings(matchdayData) {
     if (!table[name]) table[name] = { name, pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0 };
   };
 
+  // Seed all teams regardless of whether they've played
+  for (const matches of Object.values(matchdayData)) {
+    for (const m of matches) {
+      ensure(m.homeTeam);
+      ensure(m.awayTeam);
+    }
+  }
+
   for (const matches of Object.values(matchdayData)) {
     for (const m of matches) {
       if (m.status !== 'FINISHED' || m.homeScore === null || m.awayScore === null) continue;
-      ensure(m.homeTeam);
-      ensure(m.awayTeam);
       const h = table[m.homeTeam];
       const a = table[m.awayTeam];
       h.pj++; a.pj++;
@@ -46,7 +52,7 @@ export default function StandingsTab() {
 
   if (loading) return <div className="loading">Cargando clasificación…</div>;
   if (error)   return <div className="loading" style={{ color: 'var(--accent)' }}>Error: {error}</div>;
-  if (!standings.length) return <div className="loading">La temporada aún no ha comenzado.</div>;
+  if (!standings.length) return <div className="loading">No hay datos de equipos todavía.</div>;
 
   return (
     <div className="standings">
