@@ -19,7 +19,8 @@ function buildStandings(matchdayData) {
 
   for (const matches of Object.values(matchdayData)) {
     for (const m of matches) {
-      if (m.status !== 'FINISHED' || m.homeScore === null || m.awayScore === null) continue;
+      const counted = m.status === 'FINISHED' || m.status === 'IN_PLAY' || m.status === 'PAUSED';
+      if (!counted || m.homeScore === null || m.awayScore === null) continue;
       const h = table[m.homeTeam];
       const a = table[m.awayTeam];
       h.pj++; a.pj++;
