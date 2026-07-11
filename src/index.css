@@ -108,6 +108,44 @@ input  { font-family: inherit; }
   cursor: pointer;
 }
 .btn-install:hover { background: var(--accent); color: #fff; }
+
+/* ── iOS install banner ─────────────────────────────────────────────────── */
+.ios-install-banner {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: .75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  position: sticky;
+  top: 56px;
+  z-index: 99;
+}
+.ios-install-steps {
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+  font-size: .78rem;
+  color: var(--text);
+  flex: 1;
+}
+.ios-install-steps span:first-child {
+  font-weight: 600;
+  color: var(--accent);
+}
+.ios-share-icon {
+  font-size: .9rem;
+}
+.ios-install-dismiss {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: .25rem;
+  flex-shrink: 0;
+}
+.ios-install-dismiss:hover { color: var(--text); }
 .btn-login {
   background: var(--accent);
   border: 1px solid var(--accent);
