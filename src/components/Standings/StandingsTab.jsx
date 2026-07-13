@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useMatches } from '../../hooks/useMatches';
+import { useAuth } from '../../contexts/AuthContext';
 import { crestUrl } from '../../lib/crests';
 
 function buildStandings(matchdayData) {
@@ -49,6 +50,8 @@ function zoneClass(pos) {
 
 export default function StandingsTab() {
   const { matchdayData, loading, error } = useMatches();
+  const { profile } = useAuth();
+  const favoriteTeam = profile?.favoriteTeam || null;
   const standings = useMemo(() => buildStandings(matchdayData), [matchdayData]);
 
   if (loading) return <div className="loading">Cargando clasificación…</div>;
@@ -75,8 +78,9 @@ export default function StandingsTab() {
         <tbody>
           {standings.map((team, i) => {
             const pos = i + 1;
+            const isFav = team.name === favoriteTeam;
             return (
-              <tr key={team.name} className={zoneClass(pos)}>
+              <tr key={team.name} className={[zoneClass(pos), isFav ? 'row-favorite' : ''].filter(Boolean).join(' ')}>
                 <td className="col-pos">{pos}</td>
                 <td className="col-team">
                   <img className="team-crest team-crest--sm" src={crestUrl(team.name)} alt="" />

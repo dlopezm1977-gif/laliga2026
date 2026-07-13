@@ -1,17 +1,30 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useMatches } from '../../hooks/useMatches';
+import { useAuth } from '../../contexts/AuthContext';
 import { crestUrl } from '../../lib/crests';
-
-function formatDate(utcDate) {
-  if (!utcDate) return '';
-  const d = new Date(utcDate);
-  return d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
-}
 
 function formatTime(utcDate) {
   if (!utcDate) return '';
   const d = new Date(utcDate);
   return d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' });
+}
+
+function groupMatchesByDate(matches) {
+  const sorted = matches.slice().sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
+  const groups = [];
+  const seen = new Map();
+  sorted.forEach(m => {
+    const label = new Date(m.utcDate).toLocaleDateString('es-ES', {
+      weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Madrid',
+    });
+    if (!seen.has(label)) {
+      const group = { label, matches: [] };
+      seen.set(label, group);
+      groups.push(group);
+    }
+    seen.get(label).matches.push(m);
+  });
+  return groups;
 }
 
 function jornadaDates(matches) {
@@ -33,12 +46,13 @@ function StatusBadge({ status }) {
   return <span className="status-badge scheduled">Próximo</span>;
 }
 
-function MatchCard({ match }) {
+function MatchCard({ match, favorite }) {
   const isFinished = match.status === 'FINISHED';
   const isLive     = match.status === 'IN_PLAY' || match.status === 'PAUSED';
 
   return (
-    <div className="match-card">
+    <div className={`match-card${favorite ? ' match-card--favorite' : ''}`}>
+      <span className="match-time-col">{formatTime(match.utcDate)}</span>
       <div className="match-team home">
         {match.homeTeam}
         <img className="team-crest" src={crestUrl(match.homeTeam)} alt={match.homeTeam} />
@@ -51,26 +65,34 @@ function MatchCard({ match }) {
             <span>{match.awayScore ?? '–'}</span>
           </>
         ) : (
-          <span style={{ fontSize: '.8rem', color: 'var(--muted)', fontFamily: 'var(--mono)' }}>
-            {formatTime(match.utcDate)}
-          </span>
+          <span className="sep">–</span>
         )}
       </div>
       <div className="match-team away">
         <img className="team-crest" src={crestUrl(match.awayTeam)} alt={match.awayTeam} />
         {match.awayTeam}
       </div>
-      <div className="match-time">
-        {formatDate(match.utcDate)}&nbsp;&nbsp;
-        <StatusBadge status={match.status} />
-      </div>
+      <StatusBadge status={match.status} />
     </div>
   );
 }
 
 export default function CalendarTab() {
   const { matchdayData, currentMatchday, getMatches, totalMatchdays, loading, error } = useMatches();
+  const { profile } = useAuth();
   const [jornada, setJornada] = useState(null);
+  const [collapsed, setCollapsed] = useState(new Set());
+  const [filterFav, setFilterFav] = useState(false);
+
+  const favoriteTeam = profile?.favoriteTeam || null;
+
+  const toggleGroup = useCallback(label => {
+    setCollapsed(prev => {
+      const next = new Set(prev);
+      next.has(label) ? next.delete(label) : next.add(label);
+      return next;
+    });
+  }, []);
 
   const activeJornada = jornada ?? currentMatchday;
   const matches       = getMatches(activeJornada);
@@ -97,13 +119,41 @@ export default function CalendarTab() {
         >›</button>
       </div>
 
+      {favoriteTeam && (
+        <button
+          className={`fav-filter-btn${filterFav ? ' active' : ''}`}
+          onClick={() => setFilterFav(v => !v)}
+        >
+          <img src={crestUrl(favoriteTeam)} alt={favoriteTeam} />
+          {filterFav ? `Solo ${favoriteTeam}` : favoriteTeam}
+        </button>
+      )}
+
       {matches.length === 0 ? (
         <div className="loading">No hay datos para esta jornada</div>
       ) : (
-        matches
-          .slice()
-          .sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate))
-          .map(m => <MatchCard key={m.matchId} match={m} />)
+        groupMatchesByDate(matches).map(({ label, matches: group }) => {
+          const isCollapsed = collapsed.has(label);
+          const visible = filterFav && favoriteTeam
+            ? group.filter(m => m.homeTeam === favoriteTeam || m.awayTeam === favoriteTeam)
+            : group;
+          if (filterFav && visible.length === 0) return null;
+          return (
+            <div key={label}>
+              <div className="date-group-header" onClick={() => toggleGroup(label)} style={{ cursor: 'pointer' }}>
+                {label}
+                <span className="date-group-chevron">{isCollapsed ? '›' : '‹'}</span>
+              </div>
+              {!isCollapsed && visible.map(m => (
+                <MatchCard
+                  key={m.matchId}
+                  match={m}
+                  favorite={favoriteTeam && (m.homeTeam === favoriteTeam || m.awayTeam === favoriteTeam)}
+                />
+              ))}
+            </div>
+          );
+        })
       )}
     </>
   );

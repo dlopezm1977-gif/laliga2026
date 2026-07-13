@@ -22,7 +22,8 @@ export default function TabBar({ activeTab, onTabChange }) {
             onClick={() => !locked && onTabChange(tab.id)}
             aria-label={locked ? `${tab.label} (solo usuarios registrados)` : tab.label}
           >
-            {tab.icon} {tab.label}
+            <span className="tab-icon">{tab.icon}</span>
+            <span className="tab-label">{tab.label}</span>
             {locked && <span className="lock-icon">🔒</span>}
           </button>
         );

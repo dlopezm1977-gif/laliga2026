@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useInstallPrompt } from '../../hooks/useInstallPrompt';
+import { crestUrl } from '../../lib/crests';
+import ProfileModal from '../Profile/ProfileModal';
 
 function initials(name) {
   if (!name) return '?';
@@ -24,6 +26,7 @@ export default function Header({ onLogin }) {
   const { profile, isGuest, logout } = useAuth();
   const { canInstall, install, isIos, isStandalone } = useInstallPrompt();
   const [iosBannerOpen, setIosBannerOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   return (
     <>
@@ -51,15 +54,19 @@ export default function Header({ onLogin }) {
           <button className="btn-login" onClick={onLogin}>Iniciar sesión</button>
         ) : (
           <>
-            <div className="avatar" title={profile?.username}>
-              {initials(profile?.username || '')}
-            </div>
+            <button className="avatar-btn" onClick={() => setProfileOpen(true)} title={profile?.username}>
+              {profile?.favoriteTeam
+                ? <img className="avatar-crest" src={crestUrl(profile.favoriteTeam)} alt={profile.favoriteTeam} />
+                : initials(profile?.username || '')
+              }
+            </button>
             <button className="btn-logout" onClick={logout}>Salir</button>
           </>
         )}
       </header>
 
       {iosBannerOpen && <IosInstallBanner onDismiss={() => setIosBannerOpen(false)} />}
+      {profileOpen && <ProfileModal onClose={() => setProfileOpen(false)} />}
     </>
   );
 }

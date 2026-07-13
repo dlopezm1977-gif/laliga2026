@@ -1,5 +1,5 @@
 import {
-  doc, getDoc, setDoc, collection, getDocs,
+  doc, getDoc, setDoc, updateDoc, collection, getDocs,
   query, orderBy, serverTimestamp,
 } from 'firebase/firestore';
 import { db } from './firebase';
@@ -60,4 +60,8 @@ export async function createUser(uid, data) {
     ...data,
     createdAt: serverTimestamp(),
   });
+}
+
+export async function updateUser(uid, data) {
+  await updateDoc(doc(db, 'users', uid), data);
 }
