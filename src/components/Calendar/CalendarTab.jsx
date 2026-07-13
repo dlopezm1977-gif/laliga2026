@@ -53,26 +53,28 @@ function MatchCard({ match, favorite }) {
   return (
     <div className={`match-card${favorite ? ' match-card--favorite' : ''}`}>
       <span className="match-time-col">{formatTime(match.utcDate)}</span>
-      <div className="match-team home">
-        {match.homeTeam}
-        <img className="team-crest" src={crestUrl(match.homeTeam)} alt={match.homeTeam} />
+      <div className="match-middle">
+        <div className="match-team home">
+          {match.homeTeam}
+          <img className="team-crest" src={crestUrl(match.homeTeam)} alt={match.homeTeam} />
+        </div>
+        <div className="match-score">
+          {isFinished || isLive ? (
+            <>
+              <span>{match.homeScore ?? '–'}</span>
+              <span className="sep">:</span>
+              <span>{match.awayScore ?? '–'}</span>
+            </>
+          ) : (
+            <span className="sep">–</span>
+          )}
+        </div>
+        <div className="match-team away">
+          <img className="team-crest" src={crestUrl(match.awayTeam)} alt={match.awayTeam} />
+          {match.awayTeam}
+        </div>
       </div>
-      <div className="match-score">
-        {isFinished || isLive ? (
-          <>
-            <span>{match.homeScore ?? '–'}</span>
-            <span className="sep">:</span>
-            <span>{match.awayScore ?? '–'}</span>
-          </>
-        ) : (
-          <span className="sep">–</span>
-        )}
-      </div>
-      <div className="match-team away">
-        <img className="team-crest" src={crestUrl(match.awayTeam)} alt={match.awayTeam} />
-        {match.awayTeam}
-      </div>
-      <StatusBadge status={match.status} />
+      <div className="match-status-col"><StatusBadge status={match.status} /></div>
     </div>
   );
 }
