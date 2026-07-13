@@ -564,7 +564,8 @@ input  { font-family: inherit; }
 
 /* ── Favorito (calendar highlight + filter) ─────────────────────────────── */
 .match-card--favorite {
-  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface));
+  border-color: var(--accent);
 }
 .fav-filter-btn {
   display: flex;
