@@ -678,7 +678,10 @@ input  { font-family: inherit; }
 
 /* ── Clasificación: fila favorita ───────────────────────────────────────── */
 .standings-table tr.row-favorite td {
-  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface));
+}
+.standings-table tr.row-favorite td:first-child {
+  border-left-color: var(--accent);
 }
 
 /* ── Ranking ────────────────────────────────────────────────────────────── */

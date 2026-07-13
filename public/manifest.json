@@ -1,6 +1,6 @@
 {
-  "name": "Quiniela LaLiga 26/27",
-  "short_name": "Quiniela",
+  "name": "LaLiga 26/27",
+  "short_name": "LaLiga 26/27",
   "description": "Predice los resultados de LaLiga 26/27",
   "start_url": "/laliga2026/",
   "scope": "/laliga2026/",
