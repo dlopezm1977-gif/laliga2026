@@ -3,6 +3,16 @@ import { useMatches } from '../../hooks/useMatches';
 import { useAuth } from '../../contexts/AuthContext';
 import { crestUrl } from '../../lib/crests';
 
+const ABBR = {
+  'Real Madrid':   'RMA', 'Barcelona':     'BAR', 'Atlético':      'ATM',
+  'Sevilla':       'SEV', 'Betis':         'BET', 'Real Sociedad': 'RSO',
+  'Villarreal':    'VIL', 'Athletic':      'ATH', 'Valencia':      'VAL',
+  'Osasuna':       'OSA', 'Celta':         'CEL', 'Getafe':        'GET',
+  'Rayo':          'RAY', 'Alavés':        'ALA', 'Espanyol':      'ESP',
+  'Racing':        'RAC', 'Levante':       'LEV', 'Deportivo':     'DEP',
+  'Elche':         'ELC', 'Málaga':        'MAL',
+};
+
 function buildStandings(matchdayData) {
   const table = {};
 
@@ -84,7 +94,8 @@ export default function StandingsTab() {
                 <td className="col-pos">{pos}</td>
                 <td className="col-team">
                   <img className="team-crest team-crest--sm" src={crestUrl(team.name)} alt="" />
-                  <span>{team.name}</span>
+                  <span className="team-full">{team.name}</span>
+                  <span className="team-abbr">{ABBR[team.name] ?? team.name.slice(0, 3).toUpperCase()}</span>
                 </td>
                 <td>{team.pj}</td>
                 <td>{team.g}</td>

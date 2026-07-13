@@ -909,6 +909,8 @@ input  { font-family: inherit; }
 .legend-dot.zone-uecl { background: #22c55e; }
 .legend-dot.zone-rel  { background: #ef4444; }
 
+.team-abbr { display: none; }
+
 /* ── Responsive ─────────────────────────────────────────────────────────── */
 @media (max-width: 480px) {
   /* Header */
@@ -922,6 +924,10 @@ input  { font-family: inherit; }
   .tab-label { display: none; }
   .tab-icon { font-size: 1.1rem; }
   .tab-btn .lock-icon { font-size: .55rem; margin-left: 1px; }
+
+  /* Clasificación: abreviaturas en móvil */
+  .team-full { display: none; }
+  .team-abbr { display: inline; }
 
   /* Contenido */
   .main-content { padding: .75rem; }
