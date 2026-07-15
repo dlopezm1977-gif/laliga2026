@@ -1013,6 +1013,7 @@ input  { font-family: inherit; }
   :root { --header-h: 52px; }
   .app-header { padding: .5rem .75rem; }
   .app-header .logo span { display: none; }        /* oculta "Quiniela 26/27" */
+  .app-version { display: inline; }               /* pero la versión sí se ve */
   .btn-logout { padding: .25rem .45rem; font-size: .65rem; }
 
   /* Tabs: solo icono */
