@@ -101,7 +101,12 @@ export default function CalendarTab() {
   const matches       = getMatches(activeJornada);
 
   if (loading) return <LoadingSpinner text="Cargando partidos…" />;
-  if (error)   return <div className="loading" style={{ color: 'var(--accent)' }}>Error: {error}</div>;
+  if (error)   return (
+    <div className="empty-state">
+      <img src={`${import.meta.env.BASE_URL}icon-error.png`} alt="" className="empty-icon" />
+      <p style={{ color: 'var(--accent)' }}>Error al cargar los partidos.<br />Inténtalo de nuevo.</p>
+    </div>
+  );
 
   return (
     <>

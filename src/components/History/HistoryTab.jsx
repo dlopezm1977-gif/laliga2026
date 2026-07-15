@@ -122,7 +122,10 @@ export default function HistoryTab() {
       </div>
 
       {jornadasWithPreds.length === 0 ? (
-        <div className="loading">Aún no tienes predicciones guardadas.</div>
+        <div className="empty-state">
+          <img src={`${import.meta.env.BASE_URL}icon-empty.png`} alt="" className="empty-icon" />
+          <p>Aún no tienes predicciones guardadas.</p>
+        </div>
       ) : (
         jornadasWithPreds.map(md => (
           <HistoryJornada

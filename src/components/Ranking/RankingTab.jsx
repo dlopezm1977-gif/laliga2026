@@ -66,8 +66,9 @@ export default function RankingTab() {
 
   if (scores.length === 0) {
     return (
-      <div className="loading">
-        Aún no hay puntuaciones. Empieza en cuanto terminen los primeros partidos.
+      <div className="empty-state">
+        <img src={`${import.meta.env.BASE_URL}icon-empty.png`} alt="" className="empty-icon" />
+        <p>Aún no hay puntuaciones.<br />Empieza en cuanto terminen los primeros partidos.</p>
       </div>
     );
   }

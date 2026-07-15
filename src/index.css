@@ -245,9 +245,16 @@ input  { font-family: inherit; }
 }
 .auth-header .subtitle { margin-bottom: 0; }
 .auth-page-icon {
-  width: 100px;
-  height: 100px;
+  height: 120px;
+  width: auto;
   flex-shrink: 0;
+}
+.auth-register-banner {
+  display: block;
+  width: 100%;
+  max-width: 280px;
+  height: auto;
+  margin: .75rem auto 1.25rem;
 }
 .auth-card h1 {
   font-family: var(--display);
@@ -581,12 +588,56 @@ input  { font-family: inherit; }
 }
 .btn-save:hover { opacity: .9; }
 .btn-save:disabled { opacity: .4; cursor: not-allowed; }
-.save-ok {
-  text-align: center;
-  font-size: .8rem;
-  color: var(--green);
-  margin-top: .5rem;
+.save-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  z-index: 200;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: overlay-in .25s ease both;
+}
+.save-overlay-icon {
+  width: min(320px, 80vw);
+  height: auto;
+  animation: save-ok-pop .35s cubic-bezier(.175,.885,.32,1.275) both;
+}
+.save-overlay-hint {
+  font-size: .75rem;
   font-family: var(--mono);
+  color: rgba(255,255,255,.5);
+  letter-spacing: .05em;
+}
+@keyframes overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes save-ok-pop {
+  from { opacity: 0; transform: scale(.5); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ── Empty / error states ───────────────────────────────────────────────── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: var(--muted);
+  font-size: .85rem;
+  line-height: 1.5;
+}
+.empty-icon {
+  width: 200px;
+  height: auto;
 }
 
 /* ── Favorito (calendar highlight + filter) ─────────────────────────────── */
@@ -869,8 +920,8 @@ input  { font-family: inherit; }
   padding: 2rem;
 }
 .loading-icon {
-  width: 56px;
-  height: 56px;
+  width: 120px;
+  height: auto;
   animation: loading-pulse 1.4s ease-in-out infinite;
 }
 @keyframes loading-pulse {

@@ -66,8 +66,18 @@ export default function StandingsTab() {
   const standings = useMemo(() => buildStandings(matchdayData), [matchdayData]);
 
   if (loading) return <LoadingSpinner text="Cargando clasificación…" />;
-  if (error)   return <div className="loading" style={{ color: 'var(--accent)' }}>Error: {error}</div>;
-  if (!standings.length) return <div className="loading">No hay datos de equipos todavía.</div>;
+  if (error)   return (
+    <div className="empty-state">
+      <img src={`${import.meta.env.BASE_URL}icon-error.png`} alt="" className="empty-icon" />
+      <p style={{ color: 'var(--accent)' }}>Error al cargar la clasificación.<br />Inténtalo de nuevo.</p>
+    </div>
+  );
+  if (!standings.length) return (
+    <div className="empty-state">
+      <img src={`${import.meta.env.BASE_URL}icon-empty.png`} alt="" className="empty-icon" />
+      <p>No hay datos de equipos todavía.</p>
+    </div>
+  );
 
   return (
     <div className="standings">

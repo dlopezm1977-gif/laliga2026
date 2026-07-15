@@ -36,6 +36,7 @@ export default function RegisterPage({ onClose, onBack }) {
       <div className="auth-card">
         <h1>Crear cuenta</h1>
         <p className="subtitle">Quiniela LaLiga 26/27</p>
+        <img src={`${import.meta.env.BASE_URL}icon-register.png`} alt="" className="auth-register-banner" />
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Nombre</label>

@@ -65,10 +65,12 @@ function deadlineLabel(matches) {
 export default function PredictTab() {
   const { user } = useAuth();
   const { currentMatchday, getMatches, loading: matchesLoading } = useMatches();
-  const [jornada, setJornada]   = useState(null);
-  const [preds, setPreds]       = useState({});
-  const [saving, setSaving]     = useState(false);
-  const [saved, setSaved]       = useState(false);
+  const [jornada, setJornada]       = useState(null);
+  const [preds, setPreds]           = useState({});
+  const [saving, setSaving]         = useState(false);
+  const [saved, setSaved]           = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [savedOnce, setSavedOnce]   = useState(false);
   const [loadingPreds, setLoadingPreds] = useState(false);
 
   const activeJornada = jornada ?? currentMatchday;
@@ -82,6 +84,9 @@ export default function PredictTab() {
   // Load saved predictions whenever jornada changes
   useEffect(() => {
     if (!user || !activeJornada) return;
+    setHasChanges(false);
+    setSaved(false);
+    setSavedOnce(false);
     setLoadingPreds(true);
     getPrediction(user.uid, activeJornada)
       .then(data => {
@@ -89,6 +94,7 @@ export default function PredictTab() {
           const map = {};
           data.matches.forEach(m => { map[m.matchId] = m; });
           setPreds(map);
+          setSavedOnce(true);
         } else {
           setPreds({});
         }
@@ -101,13 +107,13 @@ export default function PredictTab() {
       ...prev,
       [matchId]: { ...(prev[matchId] || { matchId }), [field]: value },
     }));
+    setHasChanges(true);
     setSaved(false);
   }
 
   async function handleSave() {
     if (!user) return;
     setSaving(true);
-    setSaved(false);
     try {
       const matchList = matches.map(m => ({
         matchId:   m.matchId,
@@ -115,6 +121,8 @@ export default function PredictTab() {
         awayScore: preds[m.matchId]?.awayScore ?? 0,
       }));
       await savePrediction(user.uid, activeJornada, matchList);
+      setHasChanges(false);
+      setSavedOnce(true);
       setSaved(true);
     } finally {
       setSaving(false);
@@ -170,11 +178,16 @@ export default function PredictTab() {
           }
 
           {!isClosed && (
-            <button className="btn-save" onClick={handleSave} disabled={saving}>
-              {saving ? 'Guardando…' : 'Guardar predicciones'}
+            <button className="btn-save" onClick={handleSave} disabled={saving || !hasChanges}>
+              {saving ? 'Guardando…' : (!hasChanges && savedOnce) ? '✓ Guardado' : 'Guardar predicciones'}
             </button>
           )}
-          {saved && <div className="save-ok">✓ Predicciones guardadas</div>}
+          {saved && (
+            <div className="save-overlay" onClick={() => setSaved(false)}>
+              <img src={`${import.meta.env.BASE_URL}icon-success.png`} alt="" className="save-overlay-icon" />
+              <p className="save-overlay-hint">Toca para continuar</p>
+            </div>
+          )}
         </>
       )}
     </>
