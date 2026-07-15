@@ -18,7 +18,7 @@
 
 /* ── Reset ─────────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { font-size: 16px; }
+html { font-size: 16px; overflow-x: hidden; }
 body {
   background: var(--bg);
   color: var(--text);
@@ -26,6 +26,7 @@ body {
   font-size: .92rem;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 button { font-family: inherit; cursor: pointer; }
 input  { font-family: inherit; }
@@ -252,7 +253,7 @@ input  { font-family: inherit; }
 .auth-register-banner {
   display: block;
   width: 100%;
-  max-width: 280px;
+  max-width: min(280px, 100%);
   height: auto;
   margin: .75rem auto 1.25rem;
 }
