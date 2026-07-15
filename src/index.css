@@ -236,6 +236,19 @@ input  { font-family: inherit; }
   width: 100%;
   max-width: 380px;
 }
+.auth-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.auth-header .subtitle { margin-bottom: 0; }
+.auth-page-icon {
+  width: 100px;
+  height: 100px;
+  flex-shrink: 0;
+}
 .auth-card h1 {
   font-family: var(--display);
   font-size: 1.8rem;
@@ -845,11 +858,24 @@ input  { font-family: inherit; }
 
 /* ── Spinner / loading ──────────────────────────────────────────────────── */
 .loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .75rem;
   text-align: center;
   color: var(--muted);
   font-family: var(--mono);
   font-size: .8rem;
   padding: 2rem;
+}
+.loading-icon {
+  width: 56px;
+  height: 56px;
+  animation: loading-pulse 1.4s ease-in-out infinite;
+}
+@keyframes loading-pulse {
+  0%, 100% { opacity: 1;    transform: scale(1); }
+  50%       { opacity: .55; transform: scale(.88); }
 }
 
 /* ── Clasificación ──────────────────────────────────────────────────────── */

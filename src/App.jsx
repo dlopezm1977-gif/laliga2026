@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Header  from './components/Layout/Header';
 import TabBar  from './components/Layout/TabBar';
 import LoginPage    from './components/Auth/LoginPage';
+import LoadingSpinner from './components/LoadingSpinner';
 import CalendarTab   from './components/Calendar/CalendarTab';
 import StandingsTab  from './components/Standings/StandingsTab';
 import PredictTab    from './components/Predict/PredictTab';
@@ -14,7 +15,7 @@ function AppShell() {
   const [tab, setTab]     = useState('calendar');
   const [showAuth, setShowAuth] = useState(false);
 
-  if (isLoading) return <div className="loading">Cargando…</div>;
+  if (isLoading) return <LoadingSpinner />;
 
   if (showAuth && isGuest) {
     return <LoginPage onClose={() => setShowAuth(false)} />;

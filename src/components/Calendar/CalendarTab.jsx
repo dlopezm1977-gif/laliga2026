@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useMatches } from '../../hooks/useMatches';
 import { useAuth } from '../../contexts/AuthContext';
 import { crestUrl } from '../../lib/crests';
+import LoadingSpinner from '../LoadingSpinner';
 
 function formatTime(utcDate) {
   if (!utcDate) return '';
@@ -99,7 +100,7 @@ export default function CalendarTab() {
   const activeJornada = jornada ?? currentMatchday;
   const matches       = getMatches(activeJornada);
 
-  if (loading) return <div className="loading">Cargando partidos…</div>;
+  if (loading) return <LoadingSpinner text="Cargando partidos…" />;
   if (error)   return <div className="loading" style={{ color: 'var(--accent)' }}>Error: {error}</div>;
 
   return (

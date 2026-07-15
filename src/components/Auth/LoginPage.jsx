@@ -86,8 +86,13 @@ export default function LoginPage({ onClose }) {
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <h1>Iniciar sesión</h1>
-        <p className="subtitle">Quiniela LaLiga 26/27</p>
+        <div className="auth-header">
+          <div>
+            <h1>Iniciar sesión</h1>
+            <p className="subtitle">Quiniela LaLiga 26/27</p>
+          </div>
+          <img src={`${import.meta.env.BASE_URL}icon-login.png`} alt="" className="auth-page-icon" />
+        </div>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Email</label>

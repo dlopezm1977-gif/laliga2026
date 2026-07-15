@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { crestUrl } from '../../lib/crests';
 import { getAllPredictions, getUserScore } from '../../lib/firestore';
 import { useMatches } from '../../hooks/useMatches';
+import LoadingSpinner from '../LoadingSpinner';
 
 function getSign(h, a) {
   if (h > a) return 'H';
@@ -99,7 +100,7 @@ export default function HistoryTab() {
     }).finally(() => setLoading(false));
   }, [user]);
 
-  if (loading || matchLoading) return <div className="loading">Cargando historial…</div>;
+  if (loading || matchLoading) return <LoadingSpinner text="Cargando historial…" />;
 
   const totalPoints  = score?.totalPoints ?? 0;
   const exactCount   = score?.exactCount  ?? 0;

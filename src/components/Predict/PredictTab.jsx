@@ -3,6 +3,7 @@ import { useMatches } from '../../hooks/useMatches';
 import { crestUrl } from '../../lib/crests';
 import { useAuth } from '../../contexts/AuthContext';
 import { getPrediction, savePrediction } from '../../lib/firestore';
+import LoadingSpinner from '../LoadingSpinner';
 
 function ScoreSpinner({ value, onChange, disabled }) {
   const n = value ?? 0;
@@ -120,7 +121,7 @@ export default function PredictTab() {
     }
   }
 
-  if (matchesLoading || loadingPreds) return <div className="loading">Cargando…</div>;
+  if (matchesLoading || loadingPreds) return <LoadingSpinner />;
 
   const deadline = deadlineLabel(matches);
 

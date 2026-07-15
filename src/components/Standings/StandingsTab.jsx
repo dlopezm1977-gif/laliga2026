@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useMatches } from '../../hooks/useMatches';
 import { useAuth } from '../../contexts/AuthContext';
 import { crestUrl } from '../../lib/crests';
+import LoadingSpinner from '../LoadingSpinner';
 
 const ABBR = {
   'Real Madrid':   'RMA', 'Barcelona':     'BAR', 'Atlético':      'ATM',
@@ -64,7 +65,7 @@ export default function StandingsTab() {
   const favoriteTeam = profile?.favoriteTeam || null;
   const standings = useMemo(() => buildStandings(matchdayData), [matchdayData]);
 
-  if (loading) return <div className="loading">Cargando clasificación…</div>;
+  if (loading) return <LoadingSpinner text="Cargando clasificación…" />;
   if (error)   return <div className="loading" style={{ color: 'var(--accent)' }}>Error: {error}</div>;
   if (!standings.length) return <div className="loading">No hay datos de equipos todavía.</div>;
 

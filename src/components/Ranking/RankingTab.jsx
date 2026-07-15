@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getAllScores } from '../../lib/firestore';
+import LoadingSpinner from '../LoadingSpinner';
 
 function initials(name) {
   if (!name) return '?';
@@ -61,7 +62,7 @@ export default function RankingTab() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="loading">Cargando ranking…</div>;
+  if (loading) return <LoadingSpinner text="Cargando ranking…" />;
 
   if (scores.length === 0) {
     return (
