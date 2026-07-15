@@ -71,6 +71,14 @@ input  { font-family: inherit; }
   color: var(--text);
   font-size: 1rem;
 }
+.app-version {
+  font-size: .6rem;
+  font-family: var(--mono);
+  color: var(--muted);
+  opacity: .6;
+  align-self: flex-end;
+  padding-bottom: 1px;
+}
 .logo-laliga {
   height: 1.6rem;
   width: auto;

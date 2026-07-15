@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useInstallPrompt } from '../../hooks/useInstallPrompt';
 import { crestUrl } from '../../lib/crests';
 import ProfileModal from '../Profile/ProfileModal';
+import { version } from '../../../package.json';
 
 function initials(name) {
   if (!name) return '?';
@@ -38,6 +39,7 @@ export default function Header({ onLogin }) {
             className="logo-laliga"
           />
           <span>Quiniela 26/27</span>
+          <span className="app-version">v{version}</span>
         </div>
 
         {/* Android / Chrome: botón nativo */}
