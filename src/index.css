@@ -236,6 +236,7 @@ input  { font-family: inherit; }
   padding: 2rem;
   width: 100%;
   max-width: 380px;
+  overflow: hidden;
 }
 .auth-header {
   display: flex;
@@ -1026,4 +1027,8 @@ input  { font-family: inherit; }
   .match-card { padding: .4rem .6rem; gap: .3rem; }
   .match-score { font-size: 1.05rem; }
   .team-grid { grid-template-columns: repeat(3, 1fr); }
+
+  /* Auth: reducir padding en pantallas pequeñas */
+  .auth-page { padding: .75rem; }
+  .auth-card  { padding: 1.25rem; }
 }
