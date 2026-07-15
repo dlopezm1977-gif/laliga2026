@@ -378,6 +378,8 @@ input  { font-family: inherit; }
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: .5rem;
+  min-width: 0;
+  overflow: hidden;
 }
 .match-time-col {
   width: 38px;
@@ -399,9 +401,16 @@ input  { font-family: inherit; }
   gap: .35rem;
   font-size: .85rem;
   font-weight: 500;
+  min-width: 0;
 }
 .match-team.home { justify-content: flex-end; }
 .match-team.away { justify-content: flex-start; }
+.team-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
 .team-crest {
   width: 22px;
   height: 22px;

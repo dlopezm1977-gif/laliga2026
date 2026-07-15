@@ -56,7 +56,7 @@ function MatchCard({ match, favorite }) {
       <span className="match-time-col">{formatTime(match.utcDate)}</span>
       <div className="match-middle">
         <div className="match-team home">
-          {match.homeTeam}
+          <span className="team-name">{match.homeTeam}</span>
           <img className="team-crest" src={crestUrl(match.homeTeam)} alt={match.homeTeam} />
         </div>
         <div className="match-score">
@@ -72,7 +72,7 @@ function MatchCard({ match, favorite }) {
         </div>
         <div className="match-team away">
           <img className="team-crest" src={crestUrl(match.awayTeam)} alt={match.awayTeam} />
-          {match.awayTeam}
+          <span className="team-name">{match.awayTeam}</span>
         </div>
       </div>
       <div className="match-status-col"><StatusBadge status={match.status} /></div>

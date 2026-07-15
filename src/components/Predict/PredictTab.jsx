@@ -32,7 +32,7 @@ function PredictCard({ match, pred, onUpdate, closed }) {
   return (
     <div className={`predict-card${closed ? ' closed' : ''}`}>
       <div className="match-team home">
-        {match.homeTeam}
+        <span className="team-name">{match.homeTeam}</span>
         <img className="team-crest" src={crestUrl(match.homeTeam)} alt={match.homeTeam} />
       </div>
       <div className="predict-center">
@@ -44,7 +44,7 @@ function PredictCard({ match, pred, onUpdate, closed }) {
       </div>
       <div className="match-team away">
         <img className="team-crest" src={crestUrl(match.awayTeam)} alt={match.awayTeam} />
-        {match.awayTeam}
+        <span className="team-name">{match.awayTeam}</span>
       </div>
     </div>
   );
