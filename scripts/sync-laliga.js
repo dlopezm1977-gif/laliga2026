@@ -51,6 +51,40 @@ const SHORT_NAMES = {
 };
 const short = name => SHORT_NAMES[name] || name;
 
+async function syncScorers() {
+  console.log('Fetching La Liga scorers…');
+  // Intentar temporada actual, caer a la anterior si no hay datos
+  for (const season of [2026, 2025]) {
+    const res = await fetch(
+      `https://api.football-data.org/v4/competitions/PD/scorers?season=${season}&limit=30`,
+      { headers: { 'X-Auth-Token': FD_TOKEN } }
+    );
+    if (!res.ok) continue;
+    const data = await res.json();
+    if (!data.scorers?.length) continue;
+
+    const scorers = data.scorers.map(s => ({
+      name:          s.player.name,
+      team:          s.team.shortName,
+      teamAbbr:      s.team.tla,
+      crestUrl:      s.team.crest,
+      goals:         s.goals,
+      assists:       s.assists ?? 0,
+      penalties:     s.penalties ?? 0,
+      playedMatches: s.playedMatches,
+    }));
+
+    await db.collection('scorers_cache').doc('laliga').set({
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      season,
+      scorers,
+    });
+    console.log(`Scorers updated (season ${season}): ${scorers.length} jugadores`);
+    return;
+  }
+  console.warn('No scorer data available for any season');
+}
+
 async function main() {
   console.log('Fetching La Liga matches from football-data.org…');
   const res = await fetch(
@@ -110,4 +144,6 @@ async function main() {
   }
 }
 
-main().catch(err => { console.error(err); process.exit(1); });
+main()
+  .then(() => syncScorers())
+  .catch(err => { console.error(err); process.exit(1); });

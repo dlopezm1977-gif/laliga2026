@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useInstallPrompt } from '../../hooks/useInstallPrompt';
 import { crestUrl } from '../../lib/crests';
 import ProfileModal from '../Profile/ProfileModal';
+import InstructionsModal from '../Auth/InstructionsModal';
 import { version } from '../../../package.json';
 
 function initials(name) {
@@ -26,8 +27,9 @@ function IosInstallBanner({ onDismiss }) {
 export default function Header({ onLogin }) {
   const { profile, isGuest, logout } = useAuth();
   const { canInstall, install, isIos, isStandalone } = useInstallPrompt();
-  const [iosBannerOpen, setIosBannerOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
+  const [iosBannerOpen, setIosBannerOpen]       = useState(false);
+  const [profileOpen, setProfileOpen]           = useState(false);
+  const [instructionsOpen, setInstructionsOpen] = useState(false);
 
   return (
     <>
@@ -53,9 +55,13 @@ export default function Header({ onLogin }) {
         )}
 
         {isGuest ? (
-          <button className="btn-login" onClick={onLogin}>Iniciar sesión</button>
+          <>
+            <button className="btn-help" onClick={() => setInstructionsOpen(true)}>?</button>
+            <button className="btn-login" onClick={onLogin}>Iniciar sesión</button>
+          </>
         ) : (
           <>
+            <button className="btn-help" onClick={() => setInstructionsOpen(true)}>?</button>
             <button className="avatar-btn" onClick={() => setProfileOpen(true)} title={profile?.username}>
               {profile?.favoriteTeam
                 ? <img className="avatar-crest" src={crestUrl(profile.favoriteTeam)} alt={profile.favoriteTeam} />
@@ -67,8 +73,9 @@ export default function Header({ onLogin }) {
         )}
       </header>
 
-      {iosBannerOpen && <IosInstallBanner onDismiss={() => setIosBannerOpen(false)} />}
-      {profileOpen && <ProfileModal onClose={() => setProfileOpen(false)} />}
+      {iosBannerOpen      && <IosInstallBanner onDismiss={() => setIosBannerOpen(false)} />}
+      {profileOpen        && <ProfileModal onClose={() => setProfileOpen(false)} />}
+      {instructionsOpen   && <InstructionsModal onClose={() => setInstructionsOpen(false)} />}
     </>
   );
 }

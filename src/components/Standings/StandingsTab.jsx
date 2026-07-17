@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useMatches } from '../../hooks/useMatches';
+import { useScorers } from '../../hooks/useScorers';
 import { useAuth } from '../../contexts/AuthContext';
 import { crestUrl } from '../../lib/crests';
 import LoadingSpinner from '../LoadingSpinner';
@@ -21,7 +22,6 @@ function buildStandings(matchdayData) {
     if (!table[name]) table[name] = { name, pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0 };
   };
 
-  // Seed all teams regardless of whether they've played
   for (const matches of Object.values(matchdayData)) {
     for (const m of matches) {
       ensure(m.homeTeam);
@@ -60,73 +60,138 @@ function zoneClass(pos) {
 }
 
 export default function StandingsTab() {
-  const { matchdayData, loading, error } = useMatches();
+  const { matchdayData, loading: loadingMatches, error: errorMatches } = useMatches();
+  const { scorers, loading: loadingScorers, error: errorScorers } = useScorers();
   const { profile } = useAuth();
   const favoriteTeam = profile?.favoriteTeam || null;
   const standings = useMemo(() => buildStandings(matchdayData), [matchdayData]);
 
-  if (loading) return <LoadingSpinner text="Cargando clasificación…" />;
-  if (error)   return (
-    <div className="empty-state">
-      <img src={`${import.meta.env.BASE_URL}icon-error.png`} alt="" className="empty-icon" />
-      <p style={{ color: 'var(--accent)' }}>Error al cargar la clasificación.<br />Inténtalo de nuevo.</p>
-    </div>
-  );
-  if (!standings.length) return (
-    <div className="empty-state">
-      <img src={`${import.meta.env.BASE_URL}icon-empty.png`} alt="" className="empty-icon" />
-      <p>No hay datos de equipos todavía.</p>
-    </div>
-  );
+  const [view, setView] = useState('liga');
+
+  const loading = view === 'liga' ? loadingMatches : loadingScorers;
+  const error   = view === 'liga' ? errorMatches   : errorScorers;
 
   return (
-    <div className="standings">
-      <table className="standings-table">
-        <thead>
-          <tr>
-            <th className="col-pos">#</th>
-            <th className="col-team">Equipo</th>
-            <th>PJ</th>
-            <th>G</th>
-            <th>E</th>
-            <th>P</th>
-            <th className="col-hide">GF</th>
-            <th className="col-hide">GC</th>
-            <th>DG</th>
-            <th className="col-pts">Pts</th>
-          </tr>
-        </thead>
-        <tbody>
-          {standings.map((team, i) => {
-            const pos = i + 1;
-            const isFav = team.name === favoriteTeam;
-            return (
-              <tr key={team.name} className={[zoneClass(pos), isFav ? 'row-favorite' : ''].filter(Boolean).join(' ')}>
-                <td className="col-pos">{pos}</td>
-                <td className="col-team">
-                  <img className="team-crest team-crest--sm" src={crestUrl(team.name)} alt="" />
-                  <span className="team-full">{team.name}</span>
-                  <span className="team-abbr">{ABBR[team.name] ?? team.name.slice(0, 3).toUpperCase()}</span>
-                </td>
-                <td>{team.pj}</td>
-                <td>{team.g}</td>
-                <td>{team.e}</td>
-                <td>{team.p}</td>
-                <td className="col-hide">{team.gf}</td>
-                <td className="col-hide">{team.gc}</td>
-                <td>{team.dg > 0 ? `+${team.dg}` : team.dg}</td>
-                <td className="col-pts">{team.pts}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-      <div className="standings-legend">
-        <span className="legend-dot zone-ucl" />UCL
-        <span className="legend-dot zone-uel" />UEL
-        <span className="legend-dot zone-uecl" />UECL
-        <span className="legend-dot zone-rel" />Descenso
+    <div className="standings-wrap">
+      <div className="standings-toggle">
+        <button
+          className={`toggle-btn${view === 'liga' ? ' active' : ''}`}
+          onClick={() => setView('liga')}
+        >Liga</button>
+        <button
+          className={`toggle-btn${view === 'goleadores' ? ' active' : ''}`}
+          onClick={() => setView('goleadores')}
+        >Goleadores</button>
       </div>
+
+      {loading && <LoadingSpinner text={view === 'liga' ? 'Cargando clasificación…' : 'Cargando goleadores…'} />}
+
+      {!loading && error && (
+        <div className="empty-state">
+          <img src={`${import.meta.env.BASE_URL}icon-error.png`} alt="" className="empty-icon" />
+          <p style={{ color: 'var(--accent)' }}>Error al cargar los datos.<br />Inténtalo de nuevo.</p>
+        </div>
+      )}
+
+      {!loading && !error && view === 'liga' && (
+        standings.length === 0 ? (
+          <div className="empty-state">
+            <img src={`${import.meta.env.BASE_URL}icon-empty.png`} alt="" className="empty-icon" />
+            <p>No hay datos de equipos todavía.</p>
+          </div>
+        ) : (
+          <div className="standings">
+            <table className="standings-table">
+              <thead>
+                <tr>
+                  <th className="col-pos">#</th>
+                  <th className="col-team">Equipo</th>
+                  <th>PJ</th>
+                  <th>G</th>
+                  <th>E</th>
+                  <th>P</th>
+                  <th className="col-hide">GF</th>
+                  <th className="col-hide">GC</th>
+                  <th>DG</th>
+                  <th className="col-pts">Pts</th>
+                </tr>
+              </thead>
+              <tbody>
+                {standings.map((team, i) => {
+                  const pos = i + 1;
+                  const isFav = team.name === favoriteTeam;
+                  return (
+                    <tr key={team.name} className={[zoneClass(pos), isFav ? 'row-favorite' : ''].filter(Boolean).join(' ')}>
+                      <td className="col-pos">{pos}</td>
+                      <td className="col-team">
+                        <img className="team-crest team-crest--sm" src={crestUrl(team.name)} alt="" />
+                        <span className="team-full">{team.name}</span>
+                        <span className="team-abbr">{ABBR[team.name] ?? team.name.slice(0, 3).toUpperCase()}</span>
+                      </td>
+                      <td>{team.pj}</td>
+                      <td>{team.g}</td>
+                      <td>{team.e}</td>
+                      <td>{team.p}</td>
+                      <td className="col-hide">{team.gf}</td>
+                      <td className="col-hide">{team.gc}</td>
+                      <td>{team.dg > 0 ? `+${team.dg}` : team.dg}</td>
+                      <td className="col-pts">{team.pts}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <div className="standings-legend">
+              <span className="legend-dot zone-ucl" />UCL
+              <span className="legend-dot zone-uel" />UEL
+              <span className="legend-dot zone-uecl" />UECL
+              <span className="legend-dot zone-rel" />Descenso
+            </div>
+          </div>
+        )
+      )}
+
+      {!loading && !error && view === 'goleadores' && (
+        scorers.length === 0 ? (
+          <div className="empty-state">
+            <img src={`${import.meta.env.BASE_URL}icon-empty.png`} alt="" className="empty-icon" />
+            <p>No hay datos de goleadores todavía.</p>
+          </div>
+        ) : (
+          <div className="standings">
+            <table className="standings-table scorers-table">
+              <thead>
+                <tr>
+                  <th className="col-pos">#</th>
+                  <th className="col-scorer-name">Jugador</th>
+                  <th className="col-scorer-team">Equipo</th>
+                  <th className="col-pts">Goles</th>
+                  <th className="col-hide">Asist</th>
+                  <th className="col-hide">Pen</th>
+                  <th className="col-hide">PJ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {scorers.map((s, i) => (
+                  <tr key={s.name + i}>
+                    <td className="col-pos">{i + 1}</td>
+                    <td className="col-scorer-name">{s.name}</td>
+                    <td className="col-scorer-team">
+                      <img className="team-crest team-crest--sm" src={s.crestUrl} alt="" />
+                      <span className="team-full">{s.team}</span>
+                      <span className="team-abbr">{s.teamAbbr}</span>
+                    </td>
+                    <td className="col-pts">{s.goals}</td>
+                    <td className="col-hide">{s.assists}</td>
+                    <td className="col-hide">{s.penalties}</td>
+                    <td className="col-hide">{s.playedMatches}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
+      )}
     </div>
   );
 }
