@@ -1029,7 +1029,7 @@ input  { font-family: inherit; }
   /* Clasificación: abreviaturas en móvil */
   .team-full { display: none; }
   .team-abbr { display: inline; }
-  .col-hide  { display: none; }
+  .standings-table .col-team { min-width: 52px; }
   .standings { overflow-x: hidden; }
 
   /* Contenido */
