@@ -1029,6 +1029,8 @@ input  { font-family: inherit; }
   /* Clasificación: abreviaturas en móvil */
   .team-full { display: none; }
   .team-abbr { display: inline; }
+  .col-hide  { display: none; }
+  .standings { overflow-x: hidden; }
 
   /* Contenido */
   .main-content { padding: .75rem; }
