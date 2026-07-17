@@ -1031,6 +1031,9 @@ input  { font-family: inherit; }
   .team-abbr { display: inline; }
   .standings-table .col-team { min-width: 52px; }
   .standings { overflow-x: hidden; }
+  .standings-table { font-size: .78rem; }
+  .standings-table th,
+  .standings-table td { padding: .3rem .3rem; }
 
   /* Contenido */
   .main-content { padding: .75rem; }
