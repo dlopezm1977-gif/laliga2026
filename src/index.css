@@ -71,8 +71,8 @@ input  { font-family: inherit; }
   color: var(--text);
   font-size: 1rem;
 }
-.app-version {
-  font-size: .6rem;
+.app-header .logo .app-version {
+  font-size: .55rem;
   font-family: var(--mono);
   color: var(--muted);
   opacity: .6;
