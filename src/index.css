@@ -301,7 +301,7 @@ input  { font-family: inherit; }
   border-radius: 6px;
   padding: .6rem .8rem;
   color: var(--text);
-  font-size: .9rem;
+  font-size: 1rem;
   outline: none;
 }
 .form-group input:focus { border-color: var(--accent); }
