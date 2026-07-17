@@ -172,8 +172,10 @@ export default function StandingsTab() {
                 </tr>
               </thead>
               <tbody>
-                {scorers.map((s, i) => (
-                  <tr key={s.name + i}>
+                {[...scorers]
+                  .sort((a, b) => b.goals - a.goals || b.assists - a.assists || a.playedMatches - b.playedMatches)
+                  .map((s, i) => (
+                  <tr key={s.name + i} className={i < 3 ? `scorer-top scorer-top${i + 1}` : ''}>
                     <td className="col-pos">{i + 1}</td>
                     <td className="col-scorer-name">{s.name}</td>
                     <td className="col-scorer-team">
