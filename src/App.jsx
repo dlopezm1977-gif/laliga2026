@@ -4,11 +4,11 @@ import Header  from './components/Layout/Header';
 import TabBar  from './components/Layout/TabBar';
 import LoginPage    from './components/Auth/LoginPage';
 import LoadingSpinner from './components/LoadingSpinner';
-import CalendarTab   from './components/Calendar/CalendarTab';
-import StandingsTab  from './components/Standings/StandingsTab';
-import PredictTab    from './components/Predict/PredictTab';
-import RankingTab    from './components/Ranking/RankingTab';
-import HistoryTab    from './components/History/HistoryTab';
+import CalendarTab  from './components/Calendar/CalendarTab';
+import StandingsTab from './components/Standings/StandingsTab';
+import PredictTab   from './components/Predict/PredictTab';
+import RankingTab   from './components/Ranking/RankingTab';
+import HistoryTab   from './components/History/HistoryTab';
 
 function AppShell() {
   const { isLoading, isGuest } = useAuth();

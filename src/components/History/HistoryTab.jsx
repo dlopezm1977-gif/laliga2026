@@ -11,22 +11,27 @@ function getSign(h, a) {
   return 'D';
 }
 
-function resultBadge(pred, real) {
+function resultBadge(pred, real, isFavorite) {
   if (real.homeScore === null || real.awayScore === null) return null;
   if (pred.homeScore === real.homeScore && pred.awayScore === real.awayScore) {
-    return { label: 'Exacto', cls: 'exact', pts: 3 };
+    return isFavorite
+      ? { label: '⭐ Exacto', cls: 'exact fav', pts: 6 }
+      : { label: 'Exacto', cls: 'exact', pts: 3 };
   }
   if (getSign(pred.homeScore, pred.awayScore) === getSign(real.homeScore, real.awayScore)) {
-    return { label: 'Signo', cls: 'sign', pts: 1 };
+    return isFavorite
+      ? { label: '⭐ Signo', cls: 'sign fav', pts: 2 }
+      : { label: 'Signo', cls: 'sign', pts: 1 };
   }
   return { label: 'Fallo', cls: 'miss', pts: 0 };
 }
 
 function HistoryJornada({ matchday, predData, matchdayData, scoreData }) {
   const [open, setOpen] = useState(false);
-  const matches = matchdayData || [];
-  const preds   = predData?.matches || [];
-  const jScore  = scoreData?.byMatchday?.[matchday];
+  const matches      = matchdayData || [];
+  const preds        = predData?.matches || [];
+  const favoriteTeam = predData?.favoriteTeam || null;
+  const jScore       = scoreData?.byMatchday?.[matchday];
 
   const predMap = {};
   preds.forEach(p => { predMap[p.matchId] = p; });
@@ -48,13 +53,18 @@ function HistoryJornada({ matchday, predData, matchdayData, scoreData }) {
       </div>
       {open && (
         <div className="history-jornada-body">
+          {favoriteTeam && (
+            <p style={{ fontSize: '.72rem', color: '#f59e0b', fontFamily: 'var(--mono)', marginBottom: '.4rem' }}>
+              ⭐ Favorito: {favoriteTeam}
+            </p>
+          )}
           {matches
             .sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate))
             .map(m => {
               const pred = predMap[m.matchId];
-              const badge = pred
-                ? resultBadge(pred, m)
-                : null;
+              const isFavorite = !!favoriteTeam &&
+                (m.homeTeam === favoriteTeam || m.awayTeam === favoriteTeam);
+              const badge = pred ? resultBadge(pred, m, isFavorite) : null;
               return (
                 <div className="history-match-row" key={m.matchId}>
                   <span className="teams">

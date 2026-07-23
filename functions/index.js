@@ -114,37 +114,50 @@ exports.calculateScores = onDocumentUpdated(
 
     for (const doc of matchdayDocs) {
       const uid = doc.ref.parent.parent.id;
-      const { matches: preds = [] } = doc.data();
+      const { matches: preds = [], favoriteTeam = null } = doc.data();
 
-      let newExact = 0, newSign = 0;
+      let newExact = 0, newSign = 0, favoriteBonus = 0;
 
       for (const pred of preds) {
         const real = resultMap[pred.matchId];
         if (!real) continue;
+
+        const matchData = justFinished.find(m => m.matchId === pred.matchId);
+        const isFavorite = favoriteTeam && matchData &&
+          (matchData.homeTeam === favoriteTeam || matchData.awayTeam === favoriteTeam);
 
         const predSign = pred.homeScore > pred.awayScore ? 'H'
           : pred.awayScore > pred.homeScore ? 'A' : 'D';
         const realSign = real.home > real.away ? 'H'
           : real.away > real.home ? 'A' : 'D';
 
+        let matchPoints = 0;
         if (pred.homeScore === real.home && pred.awayScore === real.away) {
           newExact++;
+          matchPoints = 3;
         } else if (predSign === realSign) {
           newSign++;
+          matchPoints = 1;
+        }
+
+        if (isFavorite && matchPoints > 0) {
+          favoriteBonus += matchPoints;
         }
       }
 
-      const points = newExact * 3 + newSign;
+      const points = newExact * 3 + newSign + favoriteBonus;
 
       const scoreRef = db.collection('scores').doc(uid);
       batch.set(scoreRef, {
-        totalPoints:    admin.firestore.FieldValue.increment(points),
-        exactCount:     admin.firestore.FieldValue.increment(newExact),
-        signCount:      admin.firestore.FieldValue.increment(newSign),
+        totalPoints:     admin.firestore.FieldValue.increment(points),
+        exactCount:      admin.firestore.FieldValue.increment(newExact),
+        signCount:       admin.firestore.FieldValue.increment(newSign),
+        favoriteBonus:   admin.firestore.FieldValue.increment(favoriteBonus),
         matchdaysPlayed: admin.firestore.FieldValue.increment(points > 0 ? 1 : 0),
-        [`byMatchday.${matchday}.points`]: admin.firestore.FieldValue.increment(points),
-        [`byMatchday.${matchday}.exact`]:  admin.firestore.FieldValue.increment(newExact),
-        [`byMatchday.${matchday}.sign`]:   admin.firestore.FieldValue.increment(newSign),
+        [`byMatchday.${matchday}.points`]:        admin.firestore.FieldValue.increment(points),
+        [`byMatchday.${matchday}.exact`]:         admin.firestore.FieldValue.increment(newExact),
+        [`byMatchday.${matchday}.sign`]:          admin.firestore.FieldValue.increment(newSign),
+        [`byMatchday.${matchday}.favoriteBonus`]: admin.firestore.FieldValue.increment(favoriteBonus),
       }, { merge: true });
     }
 

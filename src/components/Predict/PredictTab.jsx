@@ -4,6 +4,7 @@ import { crestUrl } from '../../lib/crests';
 import { useAuth } from '../../contexts/AuthContext';
 import { getPrediction, savePrediction } from '../../lib/firestore';
 import LoadingSpinner from '../LoadingSpinner';
+import SeasonPredictTab from '../Season/SeasonPredictTab';
 
 function ScoreSpinner({ value, onChange, disabled }) {
   const n = value ?? 0;
@@ -25,13 +26,25 @@ function ScoreSpinner({ value, onChange, disabled }) {
   );
 }
 
-function PredictCard({ match, pred, onUpdate, closed }) {
+function PredictCard({ match, pred, onUpdate, closed, favoriteTeam, onSetFavorite }) {
   const home = pred?.homeScore ?? 0;
   const away = pred?.awayScore ?? 0;
+  const homeIsFav = favoriteTeam === match.homeTeam;
+  const awayIsFav = favoriteTeam === match.awayTeam;
+  const hasFav = homeIsFav || awayIsFav;
 
   return (
-    <div className={`predict-card${closed ? ' closed' : ''}`}>
+    <div className={`predict-card${closed ? ' closed' : ''}${hasFav ? ' has-favorite' : ''}`}>
       <div className="match-team home">
+        <button
+          type="button"
+          className={`fav-star${homeIsFav ? ' active' : ''}`}
+          onClick={() => onSetFavorite(homeIsFav ? null : match.homeTeam)}
+          disabled={closed}
+          title={homeIsFav ? 'Quitar favorito' : `${match.homeTeam} como favorito`}
+        >
+          {homeIsFav ? '⭐' : '☆'}
+        </button>
         <span className="team-name">{match.homeTeam}</span>
         <img className="team-crest" src={crestUrl(match.homeTeam)} alt={match.homeTeam} />
       </div>
@@ -45,6 +58,15 @@ function PredictCard({ match, pred, onUpdate, closed }) {
       <div className="match-team away">
         <img className="team-crest" src={crestUrl(match.awayTeam)} alt={match.awayTeam} />
         <span className="team-name">{match.awayTeam}</span>
+        <button
+          type="button"
+          className={`fav-star${awayIsFav ? ' active' : ''}`}
+          onClick={() => onSetFavorite(awayIsFav ? null : match.awayTeam)}
+          disabled={closed}
+          title={awayIsFav ? 'Quitar favorito' : `${match.awayTeam} como favorito`}
+        >
+          {awayIsFav ? '⭐' : '☆'}
+        </button>
       </div>
     </div>
   );
@@ -63,14 +85,16 @@ function deadlineLabel(matches) {
 }
 
 export default function PredictTab() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { currentMatchday, getMatches, loading: matchesLoading } = useMatches();
-  const [jornada, setJornada]       = useState(null);
-  const [preds, setPreds]           = useState({});
-  const [saving, setSaving]         = useState(false);
-  const [saved, setSaved]           = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
-  const [savedOnce, setSavedOnce]   = useState(false);
+  const [view, setView]                 = useState('jornadas');
+  const [jornada, setJornada]           = useState(null);
+  const [preds, setPreds]               = useState({});
+  const [favoriteTeam, setFavoriteTeam] = useState(null);
+  const [saving, setSaving]             = useState(false);
+  const [saved, setSaved]               = useState(false);
+  const [hasChanges, setHasChanges]     = useState(false);
+  const [savedOnce, setSavedOnce]       = useState(false);
   const [loadingPreds, setLoadingPreds] = useState(false);
 
   const activeJornada = jornada ?? currentMatchday;
@@ -81,7 +105,6 @@ export default function PredictTab() {
     : Infinity;
   const isClosed = Date.now() >= firstMatchTime;
 
-  // Load saved predictions whenever jornada changes
   useEffect(() => {
     if (!user || !activeJornada) return;
     setHasChanges(false);
@@ -98,6 +121,7 @@ export default function PredictTab() {
         } else {
           setPreds({});
         }
+        setFavoriteTeam(data?.favoriteTeam ?? profile?.favoriteTeam ?? null);
       })
       .finally(() => setLoadingPreds(false));
   }, [user, activeJornada]);
@@ -120,7 +144,7 @@ export default function PredictTab() {
         homeScore: preds[m.matchId]?.homeScore ?? 0,
         awayScore: preds[m.matchId]?.awayScore ?? 0,
       }));
-      await savePrediction(user.uid, activeJornada, matchList);
+      await savePrediction(user.uid, activeJornada, matchList, favoriteTeam);
       setHasChanges(false);
       setSavedOnce(true);
       setSaved(true);
@@ -129,64 +153,94 @@ export default function PredictTab() {
     }
   }
 
+  function handleSetFavorite(team) {
+    setFavoriteTeam(team);
+    setHasChanges(true);
+    setSaved(false);
+  }
+
   if (matchesLoading || loadingPreds) return <LoadingSpinner />;
 
   const deadline = deadlineLabel(matches);
 
   return (
     <>
-      <div className="jornada-nav">
+      <div className="standings-toggle" style={{ marginBottom: '1rem' }}>
         <button
-          className="btn-nav"
-          onClick={() => { setJornada(Math.max(1, activeJornada - 1)); setSaved(false); }}
-          disabled={activeJornada <= 1}
-        >‹</button>
-        <div>
-          <h2>Jornada {activeJornada}</h2>
-          {deadline && (
-            <span className="dates">
-              {isClosed
-                ? <span className="deadline-badge">Cerrada</span>
-                : <>Cierre: {deadline}</>
-              }
-            </span>
-          )}
-        </div>
+          className={`toggle-btn${view === 'jornadas' ? ' active' : ''}`}
+          onClick={() => setView('jornadas')}
+        >Jornadas</button>
         <button
-          className="btn-nav"
-          onClick={() => { setJornada(Math.min(38, activeJornada + 1)); setSaved(false); }}
-          disabled={activeJornada >= 38}
-        >›</button>
+          className={`toggle-btn${view === 'general' ? ' active' : ''}`}
+          onClick={() => setView('general')}
+        >General</button>
       </div>
 
-      {matches.length === 0 ? (
-        <div className="loading">No hay datos para esta jornada</div>
+      {view === 'general' ? (
+        <SeasonPredictTab />
       ) : (
         <>
-          {matches
-            .slice()
-            .sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate))
-            .map(m => (
-              <PredictCard
-                key={m.matchId}
-                match={m}
-                pred={preds[m.matchId]}
-                onUpdate={handleUpdate}
-                closed={isClosed}
-              />
-            ))
-          }
-
-          {!isClosed && (
-            <button className="btn-save" onClick={handleSave} disabled={saving || !hasChanges}>
-              {saving ? 'Guardando…' : (!hasChanges && savedOnce) ? '✓ Guardado' : 'Guardar predicciones'}
-            </button>
-          )}
-          {saved && (
-            <div className="save-overlay" onClick={() => setSaved(false)}>
-              <img src={`${import.meta.env.BASE_URL}icon-success.png`} alt="" className="save-overlay-icon" />
-              <p className="save-overlay-hint">Toca para continuar</p>
+          <div className="jornada-nav">
+            <button
+              className="btn-nav"
+              onClick={() => { setJornada(Math.max(1, activeJornada - 1)); setSaved(false); }}
+              disabled={activeJornada <= 1}
+            >‹</button>
+            <div>
+              <h2>Jornada {activeJornada}</h2>
+              {deadline && (
+                <span className="dates">
+                  {isClosed
+                    ? <span className="deadline-badge">Cerrada</span>
+                    : <>Cierre: {deadline}</>
+                  }
+                </span>
+              )}
             </div>
+            <button
+              className="btn-nav"
+              onClick={() => { setJornada(Math.min(38, activeJornada + 1)); setSaved(false); }}
+              disabled={activeJornada >= 38}
+            >›</button>
+          </div>
+
+          {matches.length === 0 ? (
+            <div className="loading">No hay datos para esta jornada</div>
+          ) : (
+            <>
+              {matches
+                .slice()
+                .sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate))
+                .map(m => (
+                  <PredictCard
+                    key={m.matchId}
+                    match={m}
+                    pred={preds[m.matchId]}
+                    onUpdate={handleUpdate}
+                    closed={isClosed}
+                    favoriteTeam={favoriteTeam}
+                    onSetFavorite={handleSetFavorite}
+                  />
+                ))
+              }
+              {!isClosed && favoriteTeam && (
+                <p className="fav-hint">
+                  ⭐ Favorito: <strong>{favoriteTeam}</strong> — si aciertas, puntos ×2
+                </p>
+              )}
+
+              {!isClosed && (
+                <button className="btn-save" onClick={handleSave} disabled={saving || !hasChanges}>
+                  {saving ? 'Guardando…' : (!hasChanges && savedOnce) ? '✓ Guardado' : 'Guardar predicciones'}
+                </button>
+              )}
+              {saved && (
+                <div className="save-overlay" onClick={() => setSaved(false)}>
+                  <img src={`${import.meta.env.BASE_URL}icon-success.png`} alt="" className="save-overlay-icon" />
+                  <p className="save-overlay-hint">Toca para continuar</p>
+                </div>
+              )}
+            </>
           )}
         </>
       )}

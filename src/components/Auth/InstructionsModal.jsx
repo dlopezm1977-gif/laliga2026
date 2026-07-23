@@ -15,7 +15,7 @@ export default function InstructionsModal({ onClose }) {
         </section>
 
         <section className="instructions-section">
-          <h3>⚽ Puntuación</h3>
+          <h3>⚽ Puntuación por jornada</h3>
           <div className="instructions-scores">
             <div className="score-row">
               <span className="score-badge exact">Exacto</span>
@@ -33,24 +33,43 @@ export default function InstructionsModal({ onClose }) {
         </section>
 
         <section className="instructions-section">
+          <h3>⭐ Favorito</h3>
+          <p>En cada jornada puedes marcar un equipo como <strong>favorito</strong> tocando la estrella (☆) junto a su nombre. Si aciertas el partido de ese equipo —exacto o signo— los puntos se <strong>duplican</strong>. El favorito queda fijado en el momento en que se cierra la jornada, pero puedes cambiarlo antes.</p>
+        </section>
+
+        <section className="instructions-section">
+          <h3>🌍 Predicciones Generales</h3>
+          <p>Antes de que empiece la Jornada 1 puedes hacer predicciones de temporada desde <strong>Predecir → General</strong>. Los puntos se calculan al final de la temporada.</p>
+          <div className="instructions-scores" style={{ marginTop: '.5rem' }}>
+            <div className="score-row"><span className="score-badge exact">25 pts</span><span>Campeón de Liga</span></div>
+            <div className="score-row"><span className="score-badge exact">10 pts</span><span>Cada equipo Champions acertado (de 4)</span></div>
+            <div className="score-row"><span className="score-badge sign">7 pts</span><span>Europa League</span></div>
+            <div className="score-row"><span className="score-badge sign">5 pts</span><span>Conference League</span></div>
+            <div className="score-row"><span className="score-badge sign">10 pts</span><span>Cada equipo descendido acertado (de 3)</span></div>
+            <div className="score-row"><span className="score-badge sign">15 pts</span><span>Mejor portería</span></div>
+            <div className="score-row"><span className="score-badge sign">10 pts</span><span>Equipo con más empates</span></div>
+          </div>
+        </section>
+
+        <section className="instructions-section">
           <h3>⏰ ¿Hasta cuándo puedo predecir?</h3>
-          <p>Cada jornada se <strong>cierra automáticamente</strong> en el momento en que arranca el primer partido. A partir de ese instante las predicciones quedan en modo solo lectura.</p>
+          <p>Cada jornada se <strong>cierra automáticamente</strong> en el momento en que arranca el primer partido. Las predicciones generales se cierran al inicio de la Jornada 1.</p>
         </section>
 
         <section className="instructions-section">
           <h3>📱 Pestañas</h3>
           <ul className="instructions-tabs">
-            <li><strong>Calendario</strong> — Partidos y resultados de cada jornada. Disponible sin cuenta.</li>
-            <li><strong>Clasificación</strong> — Tabla actualizada de LaLiga. Disponible sin cuenta.</li>
-            <li><strong>Predecir</strong> — Mete tus predicciones antes del cierre. Requiere cuenta.</li>
-            <li><strong>Ranking</strong> — Clasificación global de todos los jugadores. Requiere cuenta.</li>
-            <li><strong>Historial</strong> — Tus predicciones pasadas y estadísticas. Requiere cuenta.</li>
+            <li><strong>Calendario</strong> — Partidos y resultados de cada jornada.</li>
+            <li><strong>Clasificación</strong> — Tabla actualizada de LaLiga y goleadores.</li>
+            <li><strong>Predecir</strong> — Predicciones por jornada y predicciones generales de temporada.</li>
+            <li><strong>Ranking</strong> — Clasificación global de todos los jugadores.</li>
+            <li><strong>Historial</strong> — Tus predicciones pasadas y estadísticas.</li>
           </ul>
         </section>
 
         <section className="instructions-section">
           <h3>👤 Perfil</h3>
-          <p>Desde tu avatar (arriba a la derecha) puedes cambiar tu nombre y elegir tu equipo favorito para destacarlo en el calendario y la clasificación.</p>
+          <p>Desde tu avatar (arriba a la derecha) puedes cambiar tu nombre y elegir tu equipo favorito. Ese equipo se usará como favorito por defecto en cada jornada.</p>
         </section>
 
         <button className="btn-primary instructions-btn-close" onClick={onClose}>Entendido</button>

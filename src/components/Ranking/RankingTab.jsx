@@ -41,7 +41,10 @@ function RankingRow({ entry, position, isOpen, onToggle }) {
             .map(([md, stats]) => (
               <div className="rank-detail-row" key={md}>
                 <span>Jornada {md}</span>
-                <span>{stats.exact ?? 0}✓ {stats.sign ?? 0}≈</span>
+                <span>
+                  {stats.exact ?? 0}✓ {stats.sign ?? 0}≈
+                  {stats.favoriteBonus ? <span style={{ color: '#f59e0b' }}> +{stats.favoriteBonus}⭐</span> : null}
+                </span>
                 <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{stats.points ?? 0} pts</span>
               </div>
             ))}
@@ -80,7 +83,7 @@ export default function RankingTab() {
           Clasificación
         </h2>
         <p style={{ fontSize: '.72rem', color: 'var(--muted)', fontFamily: 'var(--mono)' }}>
-          Exacto: 3 pts · Signo: 1 pt · Toca una fila para ver el detalle
+          Exacto: 3 pts · Signo: 1 pt · Favorito: ×2 · Toca una fila para ver el detalle
         </p>
       </div>
       {scores.map((entry, i) => (

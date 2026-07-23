@@ -20,5 +20,14 @@ service cloud.firestore {
       allow read: if true;
       allow write: if false;
     }
+
+    match /scorers_cache/{document} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /season_predictions/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
   }
 }

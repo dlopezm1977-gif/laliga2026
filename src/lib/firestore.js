@@ -13,11 +13,23 @@ export async function getPrediction(uid, matchday) {
   return snap.exists() ? snap.data() : null;
 }
 
-export async function savePrediction(uid, matchday, matches) {
+export async function savePrediction(uid, matchday, matches, favoriteTeam) {
   await setDoc(
     doc(db, 'predictions', uid, 'matchdays', String(matchday)),
-    { matches, savedAt: serverTimestamp() }
+    { matches, favoriteTeam: favoriteTeam || null, savedAt: serverTimestamp() }
   );
+}
+
+export async function getSeasonPrediction(uid) {
+  const snap = await getDoc(doc(db, 'season_predictions', uid));
+  return snap.exists() ? snap.data() : null;
+}
+
+export async function saveSeasonPrediction(uid, data) {
+  await setDoc(doc(db, 'season_predictions', uid), {
+    ...data,
+    savedAt: serverTimestamp(),
+  });
 }
 
 export async function getAllPredictions(uid) {

@@ -1058,6 +1058,128 @@ input  { font-family: inherit; }
 .result-badge.exact  { background: rgba(34,197,94,.15); color: #22c55e; }
 .result-badge.sign   { background: rgba(234,179,8,.15);  color: #eab308; }
 .result-badge.miss   { background: rgba(100,116,139,.1); color: var(--muted); }
+.result-badge.fav    { outline: 1px solid rgba(245,158,11,.4); }
+
+/* ── Favorito star button in predict cards ──────────────────────────────── */
+.predict-card.has-favorite {
+  border-color: #f59e0b;
+}
+.fav-star {
+  background: none;
+  border: none;
+  padding: .1rem .2rem;
+  font-size: .85rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: .3;
+  transition: opacity .15s, transform .15s;
+  flex-shrink: 0;
+}
+.fav-star:hover:not(:disabled) { opacity: 1; transform: scale(1.25); }
+.fav-star.active { opacity: 1; }
+.fav-star:disabled { cursor: default; }
+.fav-hint {
+  font-size: .72rem;
+  font-family: var(--mono);
+  color: #f59e0b;
+  text-align: center;
+  margin-top: .25rem;
+  margin-bottom: .25rem;
+}
+
+/* ── Predicciones Generales ─────────────────────────────────────────────── */
+.season-subtitle {
+  font-size: .72rem;
+  color: var(--muted);
+  font-family: var(--mono);
+  margin-bottom: .75rem;
+}
+.season-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: .4rem;
+  overflow: hidden;
+}
+.srow {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .6rem .85rem;
+  min-height: 48px;
+}
+.srow-left {
+  display: flex;
+  flex-direction: column;
+  gap: .1rem;
+  flex-shrink: 0;
+  width: 130px;
+}
+.srow-label {
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.2;
+}
+.srow-pts {
+  font-family: var(--mono);
+  font-size: .63rem;
+  color: var(--accent);
+}
+.srow-value {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+.srow-single {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  font-size: .83rem;
+  font-weight: 500;
+}
+.srow-multi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .3rem .5rem;
+  align-items: center;
+}
+.srow-multi-item {
+  display: flex;
+  align-items: center;
+  gap: .2rem;
+  font-size: .75rem;
+  font-weight: 500;
+  color: var(--text);
+}
+.srow-empty {
+  font-size: .78rem;
+  color: var(--muted);
+  font-style: italic;
+}
+.srow-edit {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--muted);
+  font-size: .68rem;
+  font-family: var(--mono);
+  padding: .2rem .5rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.srow-edit:hover { border-color: var(--accent); color: var(--accent); }
+.season-picker {
+  padding: .5rem .85rem .75rem;
+  border-top: 1px solid var(--border);
+  background: var(--surface2);
+}
+.team-option.disabled-opt {
+  opacity: .3;
+  pointer-events: none;
+}
 
 /* ── Spinner / loading ──────────────────────────────────────────────────── */
 .loading {
