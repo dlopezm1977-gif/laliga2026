@@ -15,6 +15,16 @@
   --display:  'Bebas Neue', sans-serif;
   --header-h: 57px;
 }
+:root[data-theme="light"] {
+  --bg:       #f1f5f9;
+  --surface:  #ffffff;
+  --surface2: #f8fafc;
+  --border:   #cbd5e1;
+  --green:    #16a34a;
+  --yellow:   #b45309;
+  --text:     #0f172a;
+  --muted:    #64748b;
+}
 
 /* ── Reset ─────────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -137,6 +147,17 @@ input  { font-family: inherit; }
   cursor: pointer;
 }
 .btn-install:hover { background: var(--accent); color: #fff; }
+.btn-theme {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 5px;
+  padding: .3rem .55rem;
+  font-size: .9rem;
+  line-height: 1;
+  transition: border-color .15s, color .15s;
+}
+.btn-theme:hover { border-color: var(--text); color: var(--text); }
 
 /* ── iOS install banner ─────────────────────────────────────────────────── */
 .ios-install-banner {

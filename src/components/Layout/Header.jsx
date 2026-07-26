@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useInstallPrompt } from '../../hooks/useInstallPrompt';
+import { useTheme } from '../../hooks/useTheme';
 import { crestUrl } from '../../lib/crests';
 import ProfileModal from '../Profile/ProfileModal';
 import InstructionsModal from '../Auth/InstructionsModal';
@@ -27,6 +28,7 @@ function IosInstallBanner({ onDismiss }) {
 export default function Header({ onLogin }) {
   const { profile, isGuest, logout } = useAuth();
   const { canInstall, install, isIos, isStandalone } = useInstallPrompt();
+  const { theme, toggle: toggleTheme } = useTheme();
   const [iosBannerOpen, setIosBannerOpen]       = useState(false);
   const [profileOpen, setProfileOpen]           = useState(false);
   const [instructionsOpen, setInstructionsOpen] = useState(false);
@@ -56,11 +58,13 @@ export default function Header({ onLogin }) {
 
         {isGuest ? (
           <>
+            <button className="btn-theme" onClick={toggleTheme} aria-label="Cambiar tema">{theme === 'dark' ? '☀' : '🌙'}</button>
             <button className="btn-help" onClick={() => setInstructionsOpen(true)}>?</button>
             <button className="btn-login" onClick={onLogin}>Iniciar sesión</button>
           </>
         ) : (
           <>
+            <button className="btn-theme" onClick={toggleTheme} aria-label="Cambiar tema">{theme === 'dark' ? '☀' : '🌙'}</button>
             <button className="btn-help" onClick={() => setInstructionsOpen(true)}>?</button>
             <button className="avatar-btn" onClick={() => setProfileOpen(true)} title={profile?.username}>
               {profile?.favoriteTeam
