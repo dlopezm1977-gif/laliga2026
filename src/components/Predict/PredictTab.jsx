@@ -6,14 +6,21 @@ import { getPrediction, savePrediction } from '../../lib/firestore';
 import LoadingSpinner from '../LoadingSpinner';
 import SeasonPredictTab from '../Season/SeasonPredictTab';
 
-function ScoreSpinner({ value, onChange, disabled }) {
+const ABBR = {
+  'Real Madrid':   'RMA', 'Barcelona':     'BAR', 'Atlético':      'ATL',
+  'Sevilla':       'SEV', 'Betis':         'BET', 'Real Sociedad': 'RSO',
+  'Villarreal':    'VIL', 'Athletic':      'ATH', 'Valencia':      'VAL',
+  'Osasuna':       'OSA', 'Celta':         'CEL', 'Getafe':        'GET',
+  'Rayo':          'RAY', 'Alavés':        'ALA', 'Espanyol':      'ESP',
+  'Racing':        'RAC', 'Levante':       'LEV', 'Deportivo':     'DEP',
+  'Elche':         'ELC', 'Málaga':        'MÁL',
+};
+
+function ScoreInput({ value, onChange, disabled }) {
   const n = value ?? 0;
   return (
-    <div className="predict-score">
-      <div className="score-spinner">
-        <button type="button" onClick={() => onChange(Math.min(9, n + 1))} disabled={disabled}>▲</button>
-        <button type="button" onClick={() => onChange(Math.max(0, n - 1))} disabled={disabled}>▼</button>
-      </div>
+    <div className="score-input">
+      <button type="button" className="score-btn" onClick={() => onChange(Math.max(0, n - 1))} disabled={disabled}>−</button>
       <div className="score-val">
         <input
           type="number" min={0} max={9}
@@ -22,6 +29,7 @@ function ScoreSpinner({ value, onChange, disabled }) {
           readOnly={disabled}
         />
       </div>
+      <button type="button" className="score-btn" onClick={() => onChange(Math.min(9, n + 1))} disabled={disabled}>+</button>
     </div>
   );
 }
@@ -42,31 +50,27 @@ function PredictCard({ match, pred, onUpdate, closed, favoriteTeam, onSetFavorit
           onClick={() => onSetFavorite(homeIsFav ? null : match.homeTeam)}
           disabled={closed}
           title={homeIsFav ? 'Quitar favorito' : `${match.homeTeam} como favorito`}
-        >
-          {homeIsFav ? '⭐' : '☆'}
-        </button>
-        <span className="team-name">{match.homeTeam}</span>
+        >{homeIsFav ? '⭐' : '☆'}</button>
         <img className="team-crest" src={crestUrl(match.homeTeam)} alt={match.homeTeam} />
+        <span className="team-name team-full">{match.homeTeam}</span>
+        <span className="team-name team-abbr">{ABBR[match.homeTeam] || match.homeTeam.slice(0, 3).toUpperCase()}</span>
       </div>
       <div className="predict-center">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '.4rem' }}>
-          <ScoreSpinner value={home} onChange={v => onUpdate(match.matchId, 'homeScore', v)} disabled={closed} />
-          <span className="predict-sep">:</span>
-          <ScoreSpinner value={away} onChange={v => onUpdate(match.matchId, 'awayScore', v)} disabled={closed} />
-        </div>
+        <ScoreInput value={home} onChange={v => onUpdate(match.matchId, 'homeScore', v)} disabled={closed} />
+        <span className="predict-sep">:</span>
+        <ScoreInput value={away} onChange={v => onUpdate(match.matchId, 'awayScore', v)} disabled={closed} />
       </div>
       <div className="match-team away">
+        <span className="team-name team-full">{match.awayTeam}</span>
+        <span className="team-name team-abbr">{ABBR[match.awayTeam] || match.awayTeam.slice(0, 3).toUpperCase()}</span>
         <img className="team-crest" src={crestUrl(match.awayTeam)} alt={match.awayTeam} />
-        <span className="team-name">{match.awayTeam}</span>
         <button
           type="button"
           className={`fav-star${awayIsFav ? ' active' : ''}`}
           onClick={() => onSetFavorite(awayIsFav ? null : match.awayTeam)}
           disabled={closed}
           title={awayIsFav ? 'Quitar favorito' : `${match.awayTeam} como favorito`}
-        >
-          {awayIsFav ? '⭐' : '☆'}
-        </button>
+        >{awayIsFav ? '⭐' : '☆'}</button>
       </div>
     </div>
   );
