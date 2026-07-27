@@ -4,6 +4,7 @@ import { useScorers } from '../../hooks/useScorers';
 import { useAuth } from '../../contexts/AuthContext';
 import { crestUrl } from '../../lib/crests';
 import LoadingSpinner from '../LoadingSpinner';
+import MonthlyRankingTab from '../Ranking/MonthlyRankingTab';
 
 const ABBR = {
   'Real Madrid':   'RMA', 'Barcelona':     'BAR', 'Atlético':      'ATM',
@@ -79,21 +80,27 @@ export default function StandingsTab() {
           onClick={() => setView('liga')}
         >Liga</button>
         <button
+          className={`toggle-btn${view === 'mensual' ? ' active' : ''}`}
+          onClick={() => setView('mensual')}
+        >Mensual</button>
+        <button
           className={`toggle-btn${view === 'goleadores' ? ' active' : ''}`}
           onClick={() => setView('goleadores')}
         >Goleadores</button>
       </div>
 
-      {loading && <LoadingSpinner text={view === 'liga' ? 'Cargando clasificación…' : 'Cargando goleadores…'} />}
+      {view === 'mensual' && <MonthlyRankingTab />}
 
-      {!loading && error && (
+      {view !== 'mensual' && loading && <LoadingSpinner text={view === 'liga' ? 'Cargando clasificación…' : 'Cargando goleadores…'} />}
+
+      {view !== 'mensual' && !loading && error && (
         <div className="empty-state">
           <img src={`${import.meta.env.BASE_URL}icon-error.png`} alt="" className="empty-icon" />
           <p style={{ color: 'var(--accent)' }}>Error al cargar los datos.<br />Inténtalo de nuevo.</p>
         </div>
       )}
 
-      {!loading && !error && view === 'liga' && (
+      {view !== 'mensual' && !loading && !error && view === 'liga' && (
         standings.length === 0 ? (
           <div className="empty-state">
             <img src={`${import.meta.env.BASE_URL}icon-empty.png`} alt="" className="empty-icon" />
@@ -151,7 +158,7 @@ export default function StandingsTab() {
         )
       )}
 
-      {!loading && !error && view === 'goleadores' && (
+      {view !== 'mensual' && !loading && !error && view === 'goleadores' && (
         scorers.length === 0 ? (
           <div className="empty-state">
             <img src={`${import.meta.env.BASE_URL}icon-empty.png`} alt="" className="empty-icon" />

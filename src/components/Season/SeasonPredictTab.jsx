@@ -16,13 +16,13 @@ const ABBR = {
 };
 
 const SECTIONS = [
-  { key: 'ganadorLiga',   label: 'Campeón de Liga',   pts: '25 pts',     type: 'single' },
-  { key: 'champions',     label: 'Champions League',   pts: '10 pts c/u', type: 'multi',  limit: 4 },
-  { key: 'uel',           label: 'Europa League',      pts: '7 pts',      type: 'single' },
-  { key: 'uecl',          label: 'Conference League',  pts: '5 pts',      type: 'single' },
-  { key: 'descenso',      label: 'Descenso',           pts: '10 pts c/u', type: 'multi',  limit: 3 },
-  { key: 'mejorPorteria', label: 'Mejor portería',     pts: '15 pts',     type: 'single' },
-  { key: 'empatador',     label: 'Más empates',        pts: '10 pts',     type: 'single' },
+  { key: 'ganadorLiga',   label: '🏆 Campeón de Liga',   pts: '25 pts',     type: 'single' },
+  { key: 'champions',     label: '⭐ Champions League',   pts: '10 pts c/u', type: 'multi',  limit: 4 },
+  { key: 'uel',           label: '🟠 Europa League',      pts: '7 pts',      type: 'single' },
+  { key: 'uecl',          label: '🟢 Conference League',  pts: '5 pts',      type: 'single' },
+  { key: 'descenso',      label: '⬇️ Descenso',           pts: '10 pts c/u', type: 'multi',  limit: 3 },
+  { key: 'mejorPorteria', label: '🧤 Mejor portería',     pts: '15 pts',     type: 'single' },
+  { key: 'empatador',     label: '⚖️ Más empates',        pts: '10 pts',     type: 'single' },
 ];
 
 const EMPTY = {

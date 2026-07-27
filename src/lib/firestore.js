@@ -39,6 +39,70 @@ export async function getAllPredictions(uid) {
   return result;
 }
 
+export async function getAllMatchdayPredictions(matchday) {
+  const usersSnap = await getDocs(collection(db, 'users'));
+  const users = [];
+  usersSnap.forEach(d => users.push({ uid: d.id, username: d.data().username || 'Usuario' }));
+
+  const results = await Promise.all(
+    users.map(async ({ uid, username }) => {
+      try {
+        const snap = await getDoc(doc(db, 'predictions', uid, 'matchdays', String(matchday)));
+        if (!snap.exists()) return null;
+        const data = snap.data();
+        return { uid, username, matches: data.matches || [], favoriteTeam: data.favoriteTeam || null };
+      } catch {
+        return null;
+      }
+    })
+  );
+  return results.filter(Boolean);
+}
+
+// ── monthly predictions ────────────────────────────────────────────────────
+
+export async function getMonthlyPrediction(uid, monthKey) {
+  const snap = await getDoc(doc(db, 'monthly_predictions', uid, 'months', monthKey));
+  return snap.exists() ? snap.data() : null;
+}
+
+export async function saveMonthlyPrediction(uid, monthKey, data) {
+  await setDoc(
+    doc(db, 'monthly_predictions', uid, 'months', monthKey),
+    { ...data, savedAt: serverTimestamp() }
+  );
+}
+
+export async function getAllMonthlyPredictionsForUser(uid) {
+  const snap = await getDocs(collection(db, 'monthly_predictions', uid, 'months'));
+  const result = {};
+  snap.forEach(d => { result[d.id] = d.data(); });
+  return result;
+}
+
+export async function getAllMonthlyResults() {
+  const snap = await getDocs(collection(db, 'monthly_results'));
+  const result = {};
+  snap.forEach(d => { result[d.id] = d.data(); });
+  return result;
+}
+
+export async function getAllMonthPredictions(monthKey) {
+  const usersSnap = await getDocs(collection(db, 'users'));
+  const users = [];
+  usersSnap.forEach(d => users.push({ uid: d.id, username: d.data().username || 'Usuario' }));
+  const results = await Promise.all(
+    users.map(async ({ uid, username }) => {
+      try {
+        const snap = await getDoc(doc(db, 'monthly_predictions', uid, 'months', monthKey));
+        if (!snap.exists()) return null;
+        return { uid, username, ...snap.data() };
+      } catch { return null; }
+    })
+  );
+  return results.filter(Boolean);
+}
+
 // ── scores ─────────────────────────────────────────────────────────────────
 
 export async function getAllScores() {

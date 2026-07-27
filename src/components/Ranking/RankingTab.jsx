@@ -55,7 +55,7 @@ function RankingRow({ entry, position, isOpen, onToggle }) {
 }
 
 export default function RankingTab() {
-  const [scores, setScores] = useState([]);
+  const [scores, setScores]   = useState([]);
   const [loading, setLoading] = useState(true);
   const [openUid, setOpenUid] = useState(null);
 

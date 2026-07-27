@@ -3,6 +3,7 @@ import { useMatches } from '../../hooks/useMatches';
 import { useAuth } from '../../contexts/AuthContext';
 import { crestUrl } from '../../lib/crests';
 import LoadingSpinner from '../LoadingSpinner';
+import PredictionsModal from './PredictionsModal';
 
 function formatTime(utcDate) {
   if (!utcDate) return '';
@@ -47,12 +48,12 @@ function StatusBadge({ status }) {
   return <span className="status-badge scheduled">Próximo</span>;
 }
 
-function MatchCard({ match, favorite }) {
+function MatchCard({ match, favorite, onClick }) {
   const isFinished = match.status === 'FINISHED';
   const isLive     = match.status === 'IN_PLAY' || match.status === 'PAUSED';
 
   return (
-    <div className={`match-card${favorite ? ' match-card--favorite' : ''}`}>
+    <div className={`match-card${favorite ? ' match-card--favorite' : ''}`} onClick={onClick} style={{ cursor: 'pointer' }}>
       <span className="match-time-col">{formatTime(match.utcDate)}</span>
       <div className="match-middle">
         <div className="match-team home">
@@ -86,6 +87,7 @@ export default function CalendarTab() {
   const [jornada, setJornada] = useState(null);
   const [collapsed, setCollapsed] = useState(new Set());
   const [filterFav, setFilterFav] = useState(false);
+  const [selectedMatch, setSelectedMatch] = useState(null);
 
   const favoriteTeam = profile?.favoriteTeam || null;
 
@@ -157,11 +159,20 @@ export default function CalendarTab() {
                   key={m.matchId}
                   match={m}
                   favorite={favoriteTeam && (m.homeTeam === favoriteTeam || m.awayTeam === favoriteTeam)}
+                  onClick={() => setSelectedMatch(m)}
                 />
               ))}
             </div>
           );
         })
+      )}
+
+      {selectedMatch && (
+        <PredictionsModal
+          match={selectedMatch}
+          matchday={activeJornada}
+          onClose={() => setSelectedMatch(null)}
+        />
       )}
     </>
   );

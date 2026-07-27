@@ -2,3 +2,15 @@ const slugify = name =>
   name.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, '-');
 
 export const crestUrl = name => `${import.meta.env.BASE_URL}crests/${slugify(name)}.png`;
+
+const ABBR_MAP = {
+  'Real Madrid':   'RMA', 'Barcelona':     'BAR', 'Atlético':      'ATL',
+  'Sevilla':       'SEV', 'Betis':         'BET', 'Real Sociedad': 'RSO',
+  'Villarreal':    'VIL', 'Athletic':      'ATH', 'Valencia':      'VAL',
+  'Osasuna':       'OSA', 'Celta':         'CEL', 'Getafe':        'GET',
+  'Rayo':          'RAY', 'Alavés':        'ALA', 'Espanyol':      'ESP',
+  'Racing':        'RAC', 'Levante':       'LEV', 'Deportivo':     'DEP',
+  'Elche':         'ELC', 'Málaga':        'MÁL',
+};
+
+export const teamAbbr = name => ABBR_MAP[name] || name.slice(0, 3).toUpperCase();

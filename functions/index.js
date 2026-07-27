@@ -1,6 +1,6 @@
-const { onSchedule }       = require('firebase-functions/v2/scheduler');
-const { onDocumentUpdated } = require('firebase-functions/v2/firestore');
-const { defineSecret }      = require('firebase-functions/params');
+const { onSchedule }                        = require('firebase-functions/v2/scheduler');
+const { onDocumentUpdated, onDocumentWritten } = require('firebase-functions/v2/firestore');
+const { defineSecret }                      = require('firebase-functions/params');
 const admin = require('firebase-admin');
 
 admin.initializeApp();
@@ -163,5 +163,58 @@ exports.calculateScores = onDocumentUpdated(
 
     await batch.commit();
     console.log(`Scores updated for matchday ${matchday}: ${matchdayDocs.length} users`);
+  }
+);
+
+// ── calculateMonthlyScores — triggers when monthly_results are set/updated ─
+exports.calculateMonthlyScores = onDocumentWritten(
+  'monthly_results/{monthKey}',
+  async event => {
+    const monthKey = event.params.monthKey;
+    const results  = event.data.after.exists ? event.data.after.data() : null;
+    if (!results) return;
+
+    const CATEGORIES = ['bestPlayer', 'bestCoach', 'bestU23'];
+    const PTS_PER_HIT = 10;
+
+    // Load all users' predictions for this month
+    const allMonthSnap = await db.collectionGroup('months').get();
+    const monthDocs = allMonthSnap.docs.filter(d => d.id === monthKey);
+
+    const batch = db.batch();
+
+    for (const doc of monthDocs) {
+      const uid  = doc.ref.parent.parent.id;
+      const pred = doc.data();
+
+      // Calculate new points for this month
+      let newPoints = 0;
+      const correct = {};
+      for (const cat of CATEGORIES) {
+        const resultTeam = results[cat]?.team ?? results[cat]; // supports both {name,team} and plain string
+        if (pred[cat] && resultTeam && pred[cat] === resultTeam) {
+          newPoints += PTS_PER_HIT;
+          correct[cat] = true;
+        }
+      }
+
+      // Read existing score to adjust delta
+      const scoreRef  = db.collection('scores').doc(uid);
+      const scoreSnap = await scoreRef.get();
+      const prevMonthPts = scoreSnap.exists
+        ? (scoreSnap.data()?.byMonth?.[monthKey]?.points ?? 0)
+        : 0;
+      const delta = newPoints - prevMonthPts;
+
+      batch.set(scoreRef, {
+        totalPoints:   admin.firestore.FieldValue.increment(delta),
+        monthlyPoints: admin.firestore.FieldValue.increment(delta),
+        [`byMonth.${monthKey}.points`]:  newPoints,
+        [`byMonth.${monthKey}.correct`]: correct,
+      }, { merge: true });
+    }
+
+    await batch.commit();
+    console.log(`Monthly scores updated for ${monthKey}: ${monthDocs.length} users`);
   }
 );

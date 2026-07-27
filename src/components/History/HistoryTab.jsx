@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { crestUrl } from '../../lib/crests';
-import { getAllPredictions, getUserScore } from '../../lib/firestore';
+import { getAllPredictions, getUserScore, getAllMonthlyResults, getAllMonthlyPredictionsForUser } from '../../lib/firestore';
 import { useMatches } from '../../hooks/useMatches';
+import { SEASON_MONTHS, MONTHLY_CATEGORIES } from '../../lib/months';
 import LoadingSpinner from '../LoadingSpinner';
 
 function getSign(h, a) {
@@ -24,6 +25,59 @@ function resultBadge(pred, real, isFavorite) {
       : { label: 'Signo', cls: 'sign', pts: 1 };
   }
   return { label: 'Fallo', cls: 'miss', pts: 0 };
+}
+
+function HistoryMonthCard({ month, result, pred, scoreData }) {
+  const [open, setOpen] = useState(false);
+  const monthPts = scoreData?.byMonth?.[month.key]?.points ?? null;
+
+  const hasAnyResult = result && (result.bestPlayer || result.bestCoach || result.bestU23);
+  if (!hasAnyResult) return null;
+
+  return (
+    <div className="history-jornada">
+      <div className="history-jornada-hdr" onClick={() => setOpen(o => !o)}>
+        <span style={{ fontWeight: 600 }}>{month.label}</span>
+        <span style={{ fontFamily: 'var(--mono)', fontSize: '.72rem', color: 'var(--muted)' }}>mensual</span>
+        <span className="j-pts">{monthPts ?? '–'} pts</span>
+        <span style={{ color: 'var(--muted)', fontSize: '.8rem' }}>{open ? '▲' : '▼'}</span>
+      </div>
+      {open && (
+        <div className="history-jornada-body">
+          {MONTHLY_CATEGORIES.map(cat => {
+            const val        = result?.[cat.key];
+            const resultTeam = val?.team ?? val ?? null;
+            const resultName = val?.name ?? null;
+            const userTeam   = pred?.[cat.key] ?? null;
+            const correct    = resultTeam && userTeam && userTeam === resultTeam;
+            const missed     = resultTeam && userTeam && userTeam !== resultTeam;
+            return (
+              <div className="history-match-row" key={cat.key} style={{ gap: '.5rem', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '.75rem', color: 'var(--muted)', minWidth: '110px' }}>
+                  {cat.emoji} {cat.label}
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '.25rem', flex: 1 }}>
+                  {userTeam
+                    ? <><img className="team-crest team-crest--sm" src={crestUrl(userTeam)} alt={userTeam} /><span style={{ fontSize: '.8rem' }}>{userTeam}</span></>
+                    : <span style={{ color: 'var(--muted)', fontSize: '.75rem' }}>Sin pred.</span>
+                  }
+                </span>
+                {resultTeam && (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '.25rem' }}>
+                    <img className="team-crest team-crest--sm" src={crestUrl(resultTeam)} alt={resultTeam} />
+                    <span style={{ fontSize: '.78rem', color: 'var(--muted)' }}>{resultName ? `${resultName} (${resultTeam})` : resultTeam}</span>
+                  </span>
+                )}
+                {correct && <span className="result-badge exact">+10 pts</span>}
+                {missed  && <span className="result-badge miss">0 pts</span>}
+                {!resultTeam && <span className="result-badge miss" style={{ opacity: .4 }}>–</span>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function HistoryJornada({ matchday, predData, matchdayData, scoreData }) {
@@ -95,18 +149,24 @@ function HistoryJornada({ matchday, predData, matchdayData, scoreData }) {
 export default function HistoryTab() {
   const { user } = useAuth();
   const { matchdayData, loading: matchLoading } = useMatches();
-  const [allPreds, setAllPreds] = useState({});
-  const [score, setScore]       = useState(null);
-  const [loading, setLoading]   = useState(true);
+  const [allPreds, setAllPreds]           = useState({});
+  const [score, setScore]                 = useState(null);
+  const [monthlyResults, setMonthlyResults] = useState({});
+  const [monthlyPreds, setMonthlyPreds]   = useState({});
+  const [loading, setLoading]             = useState(true);
 
   useEffect(() => {
     if (!user) return;
     Promise.all([
       getAllPredictions(user.uid),
       getUserScore(user.uid),
-    ]).then(([preds, sc]) => {
+      getAllMonthlyResults(),
+      getAllMonthlyPredictionsForUser(user.uid),
+    ]).then(([preds, sc, mResults, mPreds]) => {
       setAllPreds(preds);
       setScore(sc);
+      setMonthlyResults(mResults || {});
+      setMonthlyPreds(mPreds || {});
     }).finally(() => setLoading(false));
   }, [user]);
 
@@ -130,6 +190,19 @@ export default function HistoryTab() {
         <div className="hstat"><div className="val">{signCount}</div><div className="lbl">Signos</div></div>
         <div className="hstat"><div className="val">{accuracy}%</div><div className="lbl">Aciertos</div></div>
       </div>
+
+      {SEASON_MONTHS.filter(mo => {
+        const r = monthlyResults[mo.key];
+        return r && (r.bestPlayer || r.bestCoach || r.bestU23);
+      }).reverse().map(mo => (
+        <HistoryMonthCard
+          key={mo.key}
+          month={mo}
+          result={monthlyResults[mo.key]}
+          pred={monthlyPreds[mo.key]}
+          scoreData={score}
+        />
+      ))}
 
       {jornadasWithPreds.length === 0 ? (
         <div className="empty-state">

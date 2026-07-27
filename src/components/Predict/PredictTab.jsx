@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useMatches } from '../../hooks/useMatches';
-import { crestUrl } from '../../lib/crests';
+import { crestUrl, teamAbbr } from '../../lib/crests';
 import { useAuth } from '../../contexts/AuthContext';
 import { getPrediction, savePrediction } from '../../lib/firestore';
 import LoadingSpinner from '../LoadingSpinner';
 import SeasonPredictTab from '../Season/SeasonPredictTab';
+import MonthlyPredictTab from './MonthlyPredictTab';
 
 const ABBR = {
   'Real Madrid':   'RMA', 'Barcelona':     'BAR', 'Atlético':      'ATL',
@@ -53,7 +54,7 @@ function PredictCard({ match, pred, onUpdate, closed, favoriteTeam, onSetFavorit
         >{homeIsFav ? '⭐' : '☆'}</button>
         <img className="team-crest" src={crestUrl(match.homeTeam)} alt={match.homeTeam} />
         <span className="team-name team-full">{match.homeTeam}</span>
-        <span className="team-name team-abbr">{ABBR[match.homeTeam] || match.homeTeam.slice(0, 3).toUpperCase()}</span>
+        <span className="team-name team-abbr">{teamAbbr(match.homeTeam)}</span>
       </div>
       <div className="predict-center">
         <ScoreInput value={home} onChange={v => onUpdate(match.matchId, 'homeScore', v)} disabled={closed} />
@@ -62,7 +63,7 @@ function PredictCard({ match, pred, onUpdate, closed, favoriteTeam, onSetFavorit
       </div>
       <div className="match-team away">
         <span className="team-name team-full">{match.awayTeam}</span>
-        <span className="team-name team-abbr">{ABBR[match.awayTeam] || match.awayTeam.slice(0, 3).toUpperCase()}</span>
+        <span className="team-name team-abbr">{teamAbbr(match.awayTeam)}</span>
         <img className="team-crest" src={crestUrl(match.awayTeam)} alt={match.awayTeam} />
         <button
           type="button"
@@ -175,6 +176,10 @@ export default function PredictTab() {
           onClick={() => setView('jornadas')}
         >Jornadas</button>
         <button
+          className={`toggle-btn${view === 'mensual' ? ' active' : ''}`}
+          onClick={() => setView('mensual')}
+        >Mensual</button>
+        <button
           className={`toggle-btn${view === 'general' ? ' active' : ''}`}
           onClick={() => setView('general')}
         >General</button>
@@ -182,6 +187,8 @@ export default function PredictTab() {
 
       {view === 'general' ? (
         <SeasonPredictTab />
+      ) : view === 'mensual' ? (
+        <MonthlyPredictTab />
       ) : (
         <>
           <div className="jornada-nav">
@@ -196,7 +203,7 @@ export default function PredictTab() {
                 <span className="dates">
                   {isClosed
                     ? <span className="deadline-badge">Cerrada</span>
-                    : <>Cierre: {deadline}</>
+                    : <>Cierre: {deadline} · ⭐ ×2</>
                   }
                 </span>
               )}
@@ -227,11 +234,6 @@ export default function PredictTab() {
                   />
                 ))
               }
-              {!isClosed && favoriteTeam && (
-                <p className="fav-hint">
-                  ⭐ Favorito: <strong>{favoriteTeam}</strong> — si aciertas, puntos ×2
-                </p>
-              )}
 
               {!isClosed && (
                 <button className="btn-save" onClick={handleSave} disabled={saving || !hasChanges}>
