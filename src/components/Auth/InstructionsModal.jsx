@@ -38,6 +38,17 @@ export default function InstructionsModal({ onClose }) {
         </section>
 
         <section className="instructions-section">
+          <h3>📅 Predicciones Mensuales</h3>
+          <p>Cada mes puedes predecir tres categorías desde <strong>Predecir → Mensual</strong>. Se cierran al inicio del mes correspondiente.</p>
+          <div className="instructions-scores" style={{ marginTop: '.5rem' }}>
+            <div className="score-row"><span className="score-badge exact">+10 pts</span><span>🏆 Jugador del mes acertado</span></div>
+            <div className="score-row"><span className="score-badge exact">+10 pts</span><span>🧑‍💼 Entrenador del mes acertado</span></div>
+            <div className="score-row"><span className="score-badge exact">+10 pts</span><span>⭐ Sub-23 del mes acertado</span></div>
+          </div>
+          <p style={{ marginTop: '.4rem', fontSize: '.8rem' }}>Máximo <strong>30 pts</strong> por mes.</p>
+        </section>
+
+        <section className="instructions-section">
           <h3>🌍 Predicciones Generales</h3>
           <p>Antes de que empiece la Jornada 1 puedes hacer predicciones de temporada desde <strong>Predecir → General</strong>. Los puntos se calculan al final de la temporada.</p>
           <div className="instructions-scores" style={{ marginTop: '.5rem' }}>
@@ -53,7 +64,11 @@ export default function InstructionsModal({ onClose }) {
 
         <section className="instructions-section">
           <h3>⏰ ¿Hasta cuándo puedo predecir?</h3>
-          <p>Cada jornada se <strong>cierra automáticamente</strong> en el momento en que arranca el primer partido. Las predicciones generales se cierran al inicio de la Jornada 1.</p>
+          <ul className="instructions-tabs">
+            <li><strong>Jornada</strong> — Se cierra cuando arranca el primer partido de la jornada.</li>
+            <li><strong>Mensual</strong> — Se cierra al inicio del mes correspondiente.</li>
+            <li><strong>General</strong> — Se cierra al inicio de la Jornada 1.</li>
+          </ul>
         </section>
 
         <section className="instructions-section">
@@ -61,8 +76,8 @@ export default function InstructionsModal({ onClose }) {
           <ul className="instructions-tabs">
             <li><strong>Calendario</strong> — Partidos y resultados de cada jornada.</li>
             <li><strong>Clasificación</strong> — Tabla actualizada de LaLiga y goleadores.</li>
-            <li><strong>Predecir</strong> — Predicciones por jornada y predicciones generales de temporada.</li>
-            <li><strong>Ranking</strong> — Clasificación global de todos los jugadores.</li>
+            <li><strong>Predecir</strong> — Predicciones por jornada, mensuales y generales de temporada.</li>
+            <li><strong>Ranking</strong> — Clasificación global de todos los participantes.</li>
             <li><strong>Historial</strong> — Tus predicciones pasadas y estadísticas.</li>
           </ul>
         </section>

@@ -1,6 +1,6 @@
 import {
   doc, getDoc, setDoc, updateDoc, collection, getDocs,
-  query, orderBy, serverTimestamp,
+  serverTimestamp,
 } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -103,26 +103,27 @@ export async function getAllMonthPredictions(monthKey) {
   return results.filter(Boolean);
 }
 
-// ── scores ─────────────────────────────────────────────────────────────────
+export async function getAllUsersAllPredictions() {
+  const usersSnap = await getDocs(collection(db, 'users'));
+  const users = [];
+  usersSnap.forEach(d => users.push({ uid: d.id, ...d.data() }));
 
-export async function getAllScores() {
-  const [scoresSnap, usersSnap] = await Promise.all([
-    getDocs(query(collection(db, 'scores'), orderBy('totalPoints', 'desc'))),
-    getDocs(collection(db, 'users')),
-  ]);
-  const userMap = {};
-  usersSnap.forEach(d => { userMap[d.id] = d.data(); });
-  const result = [];
-  scoresSnap.forEach(d => {
-    result.push({ uid: d.id, ...d.data(), username: userMap[d.id]?.username || 'Usuario' });
-  });
-  return result;
+  const results = await Promise.all(
+    users.map(async (u) => {
+      const [predsSnap, monthlySnap] = await Promise.all([
+        getDocs(collection(db, 'predictions', u.uid, 'matchdays')),
+        getDocs(collection(db, 'monthly_predictions', u.uid, 'months')),
+      ]);
+      const preds = {};
+      predsSnap.forEach(d => { preds[d.id] = d.data(); });
+      const monthlyPreds = {};
+      monthlySnap.forEach(d => { monthlyPreds[d.id] = d.data(); });
+      return { uid: u.uid, username: u.username || 'Usuario', preds, monthlyPreds };
+    })
+  );
+  return results;
 }
 
-export async function getUserScore(uid) {
-  const snap = await getDoc(doc(db, 'scores', uid));
-  return snap.exists() ? snap.data() : null;
-}
 
 // ── users ──────────────────────────────────────────────────────────────────
 
