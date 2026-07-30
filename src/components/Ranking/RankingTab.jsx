@@ -310,7 +310,6 @@ export default function RankingTab() {
           entry={entry}
           position={i}
           matchdayData={matchdayData}
-          matchdayData={matchdayData}
           monthlyResults={monthlyResults}
           isOpen={openUid === entry.uid}
           onToggle={() => setOpenUid(openUid === entry.uid ? null : entry.uid)}
