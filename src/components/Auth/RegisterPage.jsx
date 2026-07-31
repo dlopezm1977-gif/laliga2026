@@ -21,7 +21,9 @@ export default function RegisterPage({ onClose, onBack }) {
       await register(email, password, username.trim());
       onClose();
     } catch (err) {
-      if (err.code === 'auth/email-already-in-use') {
+      if (err.code === 'auth/username-already-in-use') {
+        setError('Ese nombre ya está en uso, elige otro.');
+      } else if (err.code === 'auth/email-already-in-use') {
         setError('Ese email ya está registrado.');
       } else {
         setError('Error al crear la cuenta. Inténtalo de nuevo.');

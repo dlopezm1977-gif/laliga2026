@@ -1,5 +1,5 @@
 import {
-  doc, getDoc, setDoc, updateDoc, collection, getDocs,
+  doc, getDoc, setDoc, updateDoc, collection, getDocs, query, where,
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from './firebase';
@@ -130,6 +130,12 @@ export async function getAllUsersAllPredictions() {
 export async function getUser(uid) {
   const snap = await getDoc(doc(db, 'users', uid));
   return snap.exists() ? snap.data() : null;
+}
+
+export async function isUsernameTaken(username, excludeUid = null) {
+  const snap = await getDocs(query(collection(db, 'users'), where('username', '==', username)));
+  if (excludeUid) return snap.docs.some(d => d.id !== excludeUid);
+  return !snap.empty;
 }
 
 export async function createUser(uid, data) {

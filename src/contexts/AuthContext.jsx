@@ -7,7 +7,7 @@ import {
   sendPasswordResetEmail,
 } from 'firebase/auth';
 import { auth } from '../lib/firebase';
-import { createUser, getUser, updateUser } from '../lib/firestore';
+import { createUser, getUser, updateUser, isUsernameTaken } from '../lib/firestore';
 
 const AuthContext = createContext(null);
 
@@ -32,6 +32,11 @@ export function AuthProvider({ children }) {
   }
 
   async function register(email, password, username) {
+    if (await isUsernameTaken(username)) {
+      const err = new Error('Ese nombre ya está en uso.');
+      err.code = 'auth/username-already-in-use';
+      throw err;
+    }
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     await createUser(cred.user.uid, { username, email });
     setProfile({ username, email });
@@ -47,6 +52,13 @@ export function AuthProvider({ children }) {
 
   async function updateProfile(data) {
     if (!user) return;
+    if (data.username) {
+      if (await isUsernameTaken(data.username, user.uid)) {
+        const err = new Error('Ese nombre ya está en uso.');
+        err.code = 'auth/username-already-in-use';
+        throw err;
+      }
+    }
     await updateUser(user.uid, data);
     setProfile(prev => ({ ...prev, ...data }));
   }

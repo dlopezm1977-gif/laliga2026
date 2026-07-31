@@ -11,6 +11,7 @@ export default function ProfileModal({ onClose }) {
   const [favoriteTeam, setFavoriteTeam] = useState(profile?.favoriteTeam || null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
 
   const teams = [...new Set(
     Object.values(matchdayData).flat().flatMap(m => [m.homeTeam, m.awayTeam])
@@ -20,10 +21,18 @@ export default function ProfileModal({ onClose }) {
     if (!username.trim()) return;
     setSaving(true);
     setSaved(false);
-    await updateProfile({ username: username.trim(), favoriteTeam: favoriteTeam || null });
-    setSaving(false);
-    setSaved(true);
-    setTimeout(onClose, 800);
+    setError('');
+    try {
+      await updateProfile({ username: username.trim(), favoriteTeam: favoriteTeam || null });
+      setSaved(true);
+      setTimeout(onClose, 800);
+    } catch (err) {
+      setError(err.code === 'auth/username-already-in-use'
+        ? 'Ese nombre ya está en uso, elige otro.'
+        : 'Error al guardar. Inténtalo de nuevo.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -66,6 +75,7 @@ export default function ProfileModal({ onClose }) {
           ))}
         </div>
 
+        {error && <div className="auth-error">{error}</div>}
         <button className="btn-save" onClick={handleSave} disabled={saving || !username.trim()}>
           {saving ? 'Guardando…' : saved ? '✓ Guardado' : 'Guardar'}
         </button>
