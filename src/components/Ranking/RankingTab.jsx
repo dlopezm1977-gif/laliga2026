@@ -77,7 +77,12 @@ function computeScore(userPreds, monthlyPreds, matchdayData, monthlyResults) {
       const userTeam = pred?.[cat.key] ?? null;
       if (resultTeam && userTeam && userTeam === resultTeam) mPts += 10;
     });
-    if (mPts > 0) byMonth[key] = { points: mPts };
+    const hasAnyResult = MONTHLY_CATEGORIES.some(cat => {
+      const val = result[cat.key];
+      return (val?.team ?? val ?? null) !== null;
+    });
+    if (!hasAnyResult) return;
+    byMonth[key] = { points: mPts };
     totalPoints += mPts;
   });
 
@@ -190,7 +195,10 @@ function RankingJornada({ matchday, predData, mdMatches, stats }) {
                 <div className="history-match-row" key={m.matchId}>
                   <span className="teams">
                     <img className="team-crest team-crest--sm" src={crestUrl(m.homeTeam)} alt={m.homeTeam} />
-                    <span className="teams-text">{m.homeTeam} – {m.awayTeam}</span>
+                    <span className="teams-text">
+                      <span className="team-full">{m.homeTeam} – {m.awayTeam}</span>
+                      <span className="team-abbr">{teamAbbr(m.homeTeam)} – {teamAbbr(m.awayTeam)}</span>
+                    </span>
                     <img className="team-crest team-crest--sm" src={crestUrl(m.awayTeam)} alt={m.awayTeam} />
                   </span>
                   <span className="pred">{pred ? `${pred.homeScore}:${pred.awayScore}` : '–'}</span>
@@ -277,7 +285,7 @@ export default function RankingTab() {
           monthlyPreds: u.monthlyPreds,
           ...computeScore(u.preds, u.monthlyPreds, matchdayData, mResults),
         }))
-        .filter(u => u.totalPoints > 0 || Object.keys(u.byMatchday).length > 0)
+        .filter(u => u.totalPoints > 0 || Object.keys(u.byMatchday).length > 0 || Object.keys(u.monthlyPreds || {}).some(k => mResults[k]))
         .sort((a, b) => b.totalPoints - a.totalPoints);
       setScores(computed);
     }).finally(() => setLoading(false));
