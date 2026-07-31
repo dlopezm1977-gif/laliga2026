@@ -163,7 +163,10 @@ function HistoryJornada({ matchday, predData, matchdayData }) {
                 <div className="history-match-row" key={m.matchId}>
                   <span className="teams">
                     <img className="team-crest team-crest--sm" src={crestUrl(m.homeTeam)} alt={m.homeTeam} />
-                    <span className="teams-text">{m.homeTeam} – {m.awayTeam}</span>
+                    <span className="teams-text">
+                      <span className="team-full">{m.homeTeam} – {m.awayTeam}</span>
+                      <span className="team-abbr">{teamAbbr(m.homeTeam)} – {teamAbbr(m.awayTeam)}</span>
+                    </span>
                     <img className="team-crest team-crest--sm" src={crestUrl(m.awayTeam)} alt={m.awayTeam} />
                   </span>
                   <span className="pred">
