@@ -59,7 +59,7 @@ function HistoryMonthCard({ month, result, pred }) {
           </div>
           {MONTHLY_CATEGORIES.map(cat => {
             const val        = result?.[cat.key];
-            const resultTeam = val?.team ?? val ?? null;
+            const resultTeam = typeof val === 'string' ? val : (val?.team ?? null);
             const resultName = val?.name ?? null;
             const userTeam   = pred?.[cat.key] ?? null;
             const correct    = resultTeam && userTeam && userTeam === resultTeam;

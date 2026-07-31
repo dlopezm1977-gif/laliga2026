@@ -1,7 +1,10 @@
 const slugify = name =>
   name.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, '-');
 
-export const crestUrl = name => `${import.meta.env.BASE_URL}crests/${slugify(name)}.png`;
+export const crestUrl = name =>
+  name && typeof name === 'string'
+    ? `${import.meta.env.BASE_URL}crests/${slugify(name)}.png`
+    : `${import.meta.env.BASE_URL}crests/unknown.png`;
 
 const ABBR_MAP = {
   'Real Madrid':   'RMA', 'Barcelona':     'BAR', 'Atlético':      'ATL',

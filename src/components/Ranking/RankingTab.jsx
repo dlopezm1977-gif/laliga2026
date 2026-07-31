@@ -73,13 +73,13 @@ function computeScore(userPreds, monthlyPreds, matchdayData, monthlyResults) {
     let mPts = 0;
     MONTHLY_CATEGORIES.forEach(cat => {
       const val = result[cat.key];
-      const resultTeam = val?.team ?? val ?? null;
+      const resultTeam = typeof val === 'string' ? val : (val?.team ?? null);
       const userTeam = pred?.[cat.key] ?? null;
       if (resultTeam && userTeam && userTeam === resultTeam) mPts += 10;
     });
     const hasAnyResult = MONTHLY_CATEGORIES.some(cat => {
       const val = result[cat.key];
-      return (val?.team ?? val ?? null) !== null;
+      return (typeof val === 'string' ? val : (val?.team ?? null)) !== null;
     });
     if (!hasAnyResult) return;
     byMonth[key] = { points: mPts };
@@ -114,7 +114,7 @@ function RankingMonth({ monthKey, result, pred, points }) {
           </div>
           {MONTHLY_CATEGORIES.map(cat => {
             const val        = result?.[cat.key];
-            const resultTeam = val?.team ?? val ?? null;
+            const resultTeam = typeof val === 'string' ? val : (val?.team ?? null);
             const userTeam   = pred?.[cat.key] ?? null;
             const correct    = resultTeam && userTeam && userTeam === resultTeam;
             const missed     = resultTeam && userTeam && userTeam !== resultTeam;
