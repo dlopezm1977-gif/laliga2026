@@ -222,7 +222,7 @@ function RankingJornada({ matchday, predData, mdMatches, stats }) {
 }
 
 function RankingRow({ entry, position, isOpen, onToggle, matchdayData, monthlyResults }) {
-  const { username, totalPoints, byMatchday, byMonth, preds, monthlyPreds } = entry;
+  const { username, avatar, totalPoints, byMatchday, byMonth, preds, monthlyPreds } = entry;
   const hasDetail = (byMatchday && Object.keys(byMatchday).length > 0) ||
                     (byMonth    && Object.keys(byMonth).length    > 0);
 
@@ -232,7 +232,12 @@ function RankingRow({ entry, position, isOpen, onToggle, matchdayData, monthlyRe
         <span className={`rank-pos ${posClass(position)}`}>
           {MEDALS[position] || position + 1}
         </span>
-        <div className="rank-avatar">{initials(username)}</div>
+        <div className="rank-avatar">
+          {avatar
+            ? <img src={`${import.meta.env.BASE_URL}avatars/${avatar}`} alt={username} />
+            : initials(username)
+          }
+        </div>
         <div className="rank-name">{username}</div>
         <div className="rank-pts">{totalPoints}</div>
       </div>
@@ -281,6 +286,7 @@ export default function RankingTab() {
         .map(u => ({
           uid: u.uid,
           username: u.username,
+          avatar: u.avatar,
           preds: u.preds,
           monthlyPreds: u.monthlyPreds,
           ...computeScore(u.preds, u.monthlyPreds, matchdayData, mResults),

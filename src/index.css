@@ -956,6 +956,54 @@ input  { font-family: inherit; }
   font-family: var(--mono); cursor: pointer;
   text-decoration: underline;
 }
+.selection-preview {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .4rem 0;
+  margin-bottom: .4rem;
+}
+.selection-preview-avatar {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--accent);
+}
+.selection-preview-crest {
+  width: 40px; height: 40px;
+  object-fit: contain;
+}
+.selection-preview-name {
+  flex: 1;
+  font-size: .85rem;
+  font-family: var(--mono);
+  color: var(--text);
+}
+
+.avatar-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-bottom: .5rem;
+}
+.avatar-option {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--surface2);
+  padding: 3px;
+  cursor: pointer;
+  transition: border-color .15s, transform .1s;
+  overflow: hidden;
+}
+.avatar-option img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.avatar-option.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);
+  transform: scale(1.08);
+}
+.avatar-option:hover { border-color: var(--accent); }
+
 .team-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -1026,7 +1074,9 @@ input  { font-family: inherit; }
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  overflow: hidden;
 }
+.rank-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .rank-name { flex: 1; font-weight: 500; font-size: .9rem; }
 .rank-stats {
   font-family: var(--mono);

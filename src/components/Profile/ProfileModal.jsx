@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useMatches } from '../../hooks/useMatches';
 import { crestUrl } from '../../lib/crests';
+import { AVATARS } from '../../lib/avatars';
 
 export default function ProfileModal({ onClose }) {
   const { profile, updateProfile } = useAuth();
@@ -9,6 +10,9 @@ export default function ProfileModal({ onClose }) {
 
   const [username, setUsername] = useState(profile?.username || '');
   const [favoriteTeam, setFavoriteTeam] = useState(profile?.favoriteTeam || null);
+  const [avatar, setAvatar] = useState(profile?.avatar || null);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(!profile?.avatar);
+  const [showTeamPicker, setShowTeamPicker] = useState(!profile?.favoriteTeam);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
@@ -17,13 +21,37 @@ export default function ProfileModal({ onClose }) {
     Object.values(matchdayData).flat().flatMap(m => [m.homeTeam, m.awayTeam])
   )].sort((a, b) => a.localeCompare(b));
 
+  function selectAvatar(file) {
+    setAvatar(file);
+    setShowAvatarPicker(false);
+    setSaved(false);
+  }
+
+  function clearAvatar() {
+    setAvatar(null);
+    setShowAvatarPicker(true);
+    setSaved(false);
+  }
+
+  function selectTeam(t) {
+    setFavoriteTeam(t);
+    setShowTeamPicker(false);
+    setSaved(false);
+  }
+
+  function clearTeam() {
+    setFavoriteTeam(null);
+    setShowTeamPicker(true);
+    setSaved(false);
+  }
+
   async function handleSave() {
     if (!username.trim()) return;
     setSaving(true);
     setSaved(false);
     setError('');
     try {
-      await updateProfile({ username: username.trim(), favoriteTeam: favoriteTeam || null });
+      await updateProfile({ username: username.trim(), favoriteTeam: favoriteTeam || null, avatar: avatar || null });
       setSaved(true);
       setTimeout(onClose, 800);
     } catch (err) {
@@ -53,27 +81,57 @@ export default function ProfileModal({ onClose }) {
           />
         </label>
 
-        <div className="modal-label">
-          Equipo favorito
-          {favoriteTeam && (
-            <button className="team-clear" onClick={() => { setFavoriteTeam(null); setSaved(false); }}>
-              Quitar
-            </button>
-          )}
-        </div>
-        <div className="team-grid">
-          {teams.map(t => (
-            <button
-              key={t}
-              className={`team-option${favoriteTeam === t ? ' selected' : ''}`}
-              onClick={() => { setFavoriteTeam(t); setSaved(false); }}
-              title={t}
-            >
-              <img src={crestUrl(t)} alt={t} />
-              <span>{t}</span>
-            </button>
-          ))}
-        </div>
+        {/* ── Avatar ── */}
+        <div className="modal-label" style={{ marginTop: '.8rem' }}>Avatar</div>
+        {avatar && !showAvatarPicker ? (
+          <div className="selection-preview">
+            <img
+              className="selection-preview-avatar"
+              src={`${import.meta.env.BASE_URL}avatars/${avatar}`}
+              alt="avatar"
+            />
+            <button className="team-clear" onClick={() => setShowAvatarPicker(true)}>Cambiar</button>
+            <button className="team-clear" onClick={clearAvatar}>Quitar</button>
+          </div>
+        ) : (
+          <div className="avatar-picker">
+            {AVATARS.map(file => (
+              <button
+                key={file}
+                className={`avatar-option${avatar === file ? ' selected' : ''}`}
+                onClick={() => selectAvatar(file)}
+                title={file.replace(/\.[^.]+$/, '')}
+              >
+                <img src={`${import.meta.env.BASE_URL}avatars/${file}`} alt={file} />
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* ── Equipo favorito ── */}
+        <div className="modal-label" style={{ marginTop: '.8rem' }}>Equipo favorito</div>
+        {favoriteTeam && !showTeamPicker ? (
+          <div className="selection-preview">
+            <img className="selection-preview-crest" src={crestUrl(favoriteTeam)} alt={favoriteTeam} />
+            <span className="selection-preview-name">{favoriteTeam}</span>
+            <button className="team-clear" onClick={() => setShowTeamPicker(true)}>Cambiar</button>
+            <button className="team-clear" onClick={clearTeam}>Quitar</button>
+          </div>
+        ) : (
+          <div className="team-grid">
+            {teams.map(t => (
+              <button
+                key={t}
+                className={`team-option${favoriteTeam === t ? ' selected' : ''}`}
+                onClick={() => selectTeam(t)}
+                title={t}
+              >
+                <img src={crestUrl(t)} alt={t} />
+                <span>{t}</span>
+              </button>
+            ))}
+          </div>
+        )}
 
         {error && <div className="auth-error">{error}</div>}
         <button className="btn-save" onClick={handleSave} disabled={saving || !username.trim()}>

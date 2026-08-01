@@ -118,7 +118,7 @@ export async function getAllUsersAllPredictions() {
       predsSnap.forEach(d => { preds[d.id] = d.data(); });
       const monthlyPreds = {};
       monthlySnap.forEach(d => { monthlyPreds[d.id] = d.data(); });
-      return { uid: u.uid, username: u.username || 'Usuario', preds, monthlyPreds };
+      return { uid: u.uid, username: u.username || 'Usuario', avatar: u.avatar || null, preds, monthlyPreds };
     })
   );
   return results;
