@@ -126,6 +126,7 @@ input  { font-family: inherit; }
 }
 .avatar-btn:hover { opacity: .85; }
 .avatar-crest { width: 100%; height: 100%; object-fit: contain; padding: 2px; }
+.avatar-user-img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .btn-logout {
   background: transparent;
   border: 1px solid var(--border);

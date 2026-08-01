@@ -68,7 +68,7 @@ export default function Header({ onLogin }) {
             <button className="btn-help" onClick={() => setInstructionsOpen(true)}>?</button>
             <button className="avatar-btn" onClick={() => setProfileOpen(true)} title={profile?.username}>
               {profile?.avatar
-                ? <img className="avatar-crest" src={`${import.meta.env.BASE_URL}avatars/${profile.avatar}`} alt="avatar" />
+                ? <img className="avatar-user-img" src={`${import.meta.env.BASE_URL}avatars/${profile.avatar}`} alt="avatar" />
                 : profile?.favoriteTeam
                   ? <img className="avatar-crest" src={crestUrl(profile.favoriteTeam)} alt={profile.favoriteTeam} />
                   : initials(profile?.username || '')
