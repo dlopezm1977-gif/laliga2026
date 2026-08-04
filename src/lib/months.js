@@ -20,9 +20,12 @@ export function getSeasonMonths() {
 }
 
 export function isMonthClosed({ year, month }) {
-  const [y, m] = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' })
+  const [y, m, d] = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' })
     .split('-').map(Number);
-  return y > year || (y === year && m >= month);
+  if (y > year) return true;
+  if (y < year) return false;
+  if (month === 8) return m > 8 || (m === 8 && d >= 15);
+  return m >= month;
 }
 
 export const SEASON_MONTHS = getSeasonMonths();

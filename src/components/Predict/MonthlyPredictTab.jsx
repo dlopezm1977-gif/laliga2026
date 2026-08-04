@@ -22,14 +22,14 @@ function getMonthDeadline(matchdayData, { year, month }) {
     return earliest === Infinity ? null : earliest;
   }
   // Rest: 1st of the month at 00:00 Madrid time
-  for (const h of [22, 23, 0, 1, 2]) {
-    const candidate = new Date(`${year}-${String(month).padStart(2, '0')}-01T${String(h).padStart(2, '0')}:00:00Z`);
-    const mh = parseInt(new Intl.DateTimeFormat('en-US', {
-      timeZone: 'Europe/Madrid', hour: '2-digit', hour12: false,
-    }).format(candidate)) % 24;
-    if (mh === 0) return candidate.getTime();
+  // Search UTC offsets around midnight to handle CEST (UTC+2) and CET (UTC+1)
+  const target = `${year}-${String(month).padStart(2, '0')}-01`;
+  for (let h = -4; h <= 4; h++) {
+    const ts = new Date(`${target}T00:00:00Z`).getTime() + h * 3600000;
+    const candidate = new Date(ts);
+    if (candidate.toLocaleString('sv-SE', { timeZone: 'Europe/Madrid' }) === `${target} 00:00:00`) return ts;
   }
-  return new Date(`${year}-${String(month).padStart(2, '0')}-01T00:00:00`).getTime();
+  return new Date(`${target}T00:00:00Z`).getTime();
 }
 
 function formatDeadline(ts) {

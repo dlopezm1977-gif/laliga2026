@@ -205,8 +205,9 @@ function HistoryMonthSection({ month, result }) {
       <div className="monthly-rank-header">{month.label}</div>
       {MONTHLY_CATEGORIES.map(cat => {
         const val  = result?.[cat.key];
-        const team = val?.team ?? val ?? null;
-        const name = val?.name ?? null;
+        const isObj = val && typeof val === 'object';
+        const team = isObj ? (val.team ?? null) : (val ?? null);
+        const name = isObj ? (val.name ?? null) : null;
         return (
           <div
             key={cat.key}
@@ -254,9 +255,10 @@ export default function MonthlyRankingTab() {
   }, []);
 
   // Once results are loaded, determine next open month and load its predictions
+  const hasVal = v => v && (typeof v === 'object' ? !!v.team : true);
   const hasResult = mo => {
     const r = results[mo.key];
-    return !!(r && (r.bestPlayer || r.bestCoach || r.bestU23));
+    return !!(r && (hasVal(r.bestPlayer) || hasVal(r.bestCoach) || hasVal(r.bestU23)));
   };
   const nextMonth     = SEASON_MONTHS.find(mo => !isMonthClosed(mo) && !hasResult(mo)) ?? null;
   const historyMonths = SEASON_MONTHS.filter(mo => isMonthClosed(mo) || hasResult(mo)).reverse();
