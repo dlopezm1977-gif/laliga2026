@@ -12,6 +12,10 @@ export default function ProfileModal({ onClose }) {
   const [favoriteTeam, setFavoriteTeam] = useState(profile?.favoriteTeam || null);
   const [avatar, setAvatar] = useState(profile?.avatar || null);
   const [showAvatarPicker, setShowAvatarPicker] = useState(!profile?.avatar);
+  const [carouselIdx, setCarouselIdx] = useState(() => {
+    const idx = profile?.avatar ? AVATARS.indexOf(profile.avatar) : 0;
+    return idx >= 0 ? idx : 0;
+  });
   const [showTeamPicker, setShowTeamPicker] = useState(!profile?.favoriteTeam);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -94,17 +98,26 @@ export default function ProfileModal({ onClose }) {
             <button className="team-clear" onClick={clearAvatar}>Quitar</button>
           </div>
         ) : (
-          <div className="avatar-picker">
-            {AVATARS.map(file => (
+          <div className="avatar-carousel-wrap">
+            <div className="avatar-carousel">
               <button
-                key={file}
-                className={`avatar-option${avatar === file ? ' selected' : ''}`}
-                onClick={() => selectAvatar(file)}
-                title={file.replace(/\.[^.]+$/, '')}
-              >
-                <img src={`${import.meta.env.BASE_URL}avatars/${file}`} alt={file} />
-              </button>
-            ))}
+                className="avatar-carousel-btn"
+                onClick={() => setCarouselIdx(i => (i - 1 + AVATARS.length) % AVATARS.length)}
+              >‹</button>
+              <img
+                className="avatar-carousel-img"
+                src={`${import.meta.env.BASE_URL}avatars/${AVATARS[carouselIdx]}`}
+                alt="avatar"
+              />
+              <button
+                className="avatar-carousel-btn"
+                onClick={() => setCarouselIdx(i => (i + 1) % AVATARS.length)}
+              >›</button>
+            </div>
+            <div className="avatar-carousel-counter">{carouselIdx + 1} / {AVATARS.length}</div>
+            <button className="btn-save" style={{ marginTop: '.5rem' }} onClick={() => selectAvatar(AVATARS[carouselIdx])}>
+              Seleccionar
+            </button>
           </div>
         )}
 

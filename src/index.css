@@ -981,29 +981,46 @@ input  { font-family: inherit; }
   color: var(--text);
 }
 
-.avatar-picker {
+.avatar-carousel-wrap {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: center;
   gap: .5rem;
-  margin-bottom: .5rem;
+  padding: .4rem 0;
 }
-.avatar-option {
-  width: 80px; height: 80px;
+.avatar-carousel {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+}
+.avatar-carousel-img {
+  width: 140px; height: 140px;
   border-radius: 50%;
-  border: 2px solid var(--border);
+  object-fit: cover;
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+.avatar-carousel-btn {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
   background: var(--surface2);
-  padding: 3px;
+  color: var(--text);
+  font-size: 1.4rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  transition: border-color .15s, transform .1s;
-  overflow: hidden;
+  transition: border-color .15s, color .15s;
+  flex-shrink: 0;
 }
-.avatar-option img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-.avatar-option.selected {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);
-  transform: scale(1.08);
+.avatar-carousel-btn:hover { border-color: var(--accent); color: var(--accent); }
+.avatar-carousel-counter {
+  font-family: var(--mono);
+  font-size: .75rem;
+  color: var(--muted);
 }
-.avatar-option:hover { border-color: var(--accent); }
 
 .team-grid {
   display: grid;
