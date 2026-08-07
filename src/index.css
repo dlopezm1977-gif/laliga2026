@@ -1624,3 +1624,8 @@ input  { font-family: inherit; }
   .instructions-tabs { font-size: .76rem; }
   .btn-help { width: 24px; height: 24px; }
 }
+
+@media (max-width: 600px) {
+  .predict-card .team-full { display: none; }
+  .predict-card .team-abbr { display: inline; }
+}

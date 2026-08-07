@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getAllUsersAllPredictions, getAllMonthlyResults } from '../../lib/firestore';
+import SeasonPredCard from '../Season/SeasonPredCard';
 import { useMatches } from '../../hooks/useMatches';
 import { MONTHLY_CATEGORIES, SEASON_MONTHS } from '../../lib/months';
 import { crestUrl, teamAbbr } from '../../lib/crests';
@@ -222,9 +223,8 @@ function RankingJornada({ matchday, predData, mdMatches, stats }) {
 }
 
 function RankingRow({ entry, position, isOpen, onToggle, matchdayData, monthlyResults }) {
-  const { username, avatar, totalPoints, byMatchday, byMonth, preds, monthlyPreds } = entry;
-  const hasDetail = (byMatchday && Object.keys(byMatchday).length > 0) ||
-                    (byMonth    && Object.keys(byMonth).length    > 0);
+  const { username, avatar, totalPoints, byMatchday, byMonth, preds, monthlyPreds, seasonPred } = entry;
+  const hasPreds = Object.keys(preds || {}).length > 0 || Object.keys(monthlyPreds || {}).length > 0;
 
   return (
     <>
@@ -241,26 +241,38 @@ function RankingRow({ entry, position, isOpen, onToggle, matchdayData, monthlyRe
         <div className="rank-name">{username}</div>
         <div className="rank-pts">{totalPoints}</div>
       </div>
-      {isOpen && hasDetail && (
+      {isOpen && (
         <div className="rank-detail">
-          {byMonth && Object.entries(byMonth).sort(([a],[b]) => a.localeCompare(b)).map(([key, stats]) => (
+          <SeasonPredCard pred={seasonPred} variant="ranking" />
+          {!hasPreds && (
+            <p style={{ color: 'var(--muted)', fontSize: '.8rem', padding: '.5rem .2rem', fontFamily: 'var(--mono)', margin: 0 }}>
+              Sin predicciones todavía.
+            </p>
+          )}
+          {Object.keys(monthlyPreds || {})
+            .sort((a, b) => {
+              const ai = SEASON_MONTHS.findIndex(m => m.key === a);
+              const bi = SEASON_MONTHS.findIndex(m => m.key === b);
+              return (bi === -1 ? 999 : bi) - (ai === -1 ? 999 : ai);
+            })
+            .map(key => (
             <RankingMonth
               key={key}
               monthKey={key}
               result={monthlyResults?.[key]}
               pred={monthlyPreds?.[key]}
-              points={stats.points}
+              points={byMonth?.[key]?.points ?? 0}
             />
           ))}
-          {byMatchday && Object.entries(byMatchday)
-            .sort(([a], [b]) => Number(b) - Number(a))
-            .map(([md, s]) => (
+          {Object.keys(preds || {})
+            .sort((a, b) => Number(b) - Number(a))
+            .map(md => (
               <RankingJornada
                 key={md}
                 matchday={md}
                 predData={preds?.[md]}
                 mdMatches={matchdayData[Number(md)]}
-                stats={s}
+                stats={byMatchday?.[md]}
               />
             ))}
         </div>
@@ -289,24 +301,15 @@ export default function RankingTab() {
           avatar: u.avatar,
           preds: u.preds,
           monthlyPreds: u.monthlyPreds,
+          seasonPred: u.seasonPred,
           ...computeScore(u.preds, u.monthlyPreds, matchdayData, mResults),
         }))
-        .filter(u => u.totalPoints > 0 || Object.keys(u.byMatchday).length > 0 || Object.keys(u.monthlyPreds || {}).some(k => mResults[k]))
-        .sort((a, b) => b.totalPoints - a.totalPoints);
+        .sort((a, b) => b.totalPoints - a.totalPoints || (a.username || '').localeCompare(b.username || '', 'es'));
       setScores(computed);
     }).finally(() => setLoading(false));
   }, [matchdayData]);
 
   if (loading || matchLoading) return <LoadingSpinner text="Cargando ranking…" />;
-
-  if (scores.length === 0) {
-    return (
-      <div className="empty-state">
-        <img src={`${import.meta.env.BASE_URL}icon-empty.png`} alt="" className="empty-icon" />
-        <p>Aún no hay puntuaciones.<br />Empieza en cuanto terminen los primeros partidos.</p>
-      </div>
-    );
-  }
 
   return (
     <>

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { crestUrl, teamAbbr } from '../../lib/crests';
-import { getAllPredictions, getAllMonthlyResults, getAllMonthlyPredictionsForUser } from '../../lib/firestore';
+import { getAllPredictions, getAllMonthlyResults, getAllMonthlyPredictionsForUser, getSeasonPrediction } from '../../lib/firestore';
+import SeasonPredCard from '../Season/SeasonPredCard';
 import { useMatches } from '../../hooks/useMatches';
 import { SEASON_MONTHS, MONTHLY_CATEGORIES } from '../../lib/months';
 import LoadingSpinner from '../LoadingSpinner';
@@ -75,11 +76,13 @@ function HistoryMonthCard({ month, result, pred }) {
                     : <span style={{ color: 'var(--muted)', fontSize: '.75rem' }}>Sin pred.</span>
                   }
                 </span>
-                {resultTeam && (
+                {resultTeam ? (
                   <span style={{ display: 'flex', alignItems: 'center', gap: '.25rem' }}>
                     <img className="team-crest team-crest--sm" src={crestUrl(resultTeam)} alt={resultTeam} />
                     <span style={{ fontSize: '.78rem', fontFamily: 'var(--mono)', color: 'var(--muted)' }}>{teamAbbr(resultTeam)}</span>
                   </span>
+                ) : (
+                  <span className="real" style={{ color: 'var(--muted)' }}>?</span>
                 )}
                 {correct && <span className="result-badge exact">+10 pts</span>}
                 {missed  && <span className="result-badge miss">0 pts</span>}
@@ -135,7 +138,7 @@ function HistoryJornada({ matchday, predData, matchdayData }) {
             </>
           ) : null}
         </span>
-        <span className="j-pts">{pts != null ? pts : '–'} pts</span>
+        <span className="j-pts">{pts ?? 0} pts</span>
         <span style={{ color: 'var(--muted)', fontSize: '.8rem' }}>{open ? '▲' : '▼'}</span>
       </div>
       {open && (
@@ -197,6 +200,7 @@ export default function HistoryTab() {
   const [allPreds, setAllPreds]           = useState({});
   const [monthlyResults, setMonthlyResults] = useState({});
   const [monthlyPreds, setMonthlyPreds]   = useState({});
+  const [seasonPred, setSeasonPred]       = useState(null);
   const [loading, setLoading]             = useState(true);
 
   useEffect(() => {
@@ -205,10 +209,12 @@ export default function HistoryTab() {
       getAllPredictions(user.uid),
       getAllMonthlyResults(),
       getAllMonthlyPredictionsForUser(user.uid),
-    ]).then(([preds, mResults, mPreds]) => {
+      getSeasonPrediction(user.uid),
+    ]).then(([preds, mResults, mPreds, sPred]) => {
       setAllPreds(preds);
       setMonthlyResults(mResults || {});
       setMonthlyPreds(mPreds || {});
+      setSeasonPred(sPred);
     }).finally(() => setLoading(false));
   }, [user]);
 
@@ -265,6 +271,8 @@ export default function HistoryTab() {
         <div className="hstat"><div className="val">{signCount}</div><div className="lbl">Signos</div></div>
         <div className="hstat"><div className="val">{accuracy}%</div><div className="lbl">Aciertos</div></div>
       </div>
+
+      <SeasonPredCard pred={seasonPred} />
 
       {SEASON_MONTHS.filter(mo => {
         const r = monthlyResults[mo.key];

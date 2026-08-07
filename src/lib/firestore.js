@@ -110,15 +110,17 @@ export async function getAllUsersAllPredictions() {
 
   const results = await Promise.all(
     users.map(async (u) => {
-      const [predsSnap, monthlySnap] = await Promise.all([
+      const [predsSnap, monthlySnap, seasonSnap] = await Promise.all([
         getDocs(collection(db, 'predictions', u.uid, 'matchdays')),
         getDocs(collection(db, 'monthly_predictions', u.uid, 'months')),
+        getDoc(doc(db, 'season_predictions', u.uid)),
       ]);
       const preds = {};
       predsSnap.forEach(d => { preds[d.id] = d.data(); });
       const monthlyPreds = {};
       monthlySnap.forEach(d => { monthlyPreds[d.id] = d.data(); });
-      return { uid: u.uid, username: u.username || 'Usuario', avatar: u.avatar || null, preds, monthlyPreds };
+      const seasonPred = seasonSnap.exists() ? seasonSnap.data() : null;
+      return { uid: u.uid, username: u.username || 'Usuario', avatar: u.avatar || null, preds, monthlyPreds, seasonPred };
     })
   );
   return results;
