@@ -127,6 +127,30 @@ export async function getAllUsersAllPredictions() {
 }
 
 
+// ── season predictions / results ──────────────────────────────────────────
+
+export async function getAllSeasonPredictions() {
+  const usersSnap = await getDocs(collection(db, 'users'));
+  const users = [];
+  usersSnap.forEach(d => users.push({ uid: d.id, username: d.data().username || 'Usuario' }));
+  const results = await Promise.all(
+    users.map(async u => {
+      const snap = await getDoc(doc(db, 'season_predictions', u.uid));
+      return snap.exists() ? { uid: u.uid, username: u.username, ...snap.data() } : null;
+    })
+  );
+  return results.filter(Boolean);
+}
+
+export async function getSeasonResults() {
+  try {
+    const snap = await getDoc(doc(db, 'season_results', 'current'));
+    return snap.exists() ? snap.data() : null;
+  } catch {
+    return null;
+  }
+}
+
 // ── users ──────────────────────────────────────────────────────────────────
 
 export async function getUser(uid) {

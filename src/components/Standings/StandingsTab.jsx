@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { crestUrl } from '../../lib/crests';
 import LoadingSpinner from '../LoadingSpinner';
 import MonthlyRankingTab from '../Ranking/MonthlyRankingTab';
+import AnnualRankingTab from '../Ranking/AnnualRankingTab';
 
 const ABBR = {
   'Real Madrid':   'RMA', 'Barcelona':     'BAR', 'Atlético':      'ATM',
@@ -87,13 +88,18 @@ export default function StandingsTab() {
           className={`toggle-btn${view === 'goleadores' ? ' active' : ''}`}
           onClick={() => setView('goleadores')}
         >Goleadores</button>
+        <button
+          className={`toggle-btn${view === 'anual' ? ' active' : ''}`}
+          onClick={() => setView('anual')}
+        >Anual</button>
       </div>
 
       {view === 'mensual' && <MonthlyRankingTab />}
+      {view === 'anual'   && <AnnualRankingTab />}
 
-      {view !== 'mensual' && loading && <LoadingSpinner text={view === 'liga' ? 'Cargando clasificación…' : 'Cargando goleadores…'} />}
+      {view !== 'mensual' && view !== 'anual' && loading && <LoadingSpinner text={view === 'liga' ? 'Cargando clasificación…' : 'Cargando goleadores…'} />}
 
-      {view !== 'mensual' && !loading && error && (
+      {view !== 'mensual' && view !== 'anual' && !loading && error && (
         <div className="empty-state">
           <img src={`${import.meta.env.BASE_URL}icon-error.png`} alt="" className="empty-icon" />
           <p style={{ color: 'var(--accent)' }}>Error al cargar los datos.<br />Inténtalo de nuevo.</p>
