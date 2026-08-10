@@ -2,6 +2,15 @@ name: Send recordatorio predicciones
 
 on:
   workflow_dispatch:
+    inputs:
+      modo:
+        description: 'Modo de envío'
+        required: true
+        default: 'test'
+        type: choice
+        options:
+          - test
+          - real
 
 jobs:
   send:
@@ -26,5 +35,10 @@ jobs:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        run: node send-summary.js --recordatorio
+        run: |
+          if [ "${{ github.event.inputs.modo }}" = "test" ]; then
+            node send-summary.js --recordatorio --test
+          else
+            node send-summary.js --recordatorio
+          fi
         working-directory: scripts
