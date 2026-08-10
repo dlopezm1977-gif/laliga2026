@@ -1,0 +1,40 @@
+name: Send resumen jornada
+
+on:
+  workflow_dispatch:
+    inputs:
+      jornada:
+        description: 'Número de jornada (opcional, detecta la última si se omite)'
+        required: false
+        default: ''
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: scripts/package.json
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: scripts
+
+      - name: Send resumen
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -n "${{ github.event.inputs.jornada }}" ]; then
+            node send-summary.js --jornada ${{ github.event.inputs.jornada }}
+          else
+            node send-summary.js
+          fi
+        working-directory: scripts
