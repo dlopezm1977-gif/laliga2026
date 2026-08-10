@@ -1,9 +1,10 @@
 // Envía resumen de jornada personalizado por email a cada participante
-// Uso: node send-summary.js [--jornada N]
+// Uso: node send-summary.js [--jornada N] [--test]
+//      node send-summary.js --recordatorio [--fecha "15 de agosto"] [--test]
 // Requiere en scripts/.env:
 //   GMAIL_USER=quiniela.laliga2627@gmail.com
 //   GMAIL_APP_PASSWORD=xxxx xxxx xxxx xxxx
-//   ADMIN_EMAIL=dlopezm1977@gmail.com   (recibe además el bloque para WhatsApp)
+//   ADMIN_EMAIL=dlopezm1977@gmail.com   (recibe además el bloque para WhatsApp y BCC de todos los mails)
 
 const fs         = require('fs');
 const path       = require('path');
@@ -33,7 +34,10 @@ if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
 // ── Argumentos ─────────────────────────────────────────────────────────────
 const jornadaArg     = process.argv.indexOf('--jornada');
 const jornadaForzada = jornadaArg !== -1 ? Number(process.argv[jornadaArg + 1]) : null;
-const TEST_MODE      = process.argv.includes('--test');  // solo envía al ADMIN_EMAIL
+const TEST_MODE      = process.argv.includes('--test');        // solo envía al ADMIN_EMAIL
+const MODO_RECORDATORIO = process.argv.includes('--recordatorio');
+const fechaArg       = process.argv.indexOf('--fecha');
+const FECHA_LIMITE   = fechaArg !== -1 ? process.argv[fechaArg + 1] : '15 de agosto';
 
 // ── Firebase Admin ─────────────────────────────────────────────────────────
 const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
@@ -261,7 +265,89 @@ function escHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
-// ── Envío individual ───────────────────────────────────────────────────────
+// ── HTML recordatorio predicciones ────────────────────────────────────────
+function generarHTMLRecordatorio(usuario, fechaLimite) {
+  return `<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:'Helvetica Neue',Arial,sans-serif">
+  <div style="max-width:520px;margin:32px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)">
+
+    <!-- Header -->
+    <div style="background:#ee3524;padding:24px 32px;text-align:center">
+      <div style="font-size:1.8rem">⏰</div>
+      <h1 style="margin:6px 0 3px;color:#fff;font-size:1.2rem;font-weight:700;letter-spacing:.04em">
+        QUINIELA LALIGA 26/27
+      </h1>
+      <p style="margin:0;color:rgba(255,255,255,.85);font-size:.88rem">Recordatorio de predicciones</p>
+    </div>
+
+    <!-- Cuerpo -->
+    <div style="padding:28px 32px">
+      <p style="margin:0 0 16px;color:#475569;font-size:.95rem">
+        Hola <strong>${escHtml(usuario.username)}</strong> 👋
+      </p>
+      <p style="margin:0 0 16px;color:#334155;font-size:.95rem;line-height:1.6">
+        Te escribimos para recordarte que tienes hasta el
+        <strong style="color:#ee3524">${escHtml(fechaLimite)}</strong>
+        para rellenar o completar tus predicciones de la temporada.
+      </p>
+      <p style="margin:0 0 24px;color:#334155;font-size:.95rem;line-height:1.6">
+        Las predicciones que no estén registradas antes de esa fecha
+        <strong>no puntúan</strong>, así que no te la juegues y entra ahora a completarlas. 🏆
+      </p>
+
+      <!-- CTA -->
+      <div style="text-align:center;margin-bottom:24px">
+        <a href="https://laliga2026.web.app"
+           style="display:inline-block;background:#ee3524;color:#fff;text-decoration:none;font-weight:700;font-size:.95rem;padding:14px 32px;border-radius:8px;letter-spacing:.03em">
+          Ir a la Quiniela →
+        </a>
+      </div>
+
+      <div style="background:#fff7ed;border-left:3px solid #ee3524;padding:14px 16px;border-radius:0 8px 8px 0;color:#334155;font-size:.88rem;line-height:1.5">
+        ⚽ Recuerda que cada predicción correcta suma puntos. ¡No dejes que se te escapen jornadas enteras por no haberlas rellenado!
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:12px 32px;text-align:center">
+      <p style="margin:0;color:#94a3b8;font-size:.72rem">LaLiga Quiniela 26/27 · generado automáticamente</p>
+    </div>
+
+  </div>
+</body>
+</html>`;
+}
+
+// ── Envío recordatorio ─────────────────────────────────────────────────────
+async function enviarRecordatorios(usuarios, fechaLimite) {
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD },
+  });
+
+  for (const usuario of usuarios) {
+    if (!usuario.email) continue;
+    const esAdmin = usuario.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+    if (TEST_MODE && !esAdmin) { console.log(`  ⏭️   ${usuario.email} omitido (--test)`); continue; }
+
+    const html = generarHTMLRecordatorio(usuario, fechaLimite);
+    const bcc  = ADMIN_EMAIL && !esAdmin ? ADMIN_EMAIL : undefined;
+
+    const info = await transporter.sendMail({
+      from:    `"Quiniela LaLiga" <${GMAIL_USER}>`,
+      to:      usuario.email,
+      ...(bcc ? { bcc } : {}),
+      subject: `⏰ Recuerda rellenar tus predicciones antes del ${fechaLimite} · Quiniela LaLiga 26/27`,
+      text:    `Hola ${usuario.username}, tienes hasta el ${fechaLimite} para completar tus predicciones en https://laliga2026.web.app`,
+      html,
+    });
+    console.log(`  ✉️   ${usuario.email} → ${info.messageId}${bcc ? ` (bcc: ${bcc})` : ''}`);
+  }
+}
+
+// ── Envío individual (resumen jornada) ────────────────────────────────────
 async function enviarEmails(jornada, topJornada, top3General, ranking, textoWA) {
   const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -275,6 +361,7 @@ async function enviarEmails(jornada, topJornada, top3General, ranking, textoWA) 
     const tendencia = calcularTendencia(usuario, ranking, jornada);
     const { html, trendImgPath } = generarHTML({ jornada, topJornada, top3General, ranking, usuario, esAdmin, textoWA, tendencia });
     const pos  = ranking.findIndex(u => u.uid === usuario.uid) + 1;
+    const bcc  = ADMIN_EMAIL && !esAdmin ? ADMIN_EMAIL : undefined;
 
     const attachments = trendImgPath ? [{
       filename: path.basename(trendImgPath),
@@ -285,48 +372,56 @@ async function enviarEmails(jornada, topJornada, top3General, ranking, textoWA) 
     const info = await transporter.sendMail({
       from:    `"Quiniela LaLiga" <${GMAIL_USER}>`,
       to:      usuario.email,
+      ...(bcc ? { bcc } : {}),
       subject: `🏆 Jornada ${jornada} · Quiniela LaLiga 26/27 — Vas ${pos}º`,
       text:    `Hola ${usuario.username}, vas ${pos}º de ${ranking.length}. ${textoWA}`,
       html,
       attachments,
     });
-    console.log(`  ✉️   ${usuario.email} (${pos}º) → ${info.messageId}`);
+    console.log(`  ✉️   ${usuario.email} (${pos}º) → ${info.messageId}${bcc ? ` (bcc: ${bcc})` : ''}`);
   }
 }
 
 // ── Lógica principal ───────────────────────────────────────────────────────
 async function main() {
-  const [scoresSnap, usersSnap] = await Promise.all([
-    db.collection('scores').orderBy('totalPoints', 'desc').get(),
-    db.collection('users').get(),
-  ]);
-
-  const scoresMap = {};
-  scoresSnap.forEach(d => { scoresMap[d.id] = d.data(); });
-
-  const ranking = [];
+  const usersSnap = await db.collection('users').get();
+  const usuarios  = [];
   usersSnap.forEach(d => {
-    const user  = d.data();
+    const user = d.data();
     if (!user.email) return;
-    const score = scoresMap[d.id] || {};
-    ranking.push({
-      uid:             d.id,
-      username:        user.username || 'Anónimo',
-      email:           user.email,
-      totalPoints:     score.totalPoints     || 0,
-      matchdaysPlayed: score.matchdaysPlayed || 0,
-      byMatchday:      score.byMatchday      || {},
-    });
+    usuarios.push({ uid: d.id, username: user.username || 'Anónimo', email: user.email });
   });
 
-  // Ordenar por puntos descendente (igual que Firestore hacía en scores)
-  ranking.sort((a, b) => b.totalPoints - a.totalPoints);
-
-  if (!ranking.length) {
+  if (!usuarios.length) {
     console.error('❌  No hay usuarios con email en la base de datos');
     process.exit(1);
   }
-  console.log(`👥  Participantes: ${ranking.map(u => u.username).join(', ')}`);
+  console.log(`👥  Participantes: ${usuarios.map(u => u.username).join(', ')}`);
+
+  // ── Modo recordatorio ──────────────────────────────────────────────────
+  if (MODO_RECORDATORIO) {
+    console.log(`⏰  Modo recordatorio · fecha límite: ${FECHA_LIMITE}`);
+    console.log(`📧  Enviando recordatorios...`);
+    await enviarRecordatorios(usuarios, FECHA_LIMITE);
+    console.log(`✅  Listo.`);
+    return;
+  }
+
+  // ── Modo resumen de jornada ────────────────────────────────────────────
+  const scoresSnap = await db.collection('scores').orderBy('totalPoints', 'desc').get();
+  const scoresMap  = {};
+  scoresSnap.forEach(d => { scoresMap[d.id] = d.data(); });
+
+  const ranking = usuarios.map(u => {
+    const score = scoresMap[u.uid] || {};
+    return {
+      ...u,
+      totalPoints:     score.totalPoints     || 0,
+      matchdaysPlayed: score.matchdaysPlayed || 0,
+      byMatchday:      score.byMatchday      || {},
+    };
+  });
+  ranking.sort((a, b) => b.totalPoints - a.totalPoints);
 
   // Detectar jornada
   let jornada = jornadaForzada;
@@ -341,9 +436,8 @@ async function main() {
   }
   console.log(`📅  Jornada: ${jornada}`);
 
-  // Top 3 jornada
-  const jornadaKey   = String(jornada);
-  const topJornada   = ranking
+  const jornadaKey = String(jornada);
+  const topJornada = ranking
     .map(u => ({ ...u, points: u.byMatchday[jornadaKey]?.points || 0 }))
     .filter(u => u.points > 0)
     .sort((a, b) => b.points - a.points)
