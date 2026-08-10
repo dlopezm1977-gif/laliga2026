@@ -3,6 +3,14 @@ name: Send resumen jornada
 on:
   workflow_dispatch:
     inputs:
+      modo:
+        description: 'Modo de envío'
+        required: true
+        default: 'test'
+        type: choice
+        options:
+          - test
+          - real
       jornada:
         description: 'Número de jornada (opcional, detecta la última si se omite)'
         required: false
@@ -32,9 +40,12 @@ jobs:
           ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
+          ARGS=""
           if [ -n "${{ github.event.inputs.jornada }}" ]; then
-            node send-summary.js --jornada ${{ github.event.inputs.jornada }}
-          else
-            node send-summary.js
+            ARGS="--jornada ${{ github.event.inputs.jornada }}"
           fi
+          if [ "${{ github.event.inputs.modo }}" = "test" ]; then
+            ARGS="$ARGS --test"
+          fi
+          node send-summary.js $ARGS
         working-directory: scripts
