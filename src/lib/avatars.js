@@ -31,4 +31,9 @@ export const AVATARS = [
   'avatar29.jpg',
   'avatar30.jpg',
   'avatar31.jpg',
+  'avatar32.jpg',
+  'avatar33.jpg',
+  'avatar34.jpg',
+  'avatar35.jpg',
+  'avatar36.jpg',
 ];
