@@ -1,5 +1,4 @@
 const { onSchedule }  = require('firebase-functions/v2/scheduler');
-const { onRequest }   = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
 const admin      = require('firebase-admin');
 const nodemailer = require('nodemailer');
@@ -7,11 +6,10 @@ const nodemailer = require('nodemailer');
 admin.initializeApp();
 const db = admin.firestore();
 
-const FD_TOKEN          = defineSecret('FD_TOKEN');
-const GMAIL_USER        = defineSecret('GMAIL_USER');
+const FD_TOKEN           = defineSecret('FD_TOKEN');
+const GMAIL_USER         = defineSecret('GMAIL_USER');
 const GMAIL_APP_PASSWORD = defineSecret('GMAIL_APP_PASSWORD');
-const ADMIN_EMAIL_S     = defineSecret('ADMIN_EMAIL');
-const CRON_SECRET       = defineSecret('CRON_SECRET');
+const ADMIN_EMAIL_S      = defineSecret('ADMIN_EMAIL');
 
 // ── Short team names ───────────────────────────────────────────────────────
 const SHORT_NAMES = {
@@ -80,18 +78,11 @@ exports.refreshMatchesCache = onSchedule(
   }
 );
 
-// ── sendRecordatorio — HTTP trigger para cron-job.org ─────────────────────
-exports.sendRecordatorio = onRequest(
-  { secrets: [GMAIL_USER, GMAIL_APP_PASSWORD, ADMIN_EMAIL_S, CRON_SECRET] },
-  async (req, res) => {
-    // Validar secret
-    const secret = req.headers['x-cron-secret'] || req.query.secret;
-    if (secret !== CRON_SECRET.value()) {
-      res.status(401).send('Unauthorized');
-      return;
-    }
-
-    const fechaLimite = req.query.fecha || '15 de agosto';
+// ── sendRecordatorio — scheduled para el 13 ago a las 10:00 (Madrid = UTC+2) ─
+exports.sendRecordatorio = onSchedule(
+  { schedule: '0 8 13 8 *', timeZone: 'Europe/Madrid', secrets: [GMAIL_USER, GMAIL_APP_PASSWORD, ADMIN_EMAIL_S] },
+  async () => {
+    const fechaLimite = '15 de agosto';
     const gmailUser   = GMAIL_USER.value();
     const adminEmail  = ADMIN_EMAIL_S.value();
 
@@ -132,7 +123,7 @@ exports.sendRecordatorio = onRequest(
       <strong>no puntúan</strong>, así que no te la juegues y entra ahora a completarlas. 🏆
     </p>
     <div style="text-align:center;margin-bottom:24px">
-      <a href="https://laliga2026.web.app"
+      <a href="https://dlopezm1977-gif.github.io/laliga2026/"
          style="display:inline-block;background:#ee3524;color:#fff;text-decoration:none;font-weight:700;font-size:.95rem;padding:14px 32px;border-radius:8px">
         Ir a la Quiniela →
       </a>
@@ -152,14 +143,14 @@ exports.sendRecordatorio = onRequest(
         to:      user.email,
         ...(bcc ? { bcc } : {}),
         subject: `⏰ Recuerda rellenar tus predicciones antes del ${fechaLimite} · Quiniela LaLiga 26/27`,
-        text:    `Hola ${nombre}, tienes hasta el ${fechaLimite} para completar tus predicciones en https://laliga2026.web.app`,
+        text:    `Hola ${nombre}, tienes hasta el ${fechaLimite} para completar tus predicciones en https://dlopezm1977-gif.github.io/laliga2026/`,
         html,
       });
       enviados.push(user.email);
       console.log(`✉️  ${user.email} → ok${bcc ? ` (bcc: ${bcc})` : ''}`);
     }
 
-    res.json({ ok: true, enviados: enviados.length, destinatarios: enviados });
+    console.log(`✅  Recordatorio enviado a ${enviados.length} participantes`);
   }
 );
 

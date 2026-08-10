@@ -299,7 +299,7 @@ function generarHTMLRecordatorio(usuario, fechaLimite) {
 
       <!-- CTA -->
       <div style="text-align:center;margin-bottom:24px">
-        <a href="https://laliga2026.web.app"
+        <a href="https://dlopezm1977-gif.github.io/laliga2026/"
            style="display:inline-block;background:#ee3524;color:#fff;text-decoration:none;font-weight:700;font-size:.95rem;padding:14px 32px;border-radius:8px;letter-spacing:.03em">
           Ir a la Quiniela →
         </a>
@@ -323,7 +323,9 @@ function generarHTMLRecordatorio(usuario, fechaLimite) {
 // ── Envío recordatorio ─────────────────────────────────────────────────────
 async function enviarRecordatorios(usuarios, fechaLimite) {
   const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
     auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD },
   });
 
@@ -340,7 +342,7 @@ async function enviarRecordatorios(usuarios, fechaLimite) {
       to:      usuario.email,
       ...(bcc ? { bcc } : {}),
       subject: `⏰ Recuerda rellenar tus predicciones antes del ${fechaLimite} · Quiniela LaLiga 26/27`,
-      text:    `Hola ${usuario.username}, tienes hasta el ${fechaLimite} para completar tus predicciones en https://laliga2026.web.app`,
+      text:    `Hola ${usuario.username}, tienes hasta el ${fechaLimite} para completar tus predicciones en https://dlopezm1977-gif.github.io/laliga2026/`,
       html,
     });
     console.log(`  ✉️   ${usuario.email} → ${info.messageId}${bcc ? ` (bcc: ${bcc})` : ''}`);
@@ -350,7 +352,9 @@ async function enviarRecordatorios(usuarios, fechaLimite) {
 // ── Envío individual (resumen jornada) ────────────────────────────────────
 async function enviarEmails(jornada, topJornada, top3General, ranking, textoWA) {
   const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
     auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD },
   });
 
