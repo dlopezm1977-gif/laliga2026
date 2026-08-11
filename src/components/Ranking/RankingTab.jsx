@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { getAllUsersAllPredictions, getAllMonthlyResults } from '../../lib/firestore';
 import SeasonPredCard from '../Season/SeasonPredCard';
 import { useMatches } from '../../hooks/useMatches';
@@ -281,12 +281,57 @@ function RankingRow({ entry, position, isOpen, onToggle, matchdayData, monthlyRe
   );
 }
 
+function PartialRankingRow({ entry, position, points }) {
+  const { username, avatar } = entry;
+  return (
+    <div className="ranking-row">
+      <span className={`rank-pos ${posClass(position)}`}>
+        {MEDALS[position] || position + 1}
+      </span>
+      <div className="rank-avatar">
+        {avatar
+          ? <img src={`${import.meta.env.BASE_URL}avatars/${avatar}`} alt={username} />
+          : initials(username)
+        }
+      </div>
+      <div className="rank-name">{username}</div>
+      <div className="rank-pts">{points}</div>
+    </div>
+  );
+}
+
+const pillStyle = (active) => ({
+  padding: '.3rem .75rem',
+  borderRadius: '99px',
+  border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
+  background: active ? 'var(--accent)' : 'transparent',
+  color: active ? '#fff' : 'var(--text)',
+  cursor: 'pointer',
+  fontSize: '.8rem',
+  fontFamily: 'var(--mono)',
+  fontWeight: active ? 700 : 400,
+});
+
+const selectStyle = {
+  marginTop: '.5rem',
+  padding: '.3rem .5rem',
+  borderRadius: '6px',
+  border: '1px solid var(--border)',
+  background: 'var(--surface)',
+  color: 'var(--text)',
+  fontSize: '.85rem',
+  fontFamily: 'var(--mono)',
+};
+
 export default function RankingTab() {
-  const { matchdayData, loading: matchLoading } = useMatches();
-  const [scores, setScores]             = useState([]);
+  const { matchdayData, currentMatchday, loading: matchLoading } = useMatches();
+  const [scores, setScores]               = useState([]);
   const [monthlyResults, setMonthlyResults] = useState({});
-  const [loading, setLoading]           = useState(true);
-  const [openUid, setOpenUid]           = useState(null);
+  const [loading, setLoading]             = useState(true);
+  const [openUid, setOpenUid]             = useState(null);
+  const [view, setView]                   = useState('global');
+  const [selectedMd, setSelectedMd]       = useState(null);
+  const [selectedMonth, setSelectedMonth] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -309,7 +354,79 @@ export default function RankingTab() {
     }).finally(() => setLoading(false));
   }, [matchdayData]);
 
+  // Mapping matchday number → month key using match dates
+  const matchdayToMonth = useMemo(() => {
+    const mapping = {};
+    Object.entries(matchdayData).forEach(([md, matches]) => {
+      if (!matches?.length) return;
+      const earliest = matches.reduce((min, m) => m.utcDate < min ? m.utcDate : min, matches[0].utcDate);
+      const date = new Date(earliest);
+      const y = date.getFullYear();
+      const m = date.getMonth() + 1;
+      const monthDef = SEASON_MONTHS.find(sm => sm.year === y && sm.month === m);
+      if (monthDef) mapping[md] = monthDef.key;
+    });
+    return mapping;
+  }, [matchdayData]);
+
+  // All 38 matchdays, most recent first for the selector
+  const availableMatchdays = useMemo(() => {
+    return Array.from({ length: 38 }, (_, i) => i + 1);
+  }, []);
+
+  // Months that have at least one matchday with data or a monthly result
+  const availableMonths = useMemo(() => {
+    const monthsWithData = new Set(Object.values(matchdayToMonth));
+    Object.keys(monthlyResults).forEach(k => monthsWithData.add(k));
+    return SEASON_MONTHS.filter(m => monthsWithData.has(m.key));
+  }, [matchdayToMonth, monthlyResults]);
+
+  // Auto-select current matchday (same logic as calendar)
+  useEffect(() => {
+    if (currentMatchday) setSelectedMd(String(currentMatchday));
+  }, [currentMatchday]);
+
+  // Auto-select the month that corresponds to the current matchday
+  useEffect(() => {
+    if (!currentMatchday || !Object.keys(matchdayToMonth).length || !availableMonths.length) return;
+    const key = matchdayToMonth[String(currentMatchday)];
+    if (key && availableMonths.some(m => m.key === key)) {
+      setSelectedMonth(key);
+    } else {
+      setSelectedMonth(availableMonths[availableMonths.length - 1].key);
+    }
+  }, [currentMatchday, matchdayToMonth, availableMonths]);
+
+  // Sorted scores for the current view
+  const displayedScores = useMemo(() => {
+    if (view === 'global') return scores;
+
+    if (view === 'jornada' && selectedMd) {
+      return [...scores]
+        .map(s => ({ ...s, displayPoints: s.byMatchday?.[selectedMd]?.points ?? 0 }))
+        .sort((a, b) => b.displayPoints - a.displayPoints || (a.username || '').localeCompare(b.username || '', 'es'));
+    }
+
+    if (view === 'mes' && selectedMonth) {
+      const mdsInMonth = Object.entries(matchdayToMonth)
+        .filter(([, key]) => key === selectedMonth)
+        .map(([md]) => md);
+      return [...scores]
+        .map(s => ({
+          ...s,
+          displayPoints:
+            mdsInMonth.reduce((sum, md) => sum + (s.byMatchday?.[md]?.points ?? 0), 0)
+            + (s.byMonth?.[selectedMonth]?.points ?? 0),
+        }))
+        .sort((a, b) => b.displayPoints - a.displayPoints || (a.username || '').localeCompare(b.username || '', 'es'));
+    }
+
+    return scores;
+  }, [view, selectedMd, selectedMonth, scores, matchdayToMonth]);
+
   if (loading || matchLoading) return <LoadingSpinner text="Cargando ranking…" />;
+
+  const selectedMonthLabel = SEASON_MONTHS.find(m => m.key === selectedMonth)?.label ?? selectedMonth;
 
   return (
     <>
@@ -318,20 +435,55 @@ export default function RankingTab() {
           Clasificación
         </h2>
         <p style={{ fontSize: '.72rem', color: 'var(--muted)', fontFamily: 'var(--mono)' }}>
-          Exacto: 3 pts · Signo: 1 pt · Favorito: ×2 · Toca una fila para ver el detalle
+          {view === 'global' && 'Exacto: 3 pts · Signo: 1 pt · Favorito: ×2 · Toca una fila para ver el detalle'}
+          {view === 'jornada' && selectedMd && `Puntos de la Jornada ${selectedMd}`}
+          {view === 'mes' && selectedMonth && `Jornadas + predicción mensual de ${selectedMonthLabel}`}
         </p>
+
+        <div style={{ display: 'flex', gap: '.5rem', marginTop: '.75rem', flexWrap: 'wrap' }}>
+          <button style={pillStyle(view === 'global')}  onClick={() => setView('global')}>Global</button>
+          <button style={pillStyle(view === 'jornada')} onClick={() => setView('jornada')}>Jornada</button>
+          <button style={pillStyle(view === 'mes')}     onClick={() => setView('mes')}>Mes</button>
+        </div>
+
+        {view === 'jornada' && availableMatchdays.length > 0 && (
+          <select value={selectedMd ?? ''} onChange={e => setSelectedMd(e.target.value)} style={selectStyle}>
+            {availableMatchdays.map(md => (
+              <option key={md} value={String(md)}>Jornada {md}</option>
+            ))}
+          </select>
+        )}
+
+        {view === 'mes' && availableMonths.length > 0 && (
+          <select value={selectedMonth ?? ''} onChange={e => setSelectedMonth(e.target.value)} style={selectStyle}>
+            {availableMonths.map(m => (
+              <option key={m.key} value={m.key}>{m.label}</option>
+            ))}
+          </select>
+        )}
       </div>
-      {scores.map((entry, i) => (
-        <RankingRow
-          key={entry.uid}
-          entry={entry}
-          position={i}
-          matchdayData={matchdayData}
-          monthlyResults={monthlyResults}
-          isOpen={openUid === entry.uid}
-          onToggle={() => setOpenUid(openUid === entry.uid ? null : entry.uid)}
-        />
-      ))}
+
+      {view === 'global'
+        ? scores.map((entry, i) => (
+            <RankingRow
+              key={entry.uid}
+              entry={entry}
+              position={i}
+              matchdayData={matchdayData}
+              monthlyResults={monthlyResults}
+              isOpen={openUid === entry.uid}
+              onToggle={() => setOpenUid(openUid === entry.uid ? null : entry.uid)}
+            />
+          ))
+        : displayedScores.map((entry, i) => (
+            <PartialRankingRow
+              key={entry.uid}
+              entry={entry}
+              position={i}
+              points={entry.displayPoints}
+            />
+          ))
+      }
     </>
   );
 }

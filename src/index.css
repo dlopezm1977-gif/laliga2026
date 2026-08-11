@@ -1276,7 +1276,8 @@ input  { font-family: inherit; }
 
 /* ── Favorito star button in predict cards ──────────────────────────────── */
 .predict-card.has-favorite {
-  border-color: #f59e0b;
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface));
+  border-color: var(--accent);
 }
 .fav-star {
   background: none;
