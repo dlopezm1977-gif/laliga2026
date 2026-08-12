@@ -281,22 +281,56 @@ function RankingRow({ entry, position, isOpen, onToggle, matchdayData, monthlyRe
   );
 }
 
-function PartialRankingRow({ entry, position, points }) {
-  const { username, avatar } = entry;
+function PartialRankingRow({ entry, position, points, isOpen, onToggle, matchdayData, monthlyResults, filterMds, filterMonth }) {
+  const { username, avatar, preds, monthlyPreds, byMatchday, byMonth } = entry;
+  const hasPreds = filterMds.some(md => preds?.[md]) || (filterMonth && monthlyPreds?.[filterMonth]);
+
   return (
-    <div className="ranking-row">
-      <span className={`rank-pos ${posClass(position)}`}>
-        {MEDALS[position] || position + 1}
-      </span>
-      <div className="rank-avatar">
-        {avatar
-          ? <img src={`${import.meta.env.BASE_URL}avatars/${avatar}`} alt={username} />
-          : initials(username)
-        }
+    <>
+      <div className="ranking-row" onClick={onToggle}>
+        <span className={`rank-pos ${posClass(position)}`}>
+          {MEDALS[position] || position + 1}
+        </span>
+        <div className="rank-avatar">
+          {avatar
+            ? <img src={`${import.meta.env.BASE_URL}avatars/${avatar}`} alt={username} />
+            : initials(username)
+          }
+        </div>
+        <div className="rank-name">{username}</div>
+        <div className="rank-pts">{points}</div>
       </div>
-      <div className="rank-name">{username}</div>
-      <div className="rank-pts">{points}</div>
-    </div>
+      {isOpen && (
+        <div className="rank-detail">
+          {!hasPreds && (
+            <p style={{ color: 'var(--muted)', fontSize: '.8rem', padding: '.5rem .2rem', fontFamily: 'var(--mono)', margin: 0 }}>
+              Sin predicciones para este período.
+            </p>
+          )}
+          {filterMonth && monthlyPreds?.[filterMonth] && (
+            <RankingMonth
+              monthKey={filterMonth}
+              result={monthlyResults?.[filterMonth]}
+              pred={monthlyPreds[filterMonth]}
+              points={byMonth?.[filterMonth]?.points ?? 0}
+            />
+          )}
+          {filterMds
+            .slice()
+            .sort((a, b) => Number(b) - Number(a))
+            .map(md => (
+              <RankingJornada
+                key={md}
+                matchday={md}
+                predData={preds?.[md]}
+                mdMatches={matchdayData[Number(md)]}
+                stats={byMatchday?.[md]}
+              />
+            ))
+          }
+        </div>
+      )}
+    </>
   );
 }
 
@@ -424,6 +458,19 @@ export default function RankingTab() {
     return scores;
   }, [view, selectedMd, selectedMonth, scores, matchdayToMonth]);
 
+  // Matchdays visible en la vista parcial actual
+  const filterMds = useMemo(() => {
+    if (view === 'jornada' && selectedMd) return [selectedMd];
+    if (view === 'mes' && selectedMonth) {
+      return Object.entries(matchdayToMonth)
+        .filter(([, key]) => key === selectedMonth)
+        .map(([md]) => md);
+    }
+    return [];
+  }, [view, selectedMd, selectedMonth, matchdayToMonth]);
+
+  const filterMonth = view === 'mes' ? selectedMonth : null;
+
   if (loading || matchLoading) return <LoadingSpinner text="Cargando ranking…" />;
 
   const selectedMonthLabel = SEASON_MONTHS.find(m => m.key === selectedMonth)?.label ?? selectedMonth;
@@ -481,6 +528,12 @@ export default function RankingTab() {
               entry={entry}
               position={i}
               points={entry.displayPoints}
+              isOpen={openUid === entry.uid}
+              onToggle={() => setOpenUid(openUid === entry.uid ? null : entry.uid)}
+              matchdayData={matchdayData}
+              monthlyResults={monthlyResults}
+              filterMds={filterMds}
+              filterMonth={filterMonth}
             />
           ))
       }
