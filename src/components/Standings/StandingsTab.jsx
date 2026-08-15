@@ -33,7 +33,7 @@ function buildStandings(matchdayData) {
 
   for (const matches of Object.values(matchdayData)) {
     for (const m of matches) {
-      const counted = m.status === 'FINISHED' || m.status === 'IN_PLAY' || m.status === 'PAUSED';
+      const counted = m.status === 'FINISHED' || m.status === 'IN_PLAY' || m.status === 'PAUSED' || m.status === 'LIVE';
       if (!counted || m.homeScore === null || m.awayScore === null) continue;
       const h = table[m.homeTeam];
       const a = table[m.awayTeam];

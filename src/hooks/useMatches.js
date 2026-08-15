@@ -19,7 +19,7 @@ function detectCurrentMatchday(matchdayData) {
 
   // 1. Partidos en juego ahora mismo
   for (const md of mds) {
-    if (matchdayData[md].some(m => m.status === 'IN_PLAY' || m.status === 'PAUSED')) return md;
+    if (matchdayData[md].some(m => m.status === 'IN_PLAY' || m.status === 'PAUSED' || m.status === 'LIVE')) return md;
   }
 
   // 2. Ventana "hoy": de las 10:00 Madrid más recientes a las 10:00 Madrid del día siguiente

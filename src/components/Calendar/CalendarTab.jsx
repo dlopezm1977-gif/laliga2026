@@ -44,13 +44,13 @@ function jornadaDates(matches) {
 
 function StatusBadge({ status }) {
   if (status === 'FINISHED') return <span className="status-badge finished">Final</span>;
-  if (status === 'IN_PLAY' || status === 'PAUSED') return <span className="status-badge live">En juego</span>;
+  if (status === 'IN_PLAY' || status === 'PAUSED' || status === 'LIVE') return <span className="status-badge live">En juego</span>;
   return <span className="status-badge scheduled">Próximo</span>;
 }
 
 function MatchCard({ match, favorite, onClick }) {
   const isFinished = match.status === 'FINISHED';
-  const isLive     = match.status === 'IN_PLAY' || match.status === 'PAUSED';
+  const isLive     = match.status === 'IN_PLAY' || match.status === 'PAUSED' || match.status === 'LIVE';
 
   return (
     <div className={`match-card${favorite ? ' match-card--favorite' : ''}`} onClick={onClick} style={{ cursor: 'pointer' }}>

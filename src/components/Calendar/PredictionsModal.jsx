@@ -52,7 +52,7 @@ export default function PredictionsModal({ match, matchday, onClose }) {
   const [error, setError]     = useState(null);
 
   const hasLiveScore = match.homeScore != null &&
-    ['FINISHED', 'IN_PLAY', 'PAUSED'].includes(match.status);
+    ['FINISHED', 'IN_PLAY', 'PAUSED', 'LIVE'].includes(match.status);
   const real = hasLiveScore
     ? { homeScore: match.homeScore, awayScore: match.awayScore }
     : null;
