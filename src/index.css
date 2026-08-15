@@ -937,12 +937,23 @@ input  { font-family: inherit; }
   color: var(--muted); padding: .3rem 0 .2rem;
   border-bottom: 1px solid var(--border); margin-bottom: .2rem;
 }
+.pred-group-label--exact { color: #22c55e; }
+.pred-group-label--sign  { color: #f59e0b; }
+.pred-group-label--miss  { color: var(--muted); }
 .pred-modal-row {
   display: flex; justify-content: space-between; align-items: center;
   padding: .35rem .1rem; font-size: .85rem;
 }
 .pred-modal-row + .pred-modal-row { border-top: 1px solid var(--border); }
 .pred-modal-user { color: var(--text); }
+.pred-modal-row-right {
+  display: flex; align-items: center; gap: .5rem;
+}
+.pred-modal-row-pts {
+  font-family: var(--mono); font-weight: 700;
+  font-size: .75rem; color: var(--muted);
+  min-width: 2.2rem; text-align: right;
+}
 .pred-modal-score {
   font-family: var(--mono); font-weight: 700;
   color: var(--accent); font-size: .9rem;

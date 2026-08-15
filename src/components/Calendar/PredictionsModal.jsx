@@ -51,8 +51,9 @@ export default function PredictionsModal({ match, matchday, onClose }) {
   const [rows, setRows]       = useState([]);
   const [error, setError]     = useState(null);
 
-  const isFinished = match.status === 'FINISHED';
-  const real = isFinished && match.homeScore != null
+  const hasLiveScore = match.homeScore != null &&
+    ['FINISHED', 'IN_PLAY', 'PAUSED'].includes(match.status);
+  const real = hasLiveScore
     ? { homeScore: match.homeScore, awayScore: match.awayScore }
     : null;
 
@@ -73,19 +74,30 @@ export default function PredictionsModal({ match, matchday, onClose }) {
       .finally(() => setLoading(false));
   }, [match.matchId, matchday]);
 
-  // group by tier (finished) or by score category (pending)
+  // group by result (live/finished) or by sign prediction (pending)
   const grouped = [];
   if (real) {
-    const tiers = [[], [], [], [], []];
-    rows.forEach(r => tiers[resultTier(r, real, r.isFav)].push(r));
-    tiers.forEach((g, i) => {
-      if (g.length) grouped.push({ label: TIER_LABELS[i], cls: TIER_CLS[i], rows: g, pts: g.length * TIER_PTS[i] });
+    const buckets = [
+      { label: 'Resultado exacto', groupCls: 'exact', rows: [] },
+      { label: 'Signo acertado',   groupCls: 'sign',  rows: [] },
+      { label: 'Fallo',            groupCls: 'miss',  rows: [] },
+    ];
+    rows.forEach(r => {
+      const tier = resultTier(r, real, r.isFav);
+      const bucketIdx = tier <= 1 ? 0 : tier <= 3 ? 1 : 2;
+      buckets[bucketIdx].rows.push({ ...r, pts: TIER_PTS[tier], cls: TIER_CLS[tier] });
     });
+    // Sort fallo rows by predicted score (sign category, then total goals)
+    buckets[2].rows.sort((a, b) => {
+      const catDiff = predCategory(a.homeScore, a.awayScore) - predCategory(b.homeScore, b.awayScore);
+      return catDiff !== 0 ? catDiff : (a.homeScore + a.awayScore) - (b.homeScore + b.awayScore);
+    });
+    buckets.forEach(g => { if (g.rows.length) grouped.push(g); });
   } else {
     const cats = [[], [], []];
     rows.forEach(r => cats[predCategory(r.homeScore, r.awayScore)].push(r));
     cats.forEach((g, i) => {
-      if (g.length) grouped.push({ label: GROUP_LABELS[i], cls: null, rows: g });
+      if (g.length) grouped.push({ label: GROUP_LABELS[i], groupCls: null, rows: g });
     });
   }
 
@@ -121,16 +133,18 @@ export default function PredictionsModal({ match, matchday, onClose }) {
         ) : (
           grouped.map((g, i) => (
             <div key={i}>
-              <div className="pred-group-label">
+              <div className={`pred-group-label${g.groupCls ? ` pred-group-label--${g.groupCls}` : ''}`}>
                 {g.label}
-                {g.pts != null && <span className="pred-group-pts">{g.pts} pts</span>}
               </div>
               {g.rows.map((r, j) => (
                 <div className="pred-modal-row" key={j}>
                   <span className="pred-modal-user">{r.isFav && <span title="Favorito">⭐</span>}{r.username}</span>
-                  <span className={`pred-modal-score${g.cls ? ` result-badge ${g.cls}` : ''}`}>
-                    {r.homeScore}–{r.awayScore}
-                  </span>
+                  <div className="pred-modal-row-right">
+                    <span className={`pred-modal-score${r.cls ? ` result-badge ${r.cls}` : ''}`}>
+                      {r.homeScore}–{r.awayScore}
+                    </span>
+                    {r.pts != null && <span className="pred-modal-row-pts">+{r.pts}</span>}
+                  </div>
                 </div>
               ))}
             </div>
