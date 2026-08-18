@@ -49,6 +49,67 @@ const db = admin.firestore();
 // ── Constantes ─────────────────────────────────────────────────────────────
 const MEDALS = ['🥇', '🥈', '🥉'];
 
+// ── Scoring (espejo del computeScore() del cliente) ────────────────────────
+const MONTHLY_CATEGORIES = [
+  { key: 'bestPlayer' },
+  { key: 'bestCoach'  },
+  { key: 'bestU23'    },
+];
+
+function getSign(h, a) { return h > a ? 'H' : a > h ? 'A' : 'D'; }
+
+function computeUserScore(userPreds, monthlyPreds, matchdayData, monthlyResults) {
+  let totalPoints = 0;
+  const byMatchday = {};
+
+  Object.entries(userPreds).forEach(([md, predData]) => {
+    const mdMatches    = matchdayData[Number(md)] || [];
+    const favoriteTeam = predData?.favoriteTeam || null;
+    const predMap      = {};
+    (predData?.matches || []).forEach(p => { predMap[p.matchId] = p; });
+
+    let jPts = 0, jExact = 0, jSign = 0, jFav = 0, jFallo = 0;
+    mdMatches.forEach(m => {
+      const pred = predMap[m.matchId];
+      if (!pred || m.homeScore === null || m.awayScore === null) return;
+      const isFav   = !!favoriteTeam && (m.homeTeam === favoriteTeam || m.awayTeam === favoriteTeam);
+      const isExact = pred.homeScore === m.homeScore && pred.awayScore === m.awayScore;
+      const isSign  = !isExact && getSign(pred.homeScore, pred.awayScore) === getSign(m.homeScore, m.awayScore);
+      const pts     = isExact ? (isFav ? 6 : 3) : isSign ? (isFav ? 2 : 1) : 0;
+      jPts += pts;
+      if (isExact) jExact++;
+      else if (isSign) jSign++;
+      else jFallo++;
+      if (isFav && pts > 0) jFav += pts - (isExact ? 3 : 1);
+    });
+
+    if (jExact > 0 || jSign > 0 || jFallo > 0 || jPts > 0) {
+      byMatchday[md] = { points: jPts, exact: jExact, sign: jSign, fallo: jFallo, favoriteBonus: jFav };
+    }
+    totalPoints += jPts;
+  });
+
+  Object.entries(monthlyPreds || {}).forEach(([key, pred]) => {
+    const result = monthlyResults[key];
+    if (!result) return;
+    let mPts = 0;
+    MONTHLY_CATEGORIES.forEach(cat => {
+      const val        = result[cat.key];
+      const resultTeam = typeof val === 'string' ? val : (val?.team ?? null);
+      const userTeam   = pred?.[cat.key] ?? null;
+      if (resultTeam && userTeam && userTeam === resultTeam) mPts += 10;
+    });
+    const hasAnyResult = MONTHLY_CATEGORIES.some(cat => {
+      const val = result[cat.key];
+      return (typeof val === 'string' ? val : (val?.team ?? null)) !== null;
+    });
+    if (!hasAnyResult) return;
+    totalPoints += mPts;
+  });
+
+  return { totalPoints, byMatchday, matchdaysPlayed: Object.keys(byMatchday).length };
+}
+
 // Devuelve la ruta absoluta del fichero de imagen (png/jpg/jpeg/svg) o ''
 function findImagePath(basename) {
   for (const ext of ['png', 'jpg', 'jpeg', 'svg']) {
@@ -412,19 +473,33 @@ async function main() {
   }
 
   // ── Modo resumen de jornada ────────────────────────────────────────────
-  const scoresSnap = await db.collection('scores').orderBy('totalPoints', 'desc').get();
-  const scoresMap  = {};
-  scoresSnap.forEach(d => { scoresMap[d.id] = d.data(); });
+  // Leer partidos y resultados mensuales
+  const [cacheSnap, monthlyResultsSnap] = await Promise.all([
+    db.collection('matches_cache').get(),
+    db.collection('monthly_results').get(),
+  ]);
 
-  const ranking = usuarios.map(u => {
-    const score = scoresMap[u.uid] || {};
-    return {
-      ...u,
-      totalPoints:     score.totalPoints     || 0,
-      matchdaysPlayed: score.matchdaysPlayed || 0,
-      byMatchday:      score.byMatchday      || {},
-    };
-  });
+  const matchdayData = {};
+  cacheSnap.forEach(d => { matchdayData[Number(d.id)] = d.data().matches || []; });
+
+  const monthlyResults = {};
+  monthlyResultsSnap.forEach(d => { monthlyResults[d.id] = d.data(); });
+
+  // Calcular ranking desde las predicciones (no depende de la colección 'scores')
+  const ranking = await Promise.all(usuarios.map(async u => {
+    const [predsSnap, monthlySnap] = await Promise.all([
+      db.collection('predictions').doc(u.uid).collection('matchdays').get(),
+      db.collection('monthly_predictions').doc(u.uid).collection('months').get(),
+    ]);
+    const userPreds = {};
+    predsSnap.forEach(d => { userPreds[d.id] = d.data(); });
+    const monthlyPreds = {};
+    monthlySnap.forEach(d => { monthlyPreds[d.id] = d.data(); });
+
+    const { totalPoints, byMatchday, matchdaysPlayed } =
+      computeUserScore(userPreds, monthlyPreds, matchdayData, monthlyResults);
+    return { ...u, totalPoints, matchdaysPlayed, byMatchday };
+  }));
   ranking.sort((a, b) => b.totalPoints - a.totalPoints);
 
   // Detectar jornada
@@ -434,16 +509,12 @@ async function main() {
     ranking.forEach(u => Object.keys(u.byMatchday).forEach(j => jornadasConDatos.add(Number(j))));
     jornada = jornadasConDatos.size ? Math.max(...jornadasConDatos) : null;
   }
-  // Fallback: buscar en matches_cache la jornada más alta con algún partido FINISHED
+  // Fallback: jornada más alta con algún partido FINISHED en matches_cache
   if (!jornada) {
-    const cacheSnap = await db.collection('matches_cache').get();
     let maxMd = null;
     cacheSnap.forEach(d => {
       const md = Number(d.id);
-      const matches = d.data().matches || [];
-      if (matches.some(m => m.status === 'FINISHED') && (maxMd === null || md > maxMd)) {
-        maxMd = md;
-      }
+      if (d.data().matches?.some(m => m.status === 'FINISHED') && (maxMd === null || md > maxMd)) maxMd = md;
     });
     jornada = maxMd;
   }
