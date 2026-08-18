@@ -405,6 +405,10 @@ async function enviarRecordatorios(usuarios, fechaLimite) {
       subject: `⏰ Recuerda rellenar tus predicciones antes del ${fechaLimite} · Quiniela LaLiga 26/27`,
       text:    `Hola ${usuario.username}, tienes hasta el ${fechaLimite} para completar tus predicciones en https://dlopezm1977-gif.github.io/laliga2026/`,
       html,
+      headers: {
+        'List-Unsubscribe':      `<mailto:${GMAIL_USER}?subject=unsubscribe>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      },
     });
     console.log(`  ✉️   ${usuario.email} → ${info.messageId}${bcc ? ` (bcc: ${bcc})` : ''}`);
   }
@@ -438,10 +442,14 @@ async function enviarEmails(jornada, topJornada, top3General, ranking, textoWA) 
       from:    `"Quiniela LaLiga" <${GMAIL_USER}>`,
       to:      usuario.email,
       ...(bcc ? { bcc } : {}),
-      subject: `🏆 Jornada ${jornada} · Quiniela LaLiga 26/27 — Vas ${pos}º`,
+      subject: `Jornada ${jornada} · Quiniela LaLiga 26/27 — Vas ${pos}º de ${ranking.length}`,
       text:    `Hola ${usuario.username}, vas ${pos}º de ${ranking.length}. ${textoWA}`,
       html,
       attachments,
+      headers: {
+        'List-Unsubscribe':      `<mailto:${GMAIL_USER}?subject=unsubscribe>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      },
     });
     console.log(`  ✉️   ${usuario.email} (${pos}º) → ${info.messageId}${bcc ? ` (bcc: ${bcc})` : ''}`);
   }
