@@ -434,6 +434,19 @@ async function main() {
     ranking.forEach(u => Object.keys(u.byMatchday).forEach(j => jornadasConDatos.add(Number(j))));
     jornada = jornadasConDatos.size ? Math.max(...jornadasConDatos) : null;
   }
+  // Fallback: buscar en matches_cache la jornada más alta con algún partido FINISHED
+  if (!jornada) {
+    const cacheSnap = await db.collection('matches_cache').get();
+    let maxMd = null;
+    cacheSnap.forEach(d => {
+      const md = Number(d.id);
+      const matches = d.data().matches || [];
+      if (matches.some(m => m.status === 'FINISHED') && (maxMd === null || md > maxMd)) {
+        maxMd = md;
+      }
+    });
+    jornada = maxMd;
+  }
   if (!jornada) {
     console.error('❌  No se encontraron jornadas con datos. Usa --jornada N');
     process.exit(1);
