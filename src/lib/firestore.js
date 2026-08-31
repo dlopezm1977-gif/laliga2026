@@ -174,3 +174,43 @@ export async function createUser(uid, data) {
 export async function updateUser(uid, data) {
   await updateDoc(doc(db, 'users', uid), data);
 }
+
+// ── minigames ──────────────────────────────────────────────────────────────
+
+export async function saveMinigameStarted(uid, gameId) {
+  await setDoc(
+    doc(db, 'minigame_results', uid, 'games', gameId),
+    { started: true, completed: false, startedAt: serverTimestamp(), points: 5 },
+    { merge: true }
+  );
+}
+
+export async function saveMinigameCompleted(uid, gameId, timeSpent) {
+  await setDoc(
+    doc(db, 'minigame_results', uid, 'games', gameId),
+    { completed: true, completedAt: serverTimestamp(), timeSpent, points: 10 },
+    { merge: true }
+  );
+}
+
+export async function getAllUsersMinigameResults() {
+  const usersSnap = await getDocs(collection(db, 'users'));
+  const users = [];
+  usersSnap.forEach(d => users.push({ uid: d.id }));
+  const results = await Promise.all(
+    users.map(async ({ uid }) => {
+      const snap = await getDocs(collection(db, 'minigame_results', uid, 'games'));
+      const games = {};
+      snap.forEach(d => { games[d.id] = d.data(); });
+      return { uid, games };
+    })
+  );
+  return Object.fromEntries(results.map(r => [r.uid, r.games]));
+}
+
+export async function getAllMinigameConfigs() {
+  const snap = await getDocs(collection(db, 'minigames'));
+  const result = {};
+  snap.forEach(d => { result[d.id] = { id: d.id, ...d.data() }; });
+  return result;
+}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { getAllUsersAllPredictions, getAllMonthlyResults } from '../../lib/firestore';
+import { getAllUsersAllPredictions, getAllMonthlyResults, getAllUsersMinigameResults, getAllMinigameConfigs } from '../../lib/firestore';
 import SeasonPredCard from '../Season/SeasonPredCard';
 import { useMatches } from '../../hooks/useMatches';
 import { MONTHLY_CATEGORIES, SEASON_MONTHS } from '../../lib/months';
@@ -35,7 +35,7 @@ function resultBadge(pred, real, isFavorite) {
   return { pts: 0, cls: 'miss', label: 'Fallo' };
 }
 
-function computeScore(userPreds, monthlyPreds, matchdayData, monthlyResults) {
+function computeScore(userPreds, monthlyPreds, matchdayData, monthlyResults, minigameResults, minigameConfigs) {
   let totalPoints = 0, exactCount = 0, signCount = 0;
   const byMatchday = {};
 
@@ -87,7 +87,20 @@ function computeScore(userPreds, monthlyPreds, matchdayData, monthlyResults) {
     totalPoints += mPts;
   });
 
-  return { totalPoints, exactCount, signCount, byMatchday, byMonth };
+  const byMinigame = {};
+  const now = Date.now();
+  Object.entries(minigameConfigs || {}).forEach(([gameId, game]) => {
+    const ended = (game.endDate?.toMillis?.() ?? 0) < now;
+    const result = (minigameResults || {})[gameId];
+    if (result?.started) {
+      byMinigame[gameId] = { points: result.points ?? 0, completed: result.completed ?? false, title: game.title };
+      totalPoints += result.points ?? 0;
+    } else if (ended) {
+      byMinigame[gameId] = { points: 0, completed: false, title: game.title, missed: true };
+    }
+  });
+
+  return { totalPoints, exactCount, signCount, byMatchday, byMonth, byMinigame };
 }
 
 function RankingMonth({ monthKey, result, pred, points }) {
@@ -222,8 +235,36 @@ function RankingJornada({ matchday, predData, mdMatches, stats }) {
   );
 }
 
+function RankingMinigame({ stats }) {
+  const [open, setOpen] = useState(false);
+  const { points, completed, title, missed } = stats;
+  const badgeCls = completed ? 'badge-green-sm' : missed ? 'badge-red-sm' : 'badge-orange-sm';
+  const label    = completed ? '✅ Completado' : missed ? '❌ No jugado' : '⏰ Intentado';
+  return (
+    <div>
+      <div
+        className="rank-detail-row"
+        onClick={() => setOpen(o => !o)}
+        style={{ cursor: 'pointer', userSelect: 'none' }}
+      >
+        <span style={{ fontWeight: 600 }}>{title || 'Juego de Parejas'}</span>
+        <span><span className="game-badge">🎮 juego</span></span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '.4rem' }}>
+          <span className="j-pts" style={{ fontSize: '.95rem' }}>{points} pts</span>
+          <span style={{ color: 'var(--muted)', fontSize: '.7rem' }}>{open ? '▲' : '▼'}</span>
+        </span>
+      </div>
+      {open && (
+        <div style={{ padding: '.3rem .2rem .4rem', borderBottom: '1px solid var(--border)', fontSize: '.8rem', color: 'var(--muted)' }}>
+          {label}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function RankingRow({ entry, position, isOpen, onToggle, matchdayData, monthlyResults }) {
-  const { username, avatar, totalPoints, byMatchday, byMonth, preds, monthlyPreds, seasonPred } = entry;
+  const { username, avatar, totalPoints, byMatchday, byMonth, byMinigame, preds, monthlyPreds, seasonPred } = entry;
   const hasPreds = Object.keys(preds || {}).length > 0 || Object.keys(monthlyPreds || {}).length > 0;
 
   return (
@@ -249,6 +290,9 @@ function RankingRow({ entry, position, isOpen, onToggle, matchdayData, monthlyRe
               Sin predicciones todavía.
             </p>
           )}
+          {Object.entries(byMinigame || {}).map(([gameId, stats]) => (
+            <RankingMinigame key={gameId} stats={stats} />
+          ))}
           {Object.keys(monthlyPreds || {})
             .sort((a, b) => {
               const ai = SEASON_MONTHS.findIndex(m => m.key === a);
@@ -371,7 +415,9 @@ export default function RankingTab() {
     Promise.all([
       getAllUsersAllPredictions(),
       getAllMonthlyResults(),
-    ]).then(([users, mResults]) => {
+      getAllUsersMinigameResults(),
+      getAllMinigameConfigs(),
+    ]).then(([users, mResults, mgResults, mgConfigs]) => {
       setMonthlyResults(mResults || {});
       const computed = users
         .map(u => ({
@@ -381,7 +427,8 @@ export default function RankingTab() {
           preds: u.preds,
           monthlyPreds: u.monthlyPreds,
           seasonPred: u.seasonPred,
-          ...computeScore(u.preds, u.monthlyPreds, matchdayData, mResults),
+          minigameResults: mgResults[u.uid] || {},
+          ...computeScore(u.preds, u.monthlyPreds, matchdayData, mResults, mgResults[u.uid] || {}, mgConfigs),
         }))
         .sort((a, b) => b.totalPoints - a.totalPoints || (a.username || '').localeCompare(b.username || '', 'es'));
       setScores(computed);

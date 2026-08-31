@@ -4,6 +4,7 @@ import { crestUrl, teamAbbr } from '../../lib/crests';
 import { getAllPredictions, getAllMonthlyResults, getAllMonthlyPredictionsForUser, getSeasonPrediction } from '../../lib/firestore';
 import SeasonPredCard from '../Season/SeasonPredCard';
 import { useMatches } from '../../hooks/useMatches';
+import { useMinigames } from '../../hooks/useMinigames';
 import { SEASON_MONTHS, MONTHLY_CATEGORIES } from '../../lib/months';
 import LoadingSpinner from '../LoadingSpinner';
 
@@ -90,6 +91,31 @@ function HistoryMonthCard({ month, result, pred }) {
               </div>
             );
           })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function HistoryMinigame({ game, result }) {
+  const [open, setOpen] = useState(false);
+  const pts       = result?.points    ?? 0;
+  const completed = result?.completed ?? false;
+  const started   = result?.started   ?? false;
+  const label     = completed ? '✅ Completado' : started ? '⏰ Tiempo agotado' : '❌ No jugado';
+  const badgeCls  = completed ? 'j-stat--exact' : started ? 'j-stat--sign' : 'j-stat--miss';
+
+  return (
+    <div className="history-jornada">
+      <div className="history-jornada-hdr" onClick={() => setOpen(o => !o)}>
+        <span style={{ fontWeight: 600 }}>{game.title || 'Juego de Parejas'}</span>
+        <span><span className="game-badge">🎮 juego</span></span>
+        <span className="j-pts">{pts} pts</span>
+        <span style={{ color: 'var(--muted)', fontSize: '.8rem' }}>{open ? '▲' : '▼'}</span>
+      </div>
+      {open && (
+        <div className="history-jornada-body">
+          <span className={`j-stat ${badgeCls}`} style={{ fontSize: '.75rem', padding: '.2rem .5rem' }}>{label}</span>
         </div>
       )}
     </div>
@@ -197,6 +223,7 @@ function HistoryJornada({ matchday, predData, matchdayData }) {
 export default function HistoryTab() {
   const { user } = useAuth();
   const { matchdayData, loading: matchLoading } = useMatches();
+  const { minigames, userResults: minigameResults } = useMinigames(user?.uid);
   const [allPreds, setAllPreds]           = useState({});
   const [monthlyResults, setMonthlyResults] = useState({});
   const [monthlyPreds, setMonthlyPreds]   = useState({});
@@ -254,7 +281,8 @@ export default function HistoryTab() {
     });
   });
 
-  const totalPoints = cTotalPts + cMonthlyPts;
+  const cMinigamePts = minigames.reduce((sum, g) => sum + (minigameResults[g.id]?.points ?? 0), 0);
+  const totalPoints = cTotalPts + cMonthlyPts + cMinigamePts;
   const exactCount  = cExactCount;
   const signCount   = cSignCount;
   const accuracy    = cMatchesWithResult > 0
@@ -284,6 +312,10 @@ export default function HistoryTab() {
           result={monthlyResults[mo.key]}
           pred={monthlyPreds[mo.key]}
         />
+      ))}
+
+      {minigames.filter(g => minigameResults[g.id] || (g.endDate?.toMillis?.() ?? 0) < Date.now()).map(g => (
+        <HistoryMinigame key={g.id} game={g} result={minigameResults[g.id]} />
       ))}
 
       {jornadasWithPreds.length === 0 ? (
