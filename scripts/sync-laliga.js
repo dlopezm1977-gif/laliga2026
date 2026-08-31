@@ -125,12 +125,28 @@ async function main() {
 
   for (const [md, mdMatches] of Object.entries(byMatchday)) {
     const prev = existing[md];
+
+    // Merge per-match: never overwrite a scored match with a scoreless one (API glitch guard)
+    let mergedMatches = mdMatches;
+    if (prev?.matches) {
+      const prevById = Object.fromEntries(prev.matches.map(m => [m.matchId, m]));
+      mergedMatches = mdMatches.map(m => {
+        const old = prevById[m.matchId];
+        const apiLostScore = old && old.homeScore != null && m.homeScore == null;
+        if (apiLostScore) {
+          console.warn(`  ⚠ MD${md} match ${m.matchId} (${m.homeTeam}-${m.awayTeam}): API devuelve sin goles, manteniendo datos anteriores (${old.homeScore}-${old.awayScore})`);
+          return old;
+        }
+        return m;
+      });
+    }
+
     // Only write if something changed (status or score)
-    const changed = !prev || JSON.stringify(prev.matches) !== JSON.stringify(mdMatches);
+    const changed = !prev || JSON.stringify(prev.matches) !== JSON.stringify(mergedMatches);
     if (changed) {
       batch.set(db.collection('matches_cache').doc(md), {
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        matches: mdMatches,
+        matches: mergedMatches,
       });
       updated++;
     }

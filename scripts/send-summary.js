@@ -147,20 +147,19 @@ function calcularTendencia(usuario, ranking, jornada) {
   return 'same';
 }
 
-// ── Mensaje motivacional según posición (10 grupos) ───────────────────────
+// ── Mensaje motivacional según posición (tono peña futbolera) ─────────────
 function mensajePersonal(pos, total) {
-  if (pos === 1)         return '👑 ¡Eres el líder! La porra es tuya, defiéndela jornada a jornada.';
-  if (pos === 2)         return '🔥 ¡A un solo puesto del liderato! Presiona fuerte, el primero ya te siente.';
-  if (pos === 3)         return '💪 ¡En el podio! Aguanta la posición y prepara el asalto a los de arriba.';
-  if (pos === 4)         return '🎯 ¡Cuarto! A un paso del podio, una buena jornada y estás dentro.';
-  if (pos === total)     return '🌱 ¡A por todas desde abajo! El campeón de la próxima jornada podrías ser tú.';
-  if (pos === total - 1) return '😤 ¡Penúltimo, pero queda mucha liga! Una racha de buenos resultados y cambias el panorama.';
-  // Grupos por percentil normalizado (evita solapar con los extremos ya capturados)
+  if (pos === 1)         return '👑 Eres el amo. Que tiemblen los demás.';
+  if (pos === 2)         return '🔥 El primero te huele el aliento. Un paso más y es tuyo.';
+  if (pos === 3)         return '🥉 En el podio, que es donde hay que estar. No te muevas.';
+  if (pos === 4)         return '😤 Cuarto. El maldito cuarto. Una jornada buena y estás dentro.';
+  if (pos === total)     return '💀 Último, pero con dignidad. Que te quiten lo bailao.';
+  if (pos === total - 1) return '😬 Penúltimo... pero tú tranquilo, que queda mucha liga.';
   const pct = (pos - 1) / (total - 1);
-  if (pct <= 0.35)       return '⚽ ¡Bien colocado en la parte alta! Sigue acumulando y la zona noble se acerca.';
-  if (pct <= 0.50)       return '📈 ¡Justo por encima de la mitad! Un empujón y entras en zona noble.';
-  if (pct <= 0.65)       return '📉 ¡Justo por debajo de la mitad! Estás cerca, una jornada te puede cambiar la vida.';
-  /* zona baja */        return '😬 ¡En la zona baja, pero no todo está perdido! Queda temporada, mantén la cabeza.';
+  if (pct <= 0.35)       return '⚽ En zona noble. Sigue así y acabas en el podio.';
+  if (pct <= 0.50)       return '📈 Por encima de la media. Un empujón y cambias de zona.';
+  if (pct <= 0.65)       return '📉 Justo por debajo de la media. Estás cerca, no te rindas.';
+  return '😵 En la zona baja, pero queda mucha liga. La remontada empieza hoy.';
 }
 
 // ── Texto WhatsApp (solo para el admin) ───────────────────────────────────
@@ -182,7 +181,7 @@ function generarTextoWhatsApp(jornada, topJornada, top3General) {
 }
 
 // ── HTML personalizado por usuario ─────────────────────────────────────────
-function generarHTML({ jornada, topJornada, top3General, ranking, usuario, esAdmin, textoWA, tendencia }) {
+function generarHTML({ jornada, topJornada, top3General, ranking, usuario, esAdmin, textoWA, tendencia, posJornada, jornadaStats }) {
   const pos   = ranking.findIndex(u => u.uid === usuario.uid) + 1;
   const total = ranking.length;
   const msgPersonal = mensajePersonal(pos, total);
@@ -259,7 +258,7 @@ function generarHTML({ jornada, topJornada, top3General, ranking, usuario, esAdm
 
     <!-- Saludo -->
     <div style="padding:20px 32px 0">
-      <p style="margin:0;color:#475569;font-size:.95rem">Hola <strong>${escHtml(usuario.username)}</strong>, aquí tienes el resumen de la jornada 👇</p>
+      <p style="margin:0;color:#475569;font-size:.95rem">Hola <strong>${escHtml(usuario.username)}</strong> 👋 Aquí tienes cómo ha quedado la cosa...</p>
     </div>
 
     ${bloqueImagen}
@@ -268,14 +267,27 @@ function generarHTML({ jornada, topJornada, top3General, ranking, usuario, esAdm
     <div style="padding:16px 32px 28px">
 
       <h2 style="margin:16px 0 10px;color:#1e293b;font-size:.9rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em">
-        📅 Top 3 de la Jornada
+        🔥 ¿Quién arrasó esta jornada?
       </h2>
       <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
         ${filaJornada}
       </table>
 
+      ${jornadaStats ? `
+      <!-- Tu jornada -->
+      <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:14px 16px;margin-bottom:20px">
+        <p style="margin:0 0 4px;font-size:.78rem;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:.05em">Tu jornada</p>
+        <p style="margin:0 0 6px;font-size:1.3rem;font-weight:700;color:#0284c7">${posJornada}º de ${ranking.length} &nbsp;·&nbsp; ${jornadaStats.points} pts</p>
+        <p style="margin:0;font-size:.85rem;color:#0369a1">
+          ${jornadaStats.exact} exacto${jornadaStats.exact !== 1 ? 's' : ''} &nbsp;·&nbsp;
+          ${jornadaStats.sign} signo${jornadaStats.sign !== 1 ? 's' : ''} &nbsp;·&nbsp;
+          ${jornadaStats.fallo} fallo${jornadaStats.fallo !== 1 ? 's' : ''}
+          ${jornadaStats.favoriteBonus ? `&nbsp;·&nbsp; +${jornadaStats.favoriteBonus} bonus favorito` : ''}
+        </p>
+      </div>` : ''}
+
       <h2 style="margin:0 0 10px;color:#1e293b;font-size:.9rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em">
-        📊 Clasificación General
+        ⚔️ Así va la guerra
       </h2>
       <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
         ${filaGeneral}
@@ -415,7 +427,7 @@ async function enviarRecordatorios(usuarios, fechaLimite) {
 }
 
 // ── Envío individual (resumen jornada) ────────────────────────────────────
-async function enviarEmails(jornada, topJornada, top3General, ranking, textoWA) {
+async function enviarEmails(jornada, topJornada, top3General, ranking, textoWA, rankingJornada) {
   const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 587,
@@ -427,8 +439,10 @@ async function enviarEmails(jornada, topJornada, top3General, ranking, textoWA) 
     if (!usuario.email) continue;
     const esAdmin   = usuario.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
     if (TEST_MODE && !esAdmin) { console.log(`  ⏭️   ${usuario.email} omitido (--test)`); continue; }
-    const tendencia = calcularTendencia(usuario, ranking, jornada);
-    const { html, trendImgPath } = generarHTML({ jornada, topJornada, top3General, ranking, usuario, esAdmin, textoWA, tendencia });
+    const tendencia    = calcularTendencia(usuario, ranking, jornada);
+    const posJornada   = rankingJornada.findIndex(u => u.uid === usuario.uid) + 1;
+    const jornadaStats = usuario.byMatchday[String(jornada)] || null;
+    const { html, trendImgPath } = generarHTML({ jornada, topJornada, top3General, ranking, usuario, esAdmin, textoWA, tendencia, posJornada, jornadaStats });
     const pos  = ranking.findIndex(u => u.uid === usuario.uid) + 1;
     const bcc  = ADMIN_EMAIL && !esAdmin ? ADMIN_EMAIL : undefined;
 
@@ -541,11 +555,13 @@ async function main() {
 
   if (!topJornada.length) console.warn(`⚠️   Nadie tiene puntos en jornada ${jornada}.`);
 
-  const top3General = ranking.slice(0, 3);
-  const textoWA     = generarTextoWhatsApp(jornada, topJornada, top3General);
+  const top3General   = ranking.slice(0, 3);
+  const rankingJornada = [...ranking]
+    .sort((a, b) => (b.byMatchday[jornadaKey]?.points || 0) - (a.byMatchday[jornadaKey]?.points || 0));
+  const textoWA = generarTextoWhatsApp(jornada, topJornada, top3General);
 
   console.log(`📧  Enviando emails individuales...`);
-  await enviarEmails(jornada, topJornada, top3General, ranking, textoWA);
+  await enviarEmails(jornada, topJornada, top3General, ranking, textoWA, rankingJornada);
   console.log(`✅  Listo.`);
 }
 
