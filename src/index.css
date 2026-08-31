@@ -741,6 +741,21 @@ input  { font-family: inherit; }
   gap: .25rem;
 }
 .predict-sep { font-family: var(--display); color: var(--muted); font-size: 1.1rem; }
+.predict-card--finished,
+.predict-card--finished.closed { opacity: 1; }
+.predict-match-result {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  padding-top: .3rem;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.predict-status-live { font-size: .72rem; font-weight: 600; color: #ef4444; }
+.predict-status-done { font-size: .72rem; color: var(--muted); }
+.predict-real-score  { font-family: var(--mono); font-size: .95rem; font-weight: 700; color: var(--text); letter-spacing: .04em; }
 .deadline-badge {
   background: rgba(234,179,8,.12);
   border: 1px solid rgba(234,179,8,.3);
@@ -1134,7 +1149,7 @@ input  { font-family: inherit; }
 }
 .rank-detail-row {
   display: grid;
-  grid-template-columns: 1fr 8rem 5.5rem;
+  grid-template-columns: 1fr 9.5rem 5.5rem;
   align-items: center;
   gap: .5rem;
   padding: .2rem 0;
@@ -1200,6 +1215,18 @@ input  { font-family: inherit; }
   background: rgba(96,165,250,.15);
   color: #60a5fa;
   border: 1px solid rgba(96,165,250,.3);
+}
+.game-badge {
+  font-family: var(--mono);
+  font-size: .6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  padding: .15rem .45rem;
+  border-radius: 4px;
+  background: rgba(139,92,246,.15);
+  color: #a78bfa;
+  border: 1px solid rgba(139,92,246,.3);
 }
 .history-jornada-hdr:hover { background: var(--surface2); }
 .history-jornada-hdr .j-pts {
@@ -1640,4 +1667,144 @@ input  { font-family: inherit; }
 @media (max-width: 600px) {
   .predict-card .team-full { display: none; }
   .predict-card .team-abbr { display: inline; }
+}
+
+/* ── Minigame card ──────────────────────────────────────────────────────── */
+.minigame-card {
+  background: color-mix(in srgb, var(--accent2) 8%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent2) 30%, var(--border));
+  border-radius: 10px;
+  padding: .85rem 1rem;
+  margin-bottom: 1rem;
+}
+.minigame-card-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+}
+.minigame-card-left {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  min-width: 0;
+}
+.minigame-icon { font-size: 1.5rem; flex-shrink: 0; }
+.minigame-title { font-weight: 700; font-size: .9rem; color: var(--text); }
+.minigame-meta { font-family: var(--mono); font-size: .72rem; color: var(--muted); margin-top: .1rem; }
+.minigame-desc { font-size: .82rem; color: var(--muted); margin-top: .65rem; line-height: 1.5; }
+.minigame-card-right { flex-shrink: 0; }
+.minigame-play-btn {
+  background: var(--accent2);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: .45rem .9rem;
+  font-size: .82rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.minigame-play-btn:hover { opacity: .9; }
+.minigame-pts-badge {
+  font-family: var(--mono);
+  font-size: .75rem;
+  font-weight: 700;
+  padding: .3rem .6rem;
+  border-radius: 6px;
+}
+.badge-green  { background: rgba(34,197,94,.15);  color: var(--green);  border: 1px solid rgba(34,197,94,.3); }
+.badge-orange { background: rgba(245,158,11,.15); color: #f59e0b;       border: 1px solid rgba(245,158,11,.3); }
+.badge-red    { background: rgba(239,68,68,.12);  color: #ef4444;       border: 1px solid rgba(239,68,68,.3); }
+
+/* ── Memory game ────────────────────────────────────────────────────────── */
+.memory-game {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+.memory-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: .85rem;
+  gap: 1rem;
+}
+.memory-pairs-count { font-family: var(--display); font-size: 1.3rem; color: var(--text); }
+.memory-timer-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: .2rem; flex-shrink: 0; }
+.memory-timer-bar {
+  width: 80px; height: 4px; border-radius: 2px;
+  background: var(--border); position: relative; overflow: hidden;
+}
+.memory-timer-bar::after {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+  width: var(--pct, 100%);
+  background: var(--color, var(--green));
+  transition: width .9s linear, background .3s;
+}
+.memory-timer-label { font-family: var(--mono); font-size: .8rem; font-weight: 700; transition: color .3s; }
+.memory-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: .4rem;
+}
+.memory-card {
+  aspect-ratio: 1;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface2);
+  cursor: pointer;
+  padding: 0;
+  overflow: hidden;
+  perspective: 600px;
+  transition: border-color .15s;
+}
+.memory-card:hover:not(:disabled):not(.matched) { border-color: var(--accent2); }
+.memory-card:disabled { cursor: default; }
+.memory-card.matched { border-color: var(--green); background: rgba(34,197,94,.08); }
+.memory-card-inner {
+  width: 100%; height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform .35s ease;
+}
+.memory-card.flipped .memory-card-inner,
+.memory-card.matched .memory-card-inner { transform: rotateY(180deg); }
+.memory-card-back,
+.memory-card-front {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.memory-card-back { padding: 8px; }
+.memory-card-back img { width: 60%; height: 60%; object-fit: contain; }
+.memory-card-front { transform: rotateY(180deg); padding: 6px; }
+.memory-card-front img { width: 100%; height: 100%; object-fit: contain; }
+.memory-result {
+  text-align: center; padding: 2rem 1rem;
+  display: flex; flex-direction: column; align-items: center; gap: .5rem;
+}
+.memory-result-icon { font-size: 2.5rem; }
+.memory-result-title { font-family: var(--display); font-size: 1.4rem; letter-spacing: .05em; color: var(--text); }
+.memory-result-pts { font-family: var(--mono); font-size: 1rem; font-weight: 700; color: var(--green); }
+.memory-result--timeout .memory-result-pts { color: #f59e0b; }
+
+/* ── Minigame badge in ranking ──────────────────────────────────────────── */
+.minigame-badge-sm {
+  font-family: var(--mono); font-size: .6rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .07em;
+  padding: .15rem .45rem; border-radius: 4px;
+}
+.badge-green-sm  { background: rgba(34,197,94,.15);  color: #4ade80; border: 1px solid rgba(34,197,94,.3); }
+.badge-orange-sm { background: rgba(245,158,11,.15); color: #fbbf24; border: 1px solid rgba(245,158,11,.3); }
+.badge-red-sm    { background: rgba(239,68,68,.12);  color: #f87171; border: 1px solid rgba(239,68,68,.3); }
+
+@media (max-width: 480px) {
+  .memory-grid { gap: .3rem; }
+  .memory-card-back { font-size: 1.1rem; }
+  .memory-card-front { padding: 4px; }
+  .memory-timer-bar { width: 60px; }
 }

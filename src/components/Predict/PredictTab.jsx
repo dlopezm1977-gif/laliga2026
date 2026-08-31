@@ -6,6 +6,14 @@ import { getPrediction, savePrediction } from '../../lib/firestore';
 import LoadingSpinner from '../LoadingSpinner';
 import SeasonPredictTab from '../Season/SeasonPredictTab';
 import MonthlyPredictTab from './MonthlyPredictTab';
+import { useMinigames } from '../../hooks/useMinigames';
+import MinigameCard from './MinigameCard';
+
+function getSign(h, a) {
+  if (h > a) return 'H';
+  if (a > h) return 'A';
+  return 'D';
+}
 
 const ABBR = {
   'Real Madrid':   'RMA', 'Barcelona':     'BAR', 'Atlético':      'ATL',
@@ -42,8 +50,24 @@ function PredictCard({ match, pred, onUpdate, closed, favoriteTeam, onSetFavorit
   const awayIsFav = favoriteTeam === match.awayTeam;
   const hasFav = homeIsFav || awayIsFav;
 
+  const hasResult  = match.homeScore !== null && match.awayScore !== null;
+  const isLive     = ['IN_PLAY', 'PAUSED', 'LIVE'].includes(match.status);
+  const isFinished = match.status === 'FINISHED';
+
+  let badge = null;
+  if (hasResult && (isFinished || isLive)) {
+    const rh = match.homeScore, ra = match.awayScore;
+    if (home === rh && away === ra) {
+      badge = hasFav ? { label: '⭐ Exacto', cls: 'exact fav', pts: 6 } : { label: 'Exacto', cls: 'exact', pts: 3 };
+    } else if (getSign(home, away) === getSign(rh, ra)) {
+      badge = hasFav ? { label: '⭐ Signo', cls: 'sign fav', pts: 2 } : { label: 'Signo', cls: 'sign', pts: 1 };
+    } else {
+      badge = { label: 'Fallo', cls: 'miss', pts: 0 };
+    }
+  }
+
   return (
-    <div className={`predict-card${closed ? ' closed' : ''}${hasFav ? ' has-favorite' : ''}`}>
+    <div className={`predict-card${closed ? ' closed' : ''}${hasFav ? ' has-favorite' : ''}${isFinished ? ' predict-card--finished' : ''}`}>
       <div className="match-team home">
         <button
           type="button"
@@ -73,6 +97,21 @@ function PredictCard({ match, pred, onUpdate, closed, favoriteTeam, onSetFavorit
           title={awayIsFav ? 'Quitar favorito' : `${match.awayTeam} como favorito`}
         >{awayIsFav ? '⭐' : '☆'}</button>
       </div>
+
+      {(hasResult || isLive) && (
+        <div className="predict-match-result">
+          {isLive  && <span className="predict-status-live">🔴 En curso</span>}
+          {isFinished && <span className="predict-status-done">✅ Finalizado</span>}
+          {hasResult && (
+            <span className="predict-real-score">{match.homeScore} : {match.awayScore}</span>
+          )}
+          {badge && (
+            <span className={`result-badge ${badge.cls}`}>
+              {badge.label}{badge.pts > 0 ? ` +${badge.pts}` : ''}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -102,8 +141,40 @@ export default function PredictTab() {
   const [savedOnce, setSavedOnce]       = useState(false);
   const [loadingPreds, setLoadingPreds] = useState(false);
 
+  const { visibleMinigames, userResults: minigameResults, refresh: refreshMinigames } = useMinigames(user?.uid);
+  const [showingMinigame, setShowingMinigame] = useState(null);
+
+  function goNext() {
+    if (showingMinigame) {
+      setShowingMinigame(null);
+      setJornada(showingMinigame.afterMatchday + 1);
+      setSaved(false);
+    } else if (minigameAfter) {
+      setShowingMinigame(minigameAfter);
+    } else {
+      setJornada(Math.min(38, activeJornada + 1));
+      setSaved(false);
+    }
+  }
+
+  function goPrev() {
+    if (showingMinigame) {
+      setShowingMinigame(null);
+      setJornada(showingMinigame.afterMatchday);
+      setSaved(false);
+    } else if (minigameBefore) {
+      setShowingMinigame(minigameBefore);
+    } else {
+      setJornada(Math.max(1, activeJornada - 1));
+      setSaved(false);
+    }
+  }
+
   const activeJornada = jornada ?? currentMatchday;
   const matches = getMatches(activeJornada);
+
+  const minigameAfter  = visibleMinigames.find(g => g.afterMatchday === activeJornada) ?? null;
+  const minigameBefore = visibleMinigames.find(g => g.afterMatchday === activeJornada - 1) ?? null;
 
   const firstMatchTime = matches.length
     ? Math.min(...matches.map(m => new Date(m.utcDate).getTime()).filter(Boolean))
@@ -192,30 +263,48 @@ export default function PredictTab() {
       ) : (
         <>
           <div className="jornada-nav">
-            <button
-              className="btn-nav"
-              onClick={() => { setJornada(Math.max(1, activeJornada - 1)); setSaved(false); }}
-              disabled={activeJornada <= 1}
-            >‹</button>
+            <button className="btn-nav" onClick={goPrev} disabled={!showingMinigame && activeJornada <= 1 && !minigameBefore}>‹</button>
             <div>
-              <h2>Jornada {activeJornada}</h2>
-              {deadline && (
-                <span className="dates">
-                  {isClosed
-                    ? <span className="deadline-badge">Cerrada</span>
-                    : <>Cierre: {deadline} · ⭐ ×2</>
-                  }
-                </span>
-              )}
+              {showingMinigame
+                ? (() => {
+                    const endDate = showingMinigame.endDate?.toDate?.();
+                    const endLabel = endDate ? endDate.toLocaleString('es-ES', {
+                      weekday: 'short', day: 'numeric', month: 'short',
+                      hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid',
+                    }) : '';
+                    const isPast = endDate && Date.now() > endDate.getTime();
+                    return <>
+                      <h2 style={{ fontSize: '1rem' }}>🎮 {showingMinigame.title || 'Juego de Parejas'}</h2>
+                      <span className="dates">
+                        {isPast
+                          ? <span className="deadline-badge">Cerrado</span>
+                          : <>Hasta: {endLabel}</>
+                        }
+                      </span>
+                    </>;
+                  })()
+                : <><h2>Jornada {activeJornada}</h2>
+                    {deadline && (
+                      <span className="dates">
+                        {isClosed
+                          ? <span className="deadline-badge">Cerrada</span>
+                          : <>Cierre: {deadline} · ⭐ ×2</>
+                        }
+                      </span>
+                    )}</>
+              }
             </div>
-            <button
-              className="btn-nav"
-              onClick={() => { setJornada(Math.min(38, activeJornada + 1)); setSaved(false); }}
-              disabled={activeJornada >= 38}
-            >›</button>
+            <button className="btn-nav" onClick={goNext} disabled={!showingMinigame && activeJornada >= 38 && !minigameAfter}>›</button>
           </div>
 
-          {matches.length === 0 ? (
+          {showingMinigame ? (
+            <MinigameCard
+              game={showingMinigame}
+              result={minigameResults[showingMinigame.id]}
+              uid={user?.uid}
+              onResultUpdate={refreshMinigames}
+            />
+          ) : matches.length === 0 ? (
             <div className="loading">No hay datos para esta jornada</div>
           ) : (
             <>
