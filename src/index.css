@@ -1911,27 +1911,16 @@ input  { font-family: inherit; }
    1. img con invert convierte blanco→negro puro y cyan→cyan (hue-rotate 180°)
    2. ::after con mix-blend-mode:screen tinta el negro puro → color surface del tema
       sin afectar el cyan: screen(negro, surface) = surface; screen(cyan, surface) ≈ cyan */
-.hm-logo-wrap {
-  display: inline-flex;
-  position: relative;
-  isolation: isolate;
-  border-radius: 4px;
-}
+.hm-logo-wrap { display: inline-flex; }
 .hm-logo-wrap img {
   display: block;
   filter: invert(1) hue-rotate(180deg);
-}
-.hm-logo-wrap::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--surface);
   mix-blend-mode: screen;
-  pointer-events: none;
-  border-radius: inherit;
 }
-:root[data-theme="light"] .hm-logo-wrap img  { filter: none; }
-:root[data-theme="light"] .hm-logo-wrap::after { display: none; }
+:root[data-theme="light"] .hm-logo-wrap img {
+  filter: none;
+  mix-blend-mode: normal;
+}
 
 /* Responsive: ocultar texto logo cuando hay poco espacio (igual que Primera) */
 @media (max-width: 480px) {
