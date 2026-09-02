@@ -1926,7 +1926,9 @@ input  { font-family: inherit; }
   height: 1.6rem;
   width: 1.84rem;
   object-fit: contain;
+  filter: invert(1) hue-rotate(180deg);
 }
+:root[data-theme="light"] .hm-logo-wrap img { filter: none; }
 
 /* Responsive: ocultar texto logo cuando hay poco espacio (igual que Primera) */
 @media (max-width: 480px) {
