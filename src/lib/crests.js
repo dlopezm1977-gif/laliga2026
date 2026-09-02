@@ -17,3 +17,8 @@ const ABBR_MAP = {
 };
 
 export const teamAbbr = name => ABBR_MAP[name] || name.slice(0, 3).toUpperCase();
+
+export const crestUrlSegunda = name =>
+  name && typeof name === 'string'
+    ? `${import.meta.env.BASE_URL}crests-segunda/${slugify(name)}.png`
+    : `${import.meta.env.BASE_URL}crests-segunda/unknown.png`;

@@ -1,6 +1,6 @@
 import { useAuth } from '../../contexts/AuthContext';
 
-const TABS = [
+const PRIMERA_TABS = [
   { id: 'calendar',  label: 'Calendario',    icon: '📅', requiresAuth: false },
   { id: 'standings', label: 'Clasificación', icon: '📋', requiresAuth: false },
   { id: 'predict',   label: 'Predecir',      icon: '🎯', requiresAuth: true  },
@@ -8,12 +8,18 @@ const TABS = [
   { id: 'history',   label: 'Historial',     icon: '📊', requiresAuth: true  },
 ];
 
-export default function TabBar({ activeTab, onTabChange }) {
+const SEGUNDA_TABS = [
+  { id: 'resultados',    label: 'Resultados',    icon: '📅', requiresAuth: false },
+  { id: 'clasificacion', label: 'Clasificación', icon: '📋', requiresAuth: false },
+];
+
+export default function TabBar({ activeTab, onTabChange, league }) {
   const { isGuest } = useAuth();
+  const tabs = league === 'segunda' ? SEGUNDA_TABS : PRIMERA_TABS;
 
   return (
-    <nav className="tab-bar">
-      {TABS.map(tab => {
+    <nav className={`tab-bar${league === 'segunda' ? ' tab-bar--segunda' : ''}`}>
+      {tabs.map(tab => {
         const locked = tab.requiresAuth && isGuest;
         return (
           <button

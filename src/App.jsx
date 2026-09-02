@@ -9,16 +9,27 @@ import StandingsTab from './components/Standings/StandingsTab';
 import PredictTab   from './components/Predict/PredictTab';
 import RankingTab   from './components/Ranking/RankingTab';
 import HistoryTab   from './components/History/HistoryTab';
+import CalendarSegundaTab  from './components/Segunda/CalendarSegundaTab';
+import StandingsSegundaTab from './components/Segunda/StandingsSegundaTab';
+
+const DEFAULT_TAB_PRIMERA = 'calendar';
+const DEFAULT_TAB_SEGUNDA = 'resultados';
 
 function AppShell() {
   const { isLoading, isGuest } = useAuth();
-  const [tab, setTab]     = useState('calendar');
+  const [league, setLeague] = useState('primera');
+  const [tab, setTab]       = useState(DEFAULT_TAB_PRIMERA);
   const [showAuth, setShowAuth] = useState(false);
 
   if (isLoading) return <LoadingSpinner />;
 
   if (showAuth && isGuest) {
     return <LoginPage onClose={() => setShowAuth(false)} />;
+  }
+
+  function handleLeagueChange(newLeague) {
+    setLeague(newLeague);
+    setTab(newLeague === 'segunda' ? DEFAULT_TAB_SEGUNDA : DEFAULT_TAB_PRIMERA);
   }
 
   function handleTabChange(newTab) {
@@ -31,15 +42,21 @@ function AppShell() {
   }
 
   return (
-    <div className="app-shell">
-      <Header onLogin={() => setShowAuth(true)} />
-      <TabBar activeTab={tab} onTabChange={handleTabChange} />
+    <div className={`app-shell${league === 'segunda' ? ' app-shell--segunda' : ''}`}>
+      <Header
+        onLogin={() => setShowAuth(true)}
+        league={league}
+        onLeagueChange={handleLeagueChange}
+      />
+      <TabBar activeTab={tab} onTabChange={handleTabChange} league={league} />
       <main className="main-content">
-        {tab === 'calendar'  && <CalendarTab  />}
-        {tab === 'standings' && <StandingsTab />}
-        {tab === 'predict'   && <PredictTab   />}
-        {tab === 'ranking'   && <RankingTab   />}
-        {tab === 'history'   && <HistoryTab   />}
+        {league === 'primera' && tab === 'calendar'       && <CalendarTab />}
+        {league === 'primera' && tab === 'standings'      && <StandingsTab />}
+        {league === 'primera' && tab === 'predict'        && <PredictTab />}
+        {league === 'primera' && tab === 'ranking'        && <RankingTab />}
+        {league === 'primera' && tab === 'history'        && <HistoryTab />}
+        {league === 'segunda' && tab === 'resultados'     && <CalendarSegundaTab />}
+        {league === 'segunda' && tab === 'clasificacion'  && <StandingsSegundaTab />}
       </main>
     </div>
   );
