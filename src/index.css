@@ -1911,7 +1911,7 @@ input  { font-family: inherit; }
    1. img con invert convierte blanco→negro puro y cyan→cyan (hue-rotate 180°)
    2. ::after con mix-blend-mode:screen tinta el negro puro → color surface del tema
       sin afectar el cyan: screen(negro, surface) = surface; screen(cyan, surface) ≈ cyan */
-.hm-logo-wrap { display: inline-flex; }
+.hm-logo-wrap { display: contents; }
 .hm-logo-wrap img { display: block; }
 
 /* Responsive: ocultar texto logo cuando hay poco espacio (igual que Primera) */
