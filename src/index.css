@@ -1907,12 +1907,16 @@ input  { font-family: inherit; }
 /* Leyenda Segunda */
 .hm-legend { margin-top: .8rem; }
 
-/* Logo Hypermotion en cabecera: img directa sin wrapper span */
+/* Logo Hypermotion en cabecera */
 .logo-laliga--hm {
   display: block;
   height: 1.6rem;
   width: 1.84rem;
   object-fit: contain;
+  filter: invert(1) hue-rotate(180deg);
+}
+:root[data-theme="light"] .logo-laliga--hm {
+  filter: none;
 }
 
 /* Logo Hypermotion en el dropdown de selección de liga */

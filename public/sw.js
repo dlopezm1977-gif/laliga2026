@@ -1,4 +1,4 @@
-const CACHE = 'quiniela-v31';
+const CACHE = 'quiniela-v32';
 const PRECACHE = ['/laliga2026/', '/laliga2026/index.html'];
 
 self.addEventListener('install', e => {
