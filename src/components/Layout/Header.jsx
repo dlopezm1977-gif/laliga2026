@@ -92,13 +92,11 @@ export default function Header({ onLogin, league, onLeagueChange }) {
           title="Cambiar liga"
         >
           {isSegunda ? (
-            <span className="hm-logo-wrap">
-              <img
-                src={`${import.meta.env.BASE_URL}hypermotion-logo.png`}
-                alt="LaLiga Hypermotion"
-                className="logo-laliga"
-              />
-            </span>
+            <img
+              src={`${import.meta.env.BASE_URL}hypermotion-logo.png`}
+              alt="LaLiga Hypermotion"
+              className="logo-laliga logo-laliga--hm"
+            />
           ) : (
             <img
               src={`${import.meta.env.BASE_URL}laliga-logo.png`}

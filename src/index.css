@@ -1907,10 +1907,15 @@ input  { font-family: inherit; }
 /* Leyenda Segunda */
 .hm-legend { margin-top: .8rem; }
 
-/* Logo Hypermotion: quitar fondo blanco en modo oscuro.
-   1. img con invert convierte blanco→negro puro y cyan→cyan (hue-rotate 180°)
-   2. ::after con mix-blend-mode:screen tinta el negro puro → color surface del tema
-      sin afectar el cyan: screen(negro, surface) = surface; screen(cyan, surface) ≈ cyan */
+/* Logo Hypermotion en cabecera: img directa sin wrapper span */
+.logo-laliga--hm {
+  display: block;
+  height: 1.6rem;
+  width: 1.84rem;
+  object-fit: contain;
+}
+
+/* Logo Hypermotion en el dropdown de selección de liga */
 .hm-logo-wrap { display: inline-flex; align-items: center; }
 .hm-logo-wrap img {
   display: block;
@@ -1921,7 +1926,7 @@ input  { font-family: inherit; }
 
 /* Responsive: ocultar texto logo cuando hay poco espacio (igual que Primera) */
 @media (max-width: 480px) {
-  .app-header--segunda .logo span:not(.app-version):not(.hm-logo-wrap) { display: none; }
+  .app-header--segunda .logo span:not(.app-version) { display: none; }
   .logo-chevron { display: none; }
 }
 
