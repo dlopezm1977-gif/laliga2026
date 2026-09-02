@@ -1921,7 +1921,7 @@ input  { font-family: inherit; }
 
 /* Responsive: ocultar texto logo cuando hay poco espacio (igual que Primera) */
 @media (max-width: 480px) {
-  .app-header--segunda .logo span:not(.app-version) { display: none; }
+  .app-header--segunda .logo span:not(.app-version):not(.hm-logo-wrap) { display: none; }
   .logo-chevron { display: none; }
 }
 
