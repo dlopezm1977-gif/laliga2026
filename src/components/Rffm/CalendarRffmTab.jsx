@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useMatchesRffm } from '../../hooks/useMatchesRffm';
 import { crestUrlRffm } from '../../lib/crests';
+import { shortName } from '../../lib/rffmTeams';
 import LoadingSpinner from '../LoadingSpinner';
 
 const FAVORITE_TEAM = 'S.A.D. OCIO Y DEPORTE CANAL A';
@@ -55,7 +56,7 @@ function MatchCard({ match }) {
       <span className="match-time-col">{match.hora || '–'}</span>
       <div className="match-middle">
         <div className="match-team home">
-          <span className="team-name">{match.homeTeam}</span>
+          <span className="team-name">{shortName(match.homeTeam)}</span>
           <img className="team-crest" src={crestUrlRffm(match.homeLogo)} alt={match.homeTeam} />
         </div>
         <div className="match-score">
@@ -71,7 +72,7 @@ function MatchCard({ match }) {
         </div>
         <div className="match-team away">
           <img className="team-crest" src={crestUrlRffm(match.awayLogo)} alt={match.awayTeam} />
-          <span className="team-name">{match.awayTeam}</span>
+          <span className="team-name">{shortName(match.awayTeam)}</span>
         </div>
       </div>
       <div className="match-status-col">

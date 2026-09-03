@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useStandingsRffm } from '../../hooks/useStandingsRffm';
 import { useScorersRffm }   from '../../hooks/useScorersRffm';
-import { crestUrlRffm }     from '../../lib/crests';
+import { crestUrlRffm }        from '../../lib/crests';
+import { shortName, abbr } from '../../lib/rffmTeams';
 import LoadingSpinner from '../LoadingSpinner';
 
 const FAVORITE_TEAM = 'S.A.D. OCIO Y DEPORTE CANAL A';
@@ -37,8 +38,8 @@ function LigaView({ standings }) {
               <td className="col-pos">{i + 1}</td>
               <td className="col-team">
                 <img className="team-crest team-crest--sm" src={crestUrlRffm(t.logo)} alt="" />
-                <span className="team-full">{t.name}</span>
-                <span className="team-abbr">{t.name.replace(/^(A\.D\.|S\.D\.|C\.D\.|A\.C\.|C\.F\.|U\.D\.|R\.C\.D\.|A\.)?/i, '').trim().slice(0, 3).toUpperCase()}</span>
+                <span className="team-full">{shortName(t.name)}</span>
+                <span className="team-abbr">{abbr(t.name)}</span>
               </td>
               <td>{t.pj}</td>
               <td>{t.pg}</td>
