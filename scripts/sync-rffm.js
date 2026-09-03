@@ -132,6 +132,7 @@ async function syncMatchesAndStandings() {
           fecha:     parseDate(m.fecha, m.hora),
           hora:      m.hora?.trim() ?? '',
           venue:     m.campojuego?.trim() ?? '',
+          venueCode: m.codigo_campo?.trim() ?? '',
           round,
         });
       }
@@ -229,6 +230,57 @@ async function syncMatchesAndStandings() {
     standings,
   });
   console.log(`Clasificación: ${standings.length} equipos`);
+
+  return new Set(
+    Object.values(allRounds).flat().map(m => m.venueCode).filter(Boolean)
+  );
+}
+
+async function getRffmBuildId() {
+  try {
+    const html = await fetch('https://www.rffm.es/').then(r => r.text());
+    const m = html.match(/"buildId":"([^"]+)"/);
+    return m?.[1] ?? null;
+  } catch { return null; }
+}
+
+async function syncCampos(campoCodes) {
+  const buildId = await getRffmBuildId();
+  if (!buildId) { console.warn('\nNo se pudo obtener el buildId de RFFM — campos no sincronizados'); return; }
+
+  console.log(`\nFetching datos de ${campoCodes.size} campos (buildId: ${buildId})…`);
+  let batch = db.batch();
+  let ops = 0;
+
+  for (const code of campoCodes) {
+    if (!code) continue;
+    try {
+      const url = `https://www.rffm.es/_next/data/${buildId}/campo/${code}.json?codcampo=${code}`;
+      const data = await fetchJson(url);
+      const f = data?.pageProps?.field;
+      if (!f) continue;
+
+      batch.set(db.collection('campos_cache_rffm').doc(String(code)), {
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        nombre:     f.nombre_campo     ?? '',
+        direccion:  f.direccion        ?? '',
+        localidad:  f.localidad        ?? '',
+        superficie: f.superficie_juego ?? '',
+        tipo:       f.tipo_campo       ?? '',
+        lat:        f.latitud          ?? '',
+        lng:        f.longitud         ?? '',
+        imagen:     f.imagen_campo     ?? '',
+      });
+      ops++;
+      if (ops % 20 === 0) { await batch.commit(); batch = db.batch(); ops = 0; }
+      console.log(`  Campo ${code}: ${f.nombre_campo}`);
+    } catch (e) {
+      console.warn(`  Campo ${code} falló: ${e.message}`);
+    }
+  }
+
+  if (ops > 0) await batch.commit();
+  console.log('Campos sync completado.');
 }
 
 async function syncScorers() {
@@ -255,6 +307,7 @@ async function syncScorers() {
 }
 
 syncMatchesAndStandings()
+  .then(campoCodes => syncCampos(campoCodes))
   .then(() => syncScorers())
   .then(() => { console.log('\nSync RFFM completado.'); process.exit(0); })
   .catch(err => { console.error(err); process.exit(1); });

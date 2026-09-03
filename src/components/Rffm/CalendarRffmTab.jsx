@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useMatchesRffm } from '../../hooks/useMatchesRffm';
+import { useCampoRffm } from '../../hooks/useCampoRffm';
 import { crestUrlRffm } from '../../lib/crests';
 import { shortName } from '../../lib/rffmTeams';
 import LoadingSpinner from '../LoadingSpinner';
@@ -47,12 +48,16 @@ function isFavMatch(match) {
   return match.homeTeam === FAVORITE_TEAM || match.awayTeam === FAVORITE_TEAM;
 }
 
-function MatchCard({ match }) {
+function MatchCard({ match, onClick }) {
   const isFinished = match.status === 'finished';
   const isLive     = match.status === 'live';
 
   return (
-    <div className={`match-card${isFavMatch(match) ? ' match-card--favorite' : ''}`}>
+    <div
+      className={`match-card${isFavMatch(match) ? ' match-card--favorite' : ''}`}
+      onClick={onClick}
+      style={{ cursor: 'pointer' }}
+    >
       <span className="match-time-col">{match.hora || '–'}</span>
       <div className="match-middle">
         <div className="match-team home">
@@ -82,11 +87,104 @@ function MatchCard({ match }) {
   );
 }
 
+function MatchDetailRffm({ match, onClose }) {
+  const isFinished = match.status === 'finished';
+  const isLive     = match.status === 'live';
+  const hasScore   = isFinished || isLive;
+  const { campo, loading: campoLoading } = useCampoRffm(match.venueCode);
+
+  const mapsUrl = campo?.lat && campo?.lng
+    ? `https://www.google.com/maps/search/?api=1&query=${campo.lat},${campo.lng}`
+    : null;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="match-detail-panel" onClick={e => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose}>✕</button>
+
+        <div className="md-header">
+          <div className="md-team">
+            <img className="md-crest" src={crestUrlRffm(match.homeLogo)} alt={match.homeTeam} />
+            <span className="md-team-name">{shortName(match.homeTeam)}</span>
+          </div>
+          <div className="md-score-block">
+            {hasScore ? (
+              <div className="md-score-main">
+                <span>{match.homeScore}</span>
+                <span className="md-sep">:</span>
+                <span>{match.awayScore}</span>
+              </div>
+            ) : (
+              <div className="md-score-main">
+                <span className="md-vs">–</span>
+              </div>
+            )}
+            <div className="md-status">
+              <StatusBadge status={match.status} />
+            </div>
+          </div>
+          <div className="md-team">
+            <img className="md-crest" src={crestUrlRffm(match.awayLogo)} alt={match.awayTeam} />
+            <span className="md-team-name">{shortName(match.awayTeam)}</span>
+          </div>
+        </div>
+
+        {match.fecha && (
+          <div className="md-meta">
+            <span>
+              {new Date(match.fecha.slice(0, 10) + 'T12:00:00').toLocaleDateString('es-ES', {
+                weekday: 'long', day: 'numeric', month: 'long'
+              })}
+            </span>
+            {match.hora && <span>· {match.hora}</span>}
+          </div>
+        )}
+
+        {match.venue && (
+          <div className="md-section">
+            <p className="md-section-title">Campo</p>
+            {campoLoading ? (
+              <div className="md-meta" style={{ color: 'var(--muted)', fontSize: '.8rem' }}>Cargando…</div>
+            ) : campo ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '.35rem', fontSize: '.82rem' }}>
+                <span style={{ fontWeight: 600 }}>{campo.nombre}</span>
+                {(campo.direccion || campo.localidad) && (
+                  <span style={{ color: 'var(--muted)' }}>
+                    {[campo.direccion, campo.localidad].filter(Boolean).join(', ')}
+                  </span>
+                )}
+                {(campo.superficie || campo.tipo) && (
+                  <span style={{ color: 'var(--muted)' }}>
+                    {[campo.tipo, campo.superficie].filter(Boolean).join(' · ')}
+                  </span>
+                )}
+                {mapsUrl && (
+                  <a
+                    href={mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: 'var(--accent)', marginTop: '.15rem' }}
+                  >
+                    Ver en Google Maps
+                  </a>
+                )}
+              </div>
+            ) : (
+              <div className="md-meta">{match.venue}</div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function CalendarRffmTab() {
   const { currentRound, getMatches, totalRounds, loading, error } = useMatchesRffm();
-  const [jornada, setJornada]     = useState(null);
-  const [collapsed, setCollapsed] = useState(new Set());
-  const [filterFav, setFilterFav] = useState(false);
+  const [jornada, setJornada]           = useState(null);
+  const [collapsed, setCollapsed]       = useState(new Set());
+  const [filterFav, setFilterFav]       = useState(false);
+  const [selectedMatch, setSelectedMatch] = useState(null);
 
   const toggleGroup = useCallback(label => {
     setCollapsed(prev => {
@@ -109,6 +207,9 @@ export default function CalendarRffmTab() {
 
   return (
     <>
+      {selectedMatch && (
+        <MatchDetailRffm match={selectedMatch} onClose={() => setSelectedMatch(null)} />
+      )}
       <div className="jornada-nav">
         <button
           className="btn-nav"
@@ -150,7 +251,7 @@ export default function CalendarRffmTab() {
                 <span className="date-group-chevron">{isCollapsed ? '›' : '‹'}</span>
               </div>
               {!isCollapsed && visible.map((m, i) => (
-                <MatchCard key={m.matchId ?? i} match={m} />
+                <MatchCard key={m.matchId ?? i} match={m} onClick={() => setSelectedMatch(m)} />
               ))}
             </div>
           );
