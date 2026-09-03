@@ -86,7 +86,7 @@ function MatchCard({ match, onOpenDetail }) {
 
 export default function CalendarSegundaTab() {
   const { currentRound, getMatches, totalRounds, loading, error } = useMatchesSegunda();
-  const { detail, loading: loadingDetail, error: errorDetail, open, close } = useMatchDetailSegunda();
+  const { detail, loading: loadingDetail, error: errorDetail, matchId, open, close } = useMatchDetailSegunda();
   const [jornada, setJornada]     = useState(null);
   const [collapsed, setCollapsed] = useState(new Set());
 
@@ -116,6 +116,7 @@ export default function CalendarSegundaTab() {
           detail={detail}
           loading={loadingDetail}
           error={errorDetail}
+          matchId={matchId}
           onClose={close}
         />
       )}

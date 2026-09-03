@@ -7,13 +7,15 @@ export function useMatchDetailSegunda() {
   const [detail,  setDetail]  = useState(null);
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState(null);
+  const [matchId, setMatchId] = useState(null);
 
-  const open = useCallback(async (matchId) => {
+  const open = useCallback(async (id) => {
+    setMatchId(id);
     setDetail(null);
     setError(null);
     setLoading(true);
     try {
-      const res = await fetch(`${BASE_URL}/events/${matchId}/`, {
+      const res = await fetch(`${BASE_URL}/events/${id}/`, {
         headers: { Authorization: `Token ${TOKEN}` },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -26,9 +28,10 @@ export function useMatchDetailSegunda() {
   }, []);
 
   const close = useCallback(() => {
+    setMatchId(null);
     setDetail(null);
     setError(null);
   }, []);
 
-  return { detail, loading, error, open, close };
+  return { detail, loading, error, matchId, open, close };
 }
