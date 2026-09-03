@@ -66,5 +66,20 @@ service cloud.firestore {
       allow read: if true;
       allow write: if false;
     }
+
+    match /matches_cache_rffm/{round} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /standings_cache_rffm/{document} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /scorers_cache_rffm/{document} {
+      allow read: if true;
+      allow write: if false;
+    }
   }
 }

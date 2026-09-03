@@ -11,9 +11,12 @@ import RankingTab   from './components/Ranking/RankingTab';
 import HistoryTab   from './components/History/HistoryTab';
 import CalendarSegundaTab  from './components/Segunda/CalendarSegundaTab';
 import StandingsSegundaTab from './components/Segunda/StandingsSegundaTab';
+import CalendarRffmTab     from './components/Rffm/CalendarRffmTab';
+import StandingsRffmTab    from './components/Rffm/StandingsRffmTab';
 
 const DEFAULT_TAB_PRIMERA = 'calendar';
 const DEFAULT_TAB_SEGUNDA = 'resultados';
+const DEFAULT_TAB_JUVENIL = 'resultados';
 
 function AppShell() {
   const { isLoading, isGuest } = useAuth();
@@ -29,7 +32,11 @@ function AppShell() {
 
   function handleLeagueChange(newLeague) {
     setLeague(newLeague);
-    setTab(newLeague === 'segunda' ? DEFAULT_TAB_SEGUNDA : DEFAULT_TAB_PRIMERA);
+    setTab(
+      newLeague === 'segunda' ? DEFAULT_TAB_SEGUNDA :
+      newLeague === 'juvenil' ? DEFAULT_TAB_JUVENIL :
+      DEFAULT_TAB_PRIMERA
+    );
   }
 
   function handleTabChange(newTab) {
@@ -42,7 +49,7 @@ function AppShell() {
   }
 
   return (
-    <div className={`app-shell${league === 'segunda' ? ' app-shell--segunda' : ''}`}>
+    <div className={`app-shell${league === 'segunda' ? ' app-shell--segunda' : league === 'juvenil' ? ' app-shell--juvenil' : ''}`}>
       <Header
         onLogin={() => setShowAuth(true)}
         league={league}
@@ -57,6 +64,8 @@ function AppShell() {
         {league === 'primera' && tab === 'history'        && <HistoryTab />}
         {league === 'segunda' && tab === 'resultados'     && <CalendarSegundaTab />}
         {league === 'segunda' && tab === 'clasificacion'  && <StandingsSegundaTab />}
+        {league === 'juvenil' && tab === 'resultados'     && <CalendarRffmTab />}
+        {league === 'juvenil' && tab === 'clasificacion'  && <StandingsRffmTab />}
       </main>
     </div>
   );

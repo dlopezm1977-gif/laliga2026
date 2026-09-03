@@ -13,12 +13,17 @@ const SEGUNDA_TABS = [
   { id: 'clasificacion', label: 'Clasificación', icon: '📋', requiresAuth: false },
 ];
 
+const JUVENIL_TABS = [
+  { id: 'resultados',    label: 'Resultados',    icon: '📅', requiresAuth: false },
+  { id: 'clasificacion', label: 'Clasificación', icon: '📋', requiresAuth: false },
+];
+
 export default function TabBar({ activeTab, onTabChange, league }) {
   const { isGuest } = useAuth();
-  const tabs = league === 'segunda' ? SEGUNDA_TABS : PRIMERA_TABS;
+  const tabs = league === 'segunda' ? SEGUNDA_TABS : league === 'juvenil' ? JUVENIL_TABS : PRIMERA_TABS;
 
   return (
-    <nav className={`tab-bar${league === 'segunda' ? ' tab-bar--segunda' : ''}`}>
+    <nav className={`tab-bar${league === 'segunda' ? ' tab-bar--segunda' : league === 'juvenil' ? ' tab-bar--juvenil' : ''}`}>
       {tabs.map(tab => {
         const locked = tab.requiresAuth && isGuest;
         return (

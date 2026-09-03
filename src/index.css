@@ -1874,6 +1874,17 @@ input  { font-family: inherit; }
 }
 .app-header--segunda .logo span { color: var(--hm-accent2); }
 
+/* Header/TabBar/Shell en modo Juvenil RFFM */
+.app-header--juvenil {
+  border-bottom-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+.tab-bar--juvenil .tab-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+
+
 /* TabBar en modo Segunda */
 .tab-bar--segunda .tab-btn.active {
   color: var(--hm-accent);
@@ -1929,6 +1940,26 @@ input  { font-family: inherit; }
   filter: invert(1) hue-rotate(180deg);
 }
 :root[data-theme="light"] .hm-logo-wrap img { filter: none; }
+
+
+/* Equipo favorito RFFM en clasificación */
+.standings-table tr.zone-rffm-fav td:first-child { border-left: 3px solid var(--accent); }
+.standings-table tr.zone-rffm-fav { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+
+/* Logo RFFM en cabecera y dropdown */
+.logo-laliga--rffm {
+  display: block;
+  height: 1.9rem;
+  width: 1.9rem;
+  object-fit: contain;
+  border-radius: 4px;
+}
+.league-option-logo--rffm {
+  height: 2.2rem;
+  width: 2.2rem;
+  object-fit: contain;
+  border-radius: 4px;
+}
 
 /* Responsive: ocultar texto logo cuando hay poco espacio (igual que Primera) */
 @media (max-width: 480px) {

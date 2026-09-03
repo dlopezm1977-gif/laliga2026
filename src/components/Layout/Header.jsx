@@ -68,6 +68,16 @@ function LeagueDropdown({ current, onChange, onClose }) {
           <span className="league-option-sub">Segunda División</span>
         </div>
       </button>
+      <button
+        className={`league-option${current === 'juvenil' ? ' active' : ''}`}
+        onClick={() => { onChange('juvenil'); onClose(); }}
+      >
+        <img src={`${import.meta.env.BASE_URL}rffm-logo.png`} alt="RFFM" className="league-option-logo league-option-logo--rffm" />
+        <div>
+          <span className="league-option-name">Pref. Juvenil Gr.2</span>
+          <span className="league-option-sub">Temporada 26/27</span>
+        </div>
+      </button>
     </div>
   );
 }
@@ -82,10 +92,11 @@ export default function Header({ onLogin, league, onLeagueChange }) {
   const [leagueOpen, setLeagueOpen]               = useState(false);
 
   const isSegunda = league === 'segunda';
+  const isJuvenil = league === 'juvenil';
 
   return (
     <>
-      <header className={`app-header${isSegunda ? ' app-header--segunda' : ''}`}>
+      <header className={`app-header${isSegunda ? ' app-header--segunda' : isJuvenil ? ' app-header--juvenil' : ''}`}>
         <div
           className="logo logo--clickable"
           onClick={() => setLeagueOpen(v => !v)}
@@ -97,6 +108,8 @@ export default function Header({ onLogin, league, onLeagueChange }) {
               alt="LaLiga Hypermotion"
               className="logo-laliga logo-laliga--hm"
             />
+          ) : isJuvenil ? (
+            <img src={`${import.meta.env.BASE_URL}rffm-logo.png`} alt="RFFM" className="logo-laliga logo-laliga--rffm" />
           ) : (
             <img
               src={`${import.meta.env.BASE_URL}laliga-logo.png`}
@@ -104,7 +117,7 @@ export default function Header({ onLogin, league, onLeagueChange }) {
               className="logo-laliga"
             />
           )}
-          <span>{isSegunda ? 'Hypermotion' : 'Quiniela 26/27'}</span>
+          <span>{isSegunda ? 'Hypermotion' : isJuvenil ? 'Pref. Juvenil' : 'Quiniela 26/27'}</span>
           <span className="logo-chevron">▾</span>
           <span className="app-version">v{version}</span>
         </div>

@@ -22,3 +22,9 @@ export const crestUrlSegunda = name =>
   name && typeof name === 'string'
     ? `${import.meta.env.BASE_URL}crests-segunda/${slugify(name)}.png`
     : `${import.meta.env.BASE_URL}crests-segunda/unknown.png`;
+
+// logoPath es el valor almacenado en Firestore: "crests-rffm/1313.jpg"
+export const crestUrlRffm = logoPath =>
+  logoPath
+    ? `${import.meta.env.BASE_URL}${logoPath}`
+    : `${import.meta.env.BASE_URL}crests-rffm/unknown.png`;
