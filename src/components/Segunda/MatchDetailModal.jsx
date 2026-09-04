@@ -386,7 +386,7 @@ export default function MatchDetailModal({ detail, loading, error, onClose, matc
   const isLive     = ['live', 'in_progress', 'halftime'].includes(detail?.status);
   const matchStart = detail?.event_date ? new Date(detail.event_date) : null;
   const tabsEnabled = isFinished || isLive ||
-    (matchStart != null && (matchStart.getTime() - Date.now()) <= 2 * 60 * 60 * 1000);
+    (matchStart != null && (matchStart.getTime() - Date.now()) <= 24 * 60 * 60 * 1000);
 
   const h2h       = detail?.head_to_head;
   const highlight = detail?.highlights?.[0];
@@ -470,7 +470,7 @@ export default function MatchDetailModal({ detail, loading, error, onClose, matc
                   key={t.id}
                   className={`md-tab-btn${activeTab === t.id ? ' active' : ''}`}
                   disabled={!tabsEnabled && t.id !== 'resumen'}
-                  title={!tabsEnabled && t.id !== 'resumen' ? 'Disponible 2h antes del partido' : undefined}
+                  title={!tabsEnabled && t.id !== 'resumen' ? 'Disponible 24h antes del partido' : undefined}
                   onClick={() => selectTab(t.id)}
                 >
                   {t.label}
