@@ -15,13 +15,17 @@ function zoneClass(zones, position) {
   return '';
 }
 
+const FORM_ES = { W: 'V', D: 'E', L: 'D', w: 'V', d: 'E', l: 'D' };
+
 function Form({ form }) {
   if (!form) return null;
   const chars = form.slice(-5).split('');
   return (
     <span className="hm-form">
       {chars.map((c, i) => (
-        <span key={i} className={`hm-form-dot hm-form-${c.toLowerCase()}`}>{c}</span>
+        <span key={i} className={`hm-form-dot hm-form-${c.toLowerCase()}`}>
+          {FORM_ES[c] ?? c}
+        </span>
       ))}
     </span>
   );

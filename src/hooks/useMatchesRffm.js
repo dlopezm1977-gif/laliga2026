@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
@@ -32,42 +32,41 @@ export function useMatchesRffm() {
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState(null);
 
-  useEffect(() => {
-    async function load() {
-      setLoading(true);
-      setError(null);
-      try {
-        const [metaSnap, roundsSnap] = await Promise.all([
-          getDoc(doc(db, 'matches_cache_rffm', 'meta')),
-          getDocs(collection(db, 'matches_cache_rffm')),
-        ]);
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [metaSnap, roundsSnap] = await Promise.all([
+        getDoc(doc(db, 'matches_cache_rffm', 'meta')),
+        getDocs(collection(db, 'matches_cache_rffm')),
+      ]);
 
-        const meta = metaSnap.exists() ? metaSnap.data() : {};
-        const all = {};
-        roundsSnap.forEach(d => {
-          if (d.id === 'meta') return;
-          const rd = parseInt(d.id, 10);
-          if (!isNaN(rd)) all[rd] = d.data().matches ?? [];
-        });
+      const meta = metaSnap.exists() ? metaSnap.data() : {};
+      const all = {};
+      roundsSnap.forEach(d => {
+        if (d.id === 'meta') return;
+        const rd = parseInt(d.id, 10);
+        if (!isNaN(rd)) all[rd] = d.data().matches ?? [];
+      });
 
-        setRoundData(all);
-        const knownRounds = Object.keys(all).length;
-        setTotalRounds(meta.totalRounds != null ? meta.totalRounds : (knownRounds > 0 ? knownRounds : 34));
-        setCurrentRound(
-          meta.currentRound != null ? meta.currentRound : detectCurrentRound(all)
-        );
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
+      setRoundData(all);
+      const knownRounds = Object.keys(all).length;
+      setTotalRounds(meta.totalRounds != null ? meta.totalRounds : (knownRounds > 0 ? knownRounds : 34));
+      setCurrentRound(
+        meta.currentRound != null ? meta.currentRound : detectCurrentRound(all)
+      );
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-    load();
   }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   function getMatches(rd) {
     return roundData[rd] ?? [];
   }
 
-  return { roundData, currentRound, getMatches, totalRounds, loading, error };
+  return { roundData, currentRound, getMatches, totalRounds, loading, error, refresh: load };
 }

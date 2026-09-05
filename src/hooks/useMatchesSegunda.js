@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
@@ -65,28 +65,27 @@ export function useMatchesSegunda() {
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState(null);
 
-  useEffect(() => {
-    async function load() {
-      setLoading(true);
-      setError(null);
-      try {
-        const snap = await getDocs(collection(db, 'matches_cache_segunda'));
-        if (snap.empty) {
-          setError('No hay datos de Segunda todavía. El sync aún no ha ejecutado.');
-          return;
-        }
-        const all = {};
-        snap.forEach(d => { all[Number(d.id)] = d.data().matches || []; });
-        setRoundData(all);
-        setCurrentRound(detectCurrentRound(all));
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const snap = await getDocs(collection(db, 'matches_cache_segunda'));
+      if (snap.empty) {
+        setError('No hay datos de Segunda todavía. El sync aún no ha ejecutado.');
+        return;
       }
+      const all = {};
+      snap.forEach(d => { all[Number(d.id)] = d.data().matches || []; });
+      setRoundData(all);
+      setCurrentRound(detectCurrentRound(all));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-    load();
   }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   function getMatches(rd) {
     return roundData[rd] || [];
@@ -94,5 +93,5 @@ export function useMatchesSegunda() {
 
   const totalRounds = Object.keys(roundData).length || 42;
 
-  return { roundData, currentRound, getMatches, totalRounds, loading, error };
+  return { roundData, currentRound, getMatches, totalRounds, loading, error, refresh: load };
 }

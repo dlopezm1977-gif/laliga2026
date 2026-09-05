@@ -180,7 +180,7 @@ function MatchDetailRffm({ match, onClose }) {
 }
 
 export default function CalendarRffmTab() {
-  const { currentRound, getMatches, totalRounds, loading, error } = useMatchesRffm();
+  const { currentRound, getMatches, totalRounds, loading, error, refresh } = useMatchesRffm();
   const [jornada, setJornada]           = useState(null);
   const [collapsed, setCollapsed]       = useState(new Set());
   const [filterFav, setFilterFav]       = useState(false);
@@ -226,14 +226,16 @@ export default function CalendarRffmTab() {
           disabled={activeRound >= (totalRounds || 34)}
         >›</button>
       </div>
-
-      <button
-        className={`fav-filter-btn${filterFav ? ' active' : ''}`}
-        onClick={() => setFilterFav(v => !v)}
-      >
-        <img src={crestUrlRffm(FAVORITE_LOGO)} alt="Ocio y Deporte Canal" />
-        {filterFav ? 'Solo Ocio y Deporte Canal' : 'Ocio y Deporte Canal'}
-      </button>
+      <div style={{ display: 'flex', alignItems: 'center', padding: '0 1rem .25rem', justifyContent: 'space-between' }}>
+        <button
+          className={`fav-filter-btn${filterFav ? ' active' : ''}`}
+          onClick={() => setFilterFav(v => !v)}
+        >
+          <img src={crestUrlRffm(FAVORITE_LOGO)} alt="Ocio y Deporte Canal" />
+          {filterFav ? 'Solo Ocio y Deporte Canal' : 'Ocio y Deporte Canal'}
+        </button>
+        <button className="btn-refresh" onClick={refresh} disabled={loading} title="Actualizar partidos">↻ Actualizar</button>
+      </div>
 
       {matches.length === 0 ? (
         <div className="loading">No hay datos para esta jornada</div>

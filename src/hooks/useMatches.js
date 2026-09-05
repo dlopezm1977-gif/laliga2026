@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
@@ -68,28 +68,27 @@ export function useMatches() {
   const [loading, setLoading]                 = useState(true);
   const [error, setError]                     = useState(null);
 
-  useEffect(() => {
-    async function load() {
-      setLoading(true);
-      setError(null);
-      try {
-        const snap = await getDocs(collection(db, 'matches_cache'));
-        if (snap.empty) {
-          setError('No hay datos todavía. El sync aún no ha ejecutado.');
-          return;
-        }
-        const all = {};
-        snap.forEach(d => { all[Number(d.id)] = d.data().matches || []; });
-        setMatchdayData(all);
-        setCurrentMatchday(detectCurrentMatchday(all));
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const snap = await getDocs(collection(db, 'matches_cache'));
+      if (snap.empty) {
+        setError('No hay datos todavía. El sync aún no ha ejecutado.');
+        return;
       }
+      const all = {};
+      snap.forEach(d => { all[Number(d.id)] = d.data().matches || []; });
+      setMatchdayData(all);
+      setCurrentMatchday(detectCurrentMatchday(all));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-    load();
   }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   function getMatches(md) {
     return matchdayData[md] || [];
@@ -97,5 +96,5 @@ export function useMatches() {
 
   const totalMatchdays = Object.keys(matchdayData).length || 38;
 
-  return { matchdayData, currentMatchday, getMatches, totalMatchdays, loading, error };
+  return { matchdayData, currentMatchday, getMatches, totalMatchdays, loading, error, refresh: load };
 }

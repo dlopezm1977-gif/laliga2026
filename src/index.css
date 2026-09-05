@@ -670,6 +670,16 @@ input  { font-family: inherit; }
 }
 .btn-nav:hover { border-color: var(--accent); }
 .btn-nav:disabled { opacity: .3; pointer-events: none; }
+.btn-refresh {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: .75rem;
+  cursor: pointer;
+  padding: .1rem .3rem;
+}
+.btn-refresh:hover { color: var(--text); }
+.btn-refresh:disabled { opacity: .4; pointer-events: none; }
 
 /* ── Predict inputs ─────────────────────────────────────────────────────── */
 .score-input {

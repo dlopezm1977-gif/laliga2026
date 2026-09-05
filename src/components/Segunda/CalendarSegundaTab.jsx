@@ -91,7 +91,7 @@ function MatchCard({ match, onOpenDetail }) {
 }
 
 export default function CalendarSegundaTab() {
-  const { currentRound, getMatches, totalRounds, loading, error } = useMatchesSegunda();
+  const { currentRound, getMatches, totalRounds, loading, error, refresh } = useMatchesSegunda();
   const { detail, stats, lineups, incidents, loading: loadingDetail, error: errorDetail, matchId, open, close } = useMatchDetailSegunda();
   const [jornada, setJornada]     = useState(null);
   const [collapsed, setCollapsed] = useState(new Set());
@@ -145,6 +145,9 @@ export default function CalendarSegundaTab() {
           onClick={() => setJornada(Math.min(totalRounds || 42, activeRound + 1))}
           disabled={activeRound >= (totalRounds || 42)}
         >›</button>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 1rem .25rem' }}>
+        <button className="btn-refresh" onClick={refresh} disabled={loading} title="Actualizar partidos">↻ Actualizar</button>
       </div>
 
       {matches.length === 0 ? (

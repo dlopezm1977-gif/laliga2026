@@ -82,7 +82,7 @@ function MatchCard({ match, favorite, onClick }) {
 }
 
 export default function CalendarTab() {
-  const { matchdayData, currentMatchday, getMatches, totalMatchdays, loading, error } = useMatches();
+  const { matchdayData, currentMatchday, getMatches, totalMatchdays, loading, error, refresh } = useMatches();
   const { profile } = useAuth();
   const [jornada, setJornada] = useState(null);
   const [collapsed, setCollapsed] = useState(new Set());
@@ -128,16 +128,18 @@ export default function CalendarTab() {
           disabled={activeJornada >= (totalMatchdays || 38)}
         >›</button>
       </div>
-
-      {favoriteTeam && (
-        <button
-          className={`fav-filter-btn${filterFav ? ' active' : ''}`}
-          onClick={() => setFilterFav(v => !v)}
-        >
-          <img src={crestUrl(favoriteTeam)} alt={favoriteTeam} />
-          {filterFav ? `Solo ${favoriteTeam}` : favoriteTeam}
-        </button>
-      )}
+      <div style={{ display: 'flex', alignItems: 'center', padding: '0 1rem .25rem', justifyContent: 'space-between' }}>
+        {favoriteTeam ? (
+          <button
+            className={`fav-filter-btn${filterFav ? ' active' : ''}`}
+            onClick={() => setFilterFav(v => !v)}
+          >
+            <img src={crestUrl(favoriteTeam)} alt={favoriteTeam} />
+            {filterFav ? `Solo ${favoriteTeam}` : favoriteTeam}
+          </button>
+        ) : <span />}
+        <button className="btn-refresh" onClick={refresh} disabled={loading} title="Actualizar partidos">↻ Actualizar</button>
+      </div>
 
       {matches.length === 0 ? (
         <div className="loading">No hay datos para esta jornada</div>
