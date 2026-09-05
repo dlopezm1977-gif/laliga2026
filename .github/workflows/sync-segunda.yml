@@ -2,6 +2,11 @@ name: Sync Segunda matches
 
 on:
   workflow_dispatch:
+    inputs:
+      backfill:
+        description: 'Sincronizar detalles de todos los partidos finalizados (histórico)'
+        type: boolean
+        default: false
 
 jobs:
   sync:
@@ -24,5 +29,5 @@ jobs:
         env:
           BZZOIRO_TOKEN: ${{ secrets.VITE_BZZOIRO_TOKEN }}
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        run: node sync-segunda.js
+        run: node sync-segunda.js ${{ inputs.backfill == true && '--backfill' || '' }}
         working-directory: scripts
