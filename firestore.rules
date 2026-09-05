@@ -57,6 +57,11 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /match_detail_cache_segunda/{matchId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     match /standings_cache_segunda/{document} {
       allow read: if true;
       allow write: if false;

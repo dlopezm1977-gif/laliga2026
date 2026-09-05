@@ -39,11 +39,17 @@ function roundDates(matches) {
     : `${fmt(dates[0])} – ${fmt(dates[dates.length - 1])}`;
 }
 
-function StatusBadge({ status, period, minute }) {
-  const isLive = status === 'live' || status === 'in_progress' || status === 'halftime';
+const LIVE_STATUSES = new Set(['live', 'in_progress', 'halftime', '1st_half', '2nd_half', 'extra_time', 'penalties']);
+const HT_STATUSES   = new Set(['halftime']);
+
+function StatusBadge({ status, minute }) {
+  const isLive = LIVE_STATUSES.has(status);
   if (status === 'finished') return <span className="status-badge finished">Final</span>;
   if (isLive) {
-    const label = status === 'halftime' ? 'Descanso' : (minute ? `${minute}'` : 'En juego');
+    let label;
+    if (HT_STATUSES.has(status)) label = 'Descanso';
+    else if (minute) label = `${minute}'`;
+    else label = 'En juego';
     return <span className="status-badge live">{label}</span>;
   }
   return <span className="status-badge scheduled">Próximo</span>;
@@ -51,7 +57,7 @@ function StatusBadge({ status, period, minute }) {
 
 function MatchCard({ match, onOpenDetail }) {
   const isFinished = match.status === 'finished';
-  const isLive     = match.status === 'live' || match.status === 'in_progress' || match.status === 'halftime';
+  const isLive     = LIVE_STATUSES.has(match.status);
 
   return (
     <div className="match-card" onClick={() => onOpenDetail(match.matchId)} style={{ cursor: 'pointer' }}>
@@ -78,7 +84,7 @@ function MatchCard({ match, onOpenDetail }) {
         </div>
       </div>
       <div className="match-status-col">
-        <StatusBadge status={match.status} period={match.period} minute={match.currentMinute} />
+        <StatusBadge status={match.status} minute={match.currentMinute} />
       </div>
     </div>
   );
@@ -86,7 +92,7 @@ function MatchCard({ match, onOpenDetail }) {
 
 export default function CalendarSegundaTab() {
   const { currentRound, getMatches, totalRounds, loading, error } = useMatchesSegunda();
-  const { detail, loading: loadingDetail, error: errorDetail, matchId, open, close } = useMatchDetailSegunda();
+  const { detail, stats, lineups, incidents, loading: loadingDetail, error: errorDetail, matchId, open, close } = useMatchDetailSegunda();
   const [jornada, setJornada]     = useState(null);
   const [collapsed, setCollapsed] = useState(new Set());
 
@@ -114,6 +120,9 @@ export default function CalendarSegundaTab() {
       {(detail || loadingDetail || errorDetail) && (
         <MatchDetailModal
           detail={detail}
+          stats={stats}
+          lineups={lineups}
+          incidents={incidents}
           loading={loadingDetail}
           error={errorDetail}
           matchId={matchId}

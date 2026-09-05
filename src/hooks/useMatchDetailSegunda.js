@@ -1,25 +1,22 @@
 import { useState, useCallback } from 'react';
-
-const BASE_URL = 'https://sports.bzzoiro.com/api/v2';
-const TOKEN    = import.meta.env.VITE_BZZOIRO_TOKEN;
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 export function useMatchDetailSegunda() {
-  const [detail,  setDetail]  = useState(null);
+  const [data,    setData]    = useState(null);
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState(null);
   const [matchId, setMatchId] = useState(null);
 
   const open = useCallback(async (id) => {
     setMatchId(id);
-    setDetail(null);
+    setData(null);
     setError(null);
     setLoading(true);
     try {
-      const res = await fetch(`${BASE_URL}/events/${id}/`, {
-        headers: { Authorization: `Token ${TOKEN}` },
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setDetail(await res.json());
+      const snap = await getDoc(doc(db, 'match_detail_cache_segunda', String(id)));
+      if (!snap.exists()) throw new Error('Detalle no disponible todavía. El sync lo cargará en el próximo ciclo.');
+      setData(snap.data());
     } catch (err) {
       setError(err.message);
     } finally {
@@ -29,9 +26,15 @@ export function useMatchDetailSegunda() {
 
   const close = useCallback(() => {
     setMatchId(null);
-    setDetail(null);
+    setData(null);
     setError(null);
   }, []);
 
-  return { detail, loading, error, matchId, open, close };
+  return {
+    detail:    data?.detail    ?? null,
+    stats:     data?.stats     ?? null,
+    lineups:   data?.lineups   ?? null,
+    incidents: data?.incidents ?? null,
+    loading, error, matchId, open, close,
+  };
 }

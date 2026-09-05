@@ -35,6 +35,8 @@ const SEASON_FROM = '2026-07-01'; // Inicio temporada 26/27
 
 const HEADERS = { Authorization: `Token ${BZZOIRO_TOKEN}` };
 
+const LIVE_STATUSES = new Set(['live', 'in_progress', 'halftime', '1st_half', '2nd_half', 'extra_time', 'penalties']);
+
 async function fetchJson(url) {
   const res = await fetch(url, { headers: HEADERS });
   if (!res.ok) {
@@ -74,6 +76,48 @@ function normalizeEvent(e) {
     period:       e.period || '',
     currentMinute: e.current_minute,
   };
+}
+
+async function syncMatchDetails(events, { backfill = false } = {}) {
+  const now = new Date();
+  const fmt = d => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Madrid' }).format(d);
+  const todayStr     = fmt(now);
+  const yesterdayStr = fmt(new Date(now.getTime() - 24 * 60 * 60 * 1000));
+
+  const qualifying = events.filter(e => {
+    if (LIVE_STATUSES.has(e.status)) return true;
+    if (!e.event_date) return false;
+    if (backfill && e.status === 'finished') return true;
+    const matchDay = fmt(new Date(e.event_date));
+    return matchDay === todayStr || matchDay === yesterdayStr;
+  });
+
+  if (!qualifying.length) {
+    console.log('No hay partidos de hoy/ayer para sincronizar detalles');
+    return;
+  }
+
+  console.log(`Syncing details for ${qualifying.length} matches (hoy/ayer)…`);
+
+  for (const e of qualifying) {
+    try {
+      console.log(`  → Match ${e.id}: ${e.home_team} vs ${e.away_team}`);
+      const [detail, stats, lineups, incidents] = await Promise.all([
+        fetchJson(`${BASE_URL}/events/${e.id}/`).catch(() => null),
+        fetchJson(`${BASE_URL}/events/${e.id}/stats`).catch(() => null),
+        fetchJson(`${BASE_URL}/events/${e.id}/lineups`).catch(() => null),
+        fetchJson(`${BASE_URL}/events/${e.id}/incidents`).catch(() => null),
+      ]);
+      await db.collection('match_detail_cache_segunda').doc(String(e.id)).set({
+        detail, stats, lineups, incidents,
+        syncedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    } catch (err) {
+      console.warn(`  ⚠ match ${e.id}: ${err.message}`);
+    }
+  }
+
+  console.log(`Match details synced: ${qualifying.length} partidos`);
 }
 
 async function syncEvents() {
@@ -130,6 +174,8 @@ async function syncEvents() {
   } else {
     console.log('No changes in events — Firestore not updated');
   }
+
+  return events;
 }
 
 async function syncStandings() {
@@ -185,7 +231,11 @@ async function syncScorers() {
   console.log(`Scorers updated: ${leaders.length} jugadores`);
 }
 
-syncEvents()
-  .then(() => syncStandings())
-  .then(() => syncScorers())
-  .catch(err => { console.error(err); process.exit(1); });
+async function main() {
+  const backfill = process.argv.includes('--backfill');
+  if (backfill) console.log('Modo backfill: sincronizando todos los partidos finalizados…');
+  const events = await syncEvents();
+  await Promise.all([syncStandings(), syncScorers()]);
+  await syncMatchDetails(events, { backfill });
+}
+main().catch(err => { console.error(err); process.exit(1); });

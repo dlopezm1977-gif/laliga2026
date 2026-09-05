@@ -17,12 +17,13 @@ function useLazyFetch(path) {
     try {
       const res = await fetch(`${BASE_URL}/events/${matchId}/${path}`, {
         headers: { Authorization: `Token ${TOKEN}` },
+        signal: AbortSignal.timeout(10_000),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setData(await res.json());
     } catch (err) {
       fetchedRef.current = false;
-      setError(err.message);
+      setError(err.name === 'TimeoutError' ? 'La API tardó demasiado. Inténtalo de nuevo.' : err.message);
     } finally {
       setLoading(false);
     }

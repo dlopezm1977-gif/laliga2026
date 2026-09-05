@@ -3,7 +3,7 @@ import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
 // Estados de partido en la API bzzoiro
-const LIVE_STATUSES    = new Set(['live', 'in_progress', 'halftime']);
+const LIVE_STATUSES    = new Set(['live', 'in_progress', 'halftime', '1st_half', '2nd_half', 'extra_time', 'penalties']);
 const FINISHED_STATUS  = 'finished';
 
 function getMadrid10amUTC(dateStr) {

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { crestUrlSegunda } from '../../lib/crests';
 import { abbr, canonicalize } from '../../lib/segundaTeams';
-import { useMatchTabData } from '../../hooks/useMatchTabData';
 import LoadingSpinner from '../LoadingSpinner';
+
+const LIVE_STATUSES = new Set(['live', 'in_progress', 'halftime', '1st_half', '2nd_half', 'extra_time', 'penalties']);
 
 function formatDateLong(iso) {
   if (!iso) return '';
@@ -177,10 +178,10 @@ function IncidentsTab({ data, loading, error, detail }) {
   const items = Array.isArray(data) ? data : (data.incidents ?? []);
 
   const isFinished = detail?.status === 'finished';
-  const isLive     = ['live', 'in_progress', 'halftime'].includes(detail?.status);
+  const isLive     = LIVE_STATUSES.has(detail?.status);
   const statusLabel = isFinished ? 'Final'
     : detail?.status === 'halftime' ? 'Descanso'
-    : isLive ? `${detail.current_minute}'`
+    : isLive ? `${detail.current_minute ?? ''}'`
     : null;
 
   const goals = items.filter(i => i.type === 'goal' || i.type === 'own_goal');
@@ -372,9 +373,8 @@ const TABS = [
   { id: 'incidencias',  label: 'Incidencias' },
 ];
 
-export default function MatchDetailModal({ detail, loading, error, onClose, matchId }) {
+export default function MatchDetailModal({ detail, stats, lineups, incidents, loading, error, onClose }) {
   const [activeTab, setActiveTab] = useState('resumen');
-  const { stats, lineups, incidents } = useMatchTabData();
 
   useEffect(() => {
     const handler = e => { if (e.key === 'Escape') onClose(); };
@@ -383,7 +383,7 @@ export default function MatchDetailModal({ detail, loading, error, onClose, matc
   }, [onClose]);
 
   const isFinished = detail?.status === 'finished';
-  const isLive     = ['live', 'in_progress', 'halftime'].includes(detail?.status);
+  const isLive     = LIVE_STATUSES.has(detail?.status);
   const matchStart = detail?.event_date ? new Date(detail.event_date) : null;
   const tabsEnabled = isFinished || isLive ||
     (matchStart != null && (matchStart.getTime() - Date.now()) <= 24 * 60 * 60 * 1000);
@@ -396,10 +396,6 @@ export default function MatchDetailModal({ detail, loading, error, onClose, matc
   function selectTab(tab) {
     if (!tabsEnabled && tab !== 'resumen') return;
     setActiveTab(tab);
-    if (matchId == null) return;
-    if (tab === 'stats')        stats.load(matchId);
-    if (tab === 'alineaciones') lineups.load(matchId);
-    if (tab === 'incidencias')  incidents.load(matchId);
   }
 
   return (
@@ -538,15 +534,15 @@ export default function MatchDetailModal({ detail, loading, error, onClose, matc
             )}
 
             {activeTab === 'stats' && (
-              <StatsTab data={stats.data} loading={stats.loading} error={stats.error} />
+              <StatsTab data={stats} loading={false} error={null} />
             )}
 
             {activeTab === 'alineaciones' && (
-              <LineupsTab data={lineups.data} loading={lineups.loading} error={lineups.error} />
+              <LineupsTab data={lineups} loading={false} error={null} />
             )}
 
             {activeTab === 'incidencias' && (
-              <IncidentsTab data={incidents.data} loading={incidents.loading} error={incidents.error} detail={detail} />
+              <IncidentsTab data={incidents} loading={false} error={null} detail={detail} />
             )}
           </>
         )}
