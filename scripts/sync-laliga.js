@@ -60,7 +60,7 @@ async function fetchAllEvents() {
   return events;
 }
 
-async function syncMatchDetails(events, idMap = {}) {
+async function syncMatchDetails(events) {
   const now = new Date();
   const fmt = d => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Madrid' }).format(d);
   const todayStr     = fmt(now);
@@ -81,7 +81,7 @@ async function syncMatchDetails(events, idMap = {}) {
   console.log(`Syncing details for ${qualifying.length} LaLiga matches…`);
 
   const cachedSnaps = await Promise.all(
-    qualifying.map(e => db.collection('match_detail_cache_laliga').doc(String(idMap[e.id] ?? e.id)).get())
+    qualifying.map(e => db.collection('match_detail_cache_laliga').doc(String(e.id)).get())
   );
   const cachedByMatchId = Object.fromEntries(
     qualifying.map((e, i) => [e.id, cachedSnaps[i].exists ? cachedSnaps[i].data() : null])
@@ -122,8 +122,7 @@ async function syncMatchDetails(events, idMap = {}) {
           : Promise.resolve(cached?.incidents ?? null),
       ]);
 
-      const docId = idMap[e.id] ?? e.id;
-      await db.collection('match_detail_cache_laliga').doc(String(docId)).set({
+      await db.collection('match_detail_cache_laliga').doc(String(e.id)).set({
         detail, stats, lineups, incidents,
         syncedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
@@ -193,7 +192,18 @@ async function syncScorers() {
   console.warn('No scorer data available for any season');
 }
 
-async function main() {
+function normalizeName(name) {
+  return (name || '').toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function namesMatch(bz, fd) {
+  const bzN = normalizeName(bz);
+  const fdN = normalizeName(fd);
+  return bzN.includes(fdN) || fdN.includes(bzN);
+}
+
+async function main(bzEvents) {
   console.log('Fetching La Liga matches from football-data.org…');
   const res = await fetch(
     'https://api.football-data.org/v4/competitions/PD/matches?season=2026',
@@ -206,16 +216,31 @@ async function main() {
   const { matches } = await res.json();
   console.log(`Got ${matches.length} matches from API`);
 
+  // Índice de eventos bzzoiro por fecha para asignar bzzoiroMatchId
+  const bzByDate = {};
+  for (const bz of bzEvents) {
+    const d = bz.event_date?.slice(0, 10);
+    if (d) (bzByDate[d] = bzByDate[d] ?? []).push(bz);
+  }
+
   // Group by matchday
   const byMatchday = {};
   for (const m of matches) {
     const md = m.matchday;
     if (!md) continue;
     if (!byMatchday[md]) byMatchday[md] = [];
+    const homeTeam = short(m.homeTeam?.name || '');
+    const awayTeam = short(m.awayTeam?.name || '');
+    const dateStr  = m.utcDate?.slice(0, 10);
+    const bzMatch  = (bzByDate[dateStr] ?? []).find(bz =>
+      namesMatch(bz.home_team, homeTeam) && namesMatch(bz.away_team, awayTeam)
+    );
+    if (!bzMatch) console.warn(`  ⚠ Sin bzzoiro match para ${homeTeam} vs ${awayTeam} @ ${dateStr}`);
     byMatchday[md].push({
-      matchId:   m.id,
-      homeTeam:  short(m.homeTeam?.name || ''),
-      awayTeam:  short(m.awayTeam?.name || ''),
+      matchId:         m.id,
+      bzzoiroMatchId:  bzMatch?.id ?? null,
+      homeTeam,
+      awayTeam,
       homeScore: m.score?.fullTime?.home ?? null,
       awayScore: m.score?.fullTime?.away ?? null,
       status:    m.status,
@@ -243,13 +268,13 @@ async function main() {
         const apiLostScore = old && old.homeScore != null && m.homeScore == null;
         if (apiLostScore) {
           console.warn(`  ⚠ MD${md} match ${m.matchId} (${m.homeTeam}-${m.awayTeam}): API devuelve sin goles, manteniendo datos anteriores (${old.homeScore}-${old.awayScore})`);
-          return old;
+          return { ...old, bzzoiroMatchId: m.bzzoiroMatchId ?? old.bzzoiroMatchId };
         }
         return m;
       });
     }
 
-    // Only write if something changed (status or score)
+    // Only write if something changed (status, score or bzzoiroMatchId)
     const changed = !prev || JSON.stringify(prev.matches) !== JSON.stringify(mergedMatches);
     if (changed) {
       batch.set(db.collection('matches_cache').doc(md), {
@@ -266,40 +291,12 @@ async function main() {
   } else {
     console.log('No changes detected, Firestore not updated');
   }
-
-  return Object.values(byMatchday).flat();
-}
-
-function normalizeName(name) {
-  return (name || '').toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]/g, ' ').replace(/\s+/g, ' ').trim();
-}
-function namesMatch(bz, fd) {
-  const bzN = normalizeName(bz);
-  const fdN = normalizeName(fd);
-  return bzN.includes(fdN) || fdN.includes(bzN);
-}
-function buildIdMap(fdMatches, bzEvents) {
-  const map = {};
-  for (const bz of bzEvents) {
-    const bzDate = bz.event_date?.slice(0, 10);
-    const fd = fdMatches.find(m =>
-      m.utcDate?.slice(0, 10) === bzDate
-      && namesMatch(bz.home_team, m.homeTeam)
-      && namesMatch(bz.away_team, m.awayTeam)
-    );
-    if (fd) map[bz.id] = fd.matchId;
-    else console.warn(`  ⚠ Sin match FD para bzzoiro ${bz.id} (${bz.home_team} vs ${bz.away_team} @ ${bzDate})`);
-  }
-  return map;
 }
 
 async function run() {
-  const fdMatches = await main();
-  await syncScorers();
   const bzEvents = await fetchAllEvents();
-  const idMap = buildIdMap(fdMatches, bzEvents);
-  await syncMatchDetails(bzEvents, idMap);
+  await main(bzEvents);
+  await syncScorers();
+  await syncMatchDetails(bzEvents);
 }
 run().catch(err => { console.error(err); process.exit(1); });
