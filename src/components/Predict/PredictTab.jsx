@@ -29,7 +29,7 @@ function ScoreInput({ value, onChange, disabled }) {
   const n = value ?? 0;
   return (
     <div className="score-input">
-      <button type="button" className="score-btn" onClick={() => onChange(Math.max(0, n - 1))} disabled={disabled}>−</button>
+      {!disabled && <button type="button" className="score-btn" onClick={() => onChange(Math.max(0, n - 1))}>−</button>}
       <div className="score-val">
         <input
           type="number" min={0} max={9}
@@ -38,7 +38,7 @@ function ScoreInput({ value, onChange, disabled }) {
           readOnly={disabled}
         />
       </div>
-      <button type="button" className="score-btn" onClick={() => onChange(Math.min(9, n + 1))} disabled={disabled}>+</button>
+      {!disabled && <button type="button" className="score-btn" onClick={() => onChange(Math.min(9, n + 1))}>+</button>}
     </div>
   );
 }
@@ -50,9 +50,10 @@ function PredictCard({ match, pred, onUpdate, closed, favoriteTeam, onSetFavorit
   const awayIsFav = favoriteTeam === match.awayTeam;
   const hasFav = homeIsFav || awayIsFav;
 
+  const LIVE_ST    = new Set(['live', 'in_progress', 'halftime', '1st_half', '2nd_half', 'extra_time', 'penalties']);
   const hasResult  = match.homeScore !== null && match.awayScore !== null;
-  const isLive     = ['IN_PLAY', 'PAUSED', 'LIVE'].includes(match.status);
-  const isFinished = match.status === 'FINISHED';
+  const isLive     = LIVE_ST.has(match.status);
+  const isFinished = match.status === 'finished';
 
   let badge = null;
   if (hasResult && (isFinished || isLive)) {
@@ -67,7 +68,7 @@ function PredictCard({ match, pred, onUpdate, closed, favoriteTeam, onSetFavorit
   }
 
   return (
-    <div className={`predict-card${closed ? ' closed' : ''}${hasFav ? ' has-favorite' : ''}${isFinished ? ' predict-card--finished' : ''}`}>
+    <div className={`predict-card${closed ? ' closed' : ''}${hasFav ? ' has-favorite' : ''}${isFinished ? ' predict-card--finished' : ''}${isLive ? ' predict-card--live' : ''}`}>
       <div className="match-team home">
         <button
           type="button"

@@ -752,7 +752,7 @@ input  { font-family: inherit; }
 }
 .predict-sep { font-family: var(--display); color: var(--muted); font-size: 1.1rem; }
 .predict-card--finished,
-.predict-card--finished.closed { opacity: 1; }
+.predict-card--live { opacity: 1; }
 .predict-match-result {
   grid-column: 1 / -1;
   display: flex;
