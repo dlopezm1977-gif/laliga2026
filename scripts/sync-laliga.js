@@ -54,6 +54,7 @@ const SHORT_NAMES = {
   'CA Osasuna':               'Osasuna',
   'Osasuna':                  'Osasuna',
   'Celta de Vigo':            'Celta',
+  'Celta Vigo':               'Celta',
   'RC Celta':                 'Celta',
   'Getafe CF':                'Getafe',
   'Getafe':                   'Getafe',
