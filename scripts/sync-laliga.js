@@ -20,12 +20,119 @@ if (!process.env.FOOTBALL_DATA_TOKEN) {
 const FD_TOKEN = process.env.FOOTBALL_DATA_TOKEN;
 if (!FD_TOKEN) { console.error('Missing FOOTBALL_DATA_TOKEN (añádelo en scripts/.env)'); process.exit(1); }
 
+const BZZOIRO_TOKEN = process.env.BZZOIRO_TOKEN;
+if (!BZZOIRO_TOKEN) { console.error('Missing BZZOIRO_TOKEN (añádelo en scripts/.env)'); process.exit(1); }
+
 // GitHub Actions: env var; local: file
 const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
   ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
   : require('./serviceAccountKey.json');
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 const db = admin.firestore();
+
+const BZ_BASE_URL  = 'https://sports.bzzoiro.com/api/v2';
+const BZ_LEAGUE_ID = 3;
+const BZ_SEASON_FROM = '2026-07-01';
+const BZ_HEADERS   = { Authorization: `Token ${BZZOIRO_TOKEN}` };
+const SCORERS_TTL_MS = 60 * 60 * 1000;
+const LIVE_STATUSES  = new Set(['live', 'in_progress', 'halftime', '1st_half', '2nd_half', 'extra_time', 'penalties']);
+
+async function fetchJson(url) {
+  const res = await fetch(url, { headers: BZ_HEADERS });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => '');
+    throw new Error(`HTTP ${res.status} — ${url}\n${txt}`);
+  }
+  return res.json();
+}
+
+async function fetchAllEvents() {
+  console.log('Fetching all LaLiga events from bzzoiro (paginated)…');
+  const events = [];
+  let url = `${BZ_BASE_URL}/events/?league_id=${BZ_LEAGUE_ID}&date_from=${BZ_SEASON_FROM}&limit=50`;
+  while (url) {
+    const data = await fetchJson(url);
+    events.push(...data.results);
+    url = data.next || null;
+    if (url) console.log(`  Fetched ${events.length}/${data.count}…`);
+  }
+  console.log(`Got ${events.length} LaLiga events from bzzoiro`);
+  return events;
+}
+
+async function syncMatchDetails(events) {
+  const now = new Date();
+  const fmt = d => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Madrid' }).format(d);
+  const todayStr     = fmt(now);
+  const yesterdayStr = fmt(new Date(now.getTime() - 24 * 60 * 60 * 1000));
+
+  const qualifying = events.filter(e => {
+    if (LIVE_STATUSES.has(e.status)) return true;
+    if (!e.event_date) return false;
+    const matchDay = fmt(new Date(e.event_date));
+    return matchDay === todayStr || matchDay === yesterdayStr;
+  });
+
+  if (!qualifying.length) {
+    console.log('No hay partidos de hoy/ayer para sincronizar detalles (LaLiga)');
+    return;
+  }
+
+  console.log(`Syncing details for ${qualifying.length} LaLiga matches…`);
+
+  const cachedSnaps = await Promise.all(
+    qualifying.map(e => db.collection('match_detail_cache_laliga').doc(String(e.id)).get())
+  );
+  const cachedByMatchId = Object.fromEntries(
+    qualifying.map((e, i) => [e.id, cachedSnaps[i].exists ? cachedSnaps[i].data() : null])
+  );
+
+  for (const e of qualifying) {
+    try {
+      const cached        = cachedByMatchId[e.id];
+      const matchFinished = e.status === 'finished';
+      const matchStarted  = LIVE_STATUSES.has(e.status) || matchFinished;
+      const hasHighlights = Array.isArray(cached?.detail?.highlights) && cached.detail.highlights.length > 0;
+      const hasLineups    = matchFinished && cached?.lineups != null;
+      const cachedAge     = cached?.syncedAt?.toDate ? Date.now() - cached.syncedAt.toDate().getTime() : Infinity;
+      const finishedFresh = matchFinished && cachedAge < SCORERS_TTL_MS;
+
+      const skipped = [
+        hasHighlights && 'detail',
+        hasLineups    && 'lineups',
+        !matchStarted && 'stats',
+        !matchStarted && 'incidents',
+        finishedFresh && 'stats (TTL)',
+        finishedFresh && 'incidents (TTL)',
+      ].filter(Boolean);
+      console.log(`  → Match ${e.id}: ${e.home_team} vs ${e.away_team}${skipped.length ? ` (saltado: ${skipped.join(', ')})` : ''}`);
+
+      const [detail, stats, lineups, incidents] = await Promise.all([
+        hasHighlights
+          ? Promise.resolve(cached.detail)
+          : fetchJson(`${BZ_BASE_URL}/events/${e.id}/`).catch(() => null),
+        (matchStarted && !finishedFresh)
+          ? fetchJson(`${BZ_BASE_URL}/events/${e.id}/stats`).catch(() => null)
+          : Promise.resolve(cached?.stats ?? null),
+        hasLineups
+          ? Promise.resolve(cached.lineups)
+          : fetchJson(`${BZ_BASE_URL}/events/${e.id}/lineups`).catch(() => null),
+        (matchStarted && !finishedFresh)
+          ? fetchJson(`${BZ_BASE_URL}/events/${e.id}/incidents`).catch(() => null)
+          : Promise.resolve(cached?.incidents ?? null),
+      ]);
+
+      await db.collection('match_detail_cache_laliga').doc(String(e.id)).set({
+        detail, stats, lineups, incidents,
+        syncedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    } catch (err) {
+      console.warn(`  ⚠ match ${e.id}: ${err.message}`);
+    }
+  }
+
+  console.log(`Match details synced: ${qualifying.length} partidos (LaLiga)`);
+}
 
 const SHORT_NAMES = {
   'Real Madrid CF':                'Real Madrid',
@@ -160,6 +267,10 @@ async function main() {
   }
 }
 
-main()
-  .then(() => syncScorers())
-  .catch(err => { console.error(err); process.exit(1); });
+async function run() {
+  await main();
+  await syncScorers();
+  const events = await fetchAllEvents();
+  await syncMatchDetails(events);
+}
+run().catch(err => { console.error(err); process.exit(1); });

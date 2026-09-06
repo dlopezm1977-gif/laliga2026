@@ -23,6 +23,8 @@ jobs:
       - name: Run sync
         env:
           FOOTBALL_DATA_TOKEN: ${{ secrets.FOOTBALL_DATA_TOKEN }}
+          BZZOIRO_TOKEN: ${{ secrets.VITE_BZZOIRO_TOKEN }}
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: node sync-laliga.js
         working-directory: scripts
+

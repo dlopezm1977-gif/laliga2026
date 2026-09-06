@@ -99,15 +99,49 @@ async function syncMatchDetails(events, { backfill = false } = {}) {
 
   console.log(`Syncing details for ${qualifying.length} matches (hoy/ayer)…`);
 
+  // Leer cache existente en paralelo para decidir qué endpoints saltar
+  const cachedSnaps = await Promise.all(
+    qualifying.map(e => db.collection('match_detail_cache_segunda').doc(String(e.id)).get())
+  );
+  const cachedByMatchId = Object.fromEntries(
+    qualifying.map((e, i) => [e.id, cachedSnaps[i].exists ? cachedSnaps[i].data() : null])
+  );
+
   for (const e of qualifying) {
     try {
-      console.log(`  → Match ${e.id}: ${e.home_team} vs ${e.away_team}`);
+      const cached        = cachedByMatchId[e.id];
+      const matchFinished = e.status === 'finished';
+      const matchStarted  = LIVE_STATUSES.has(e.status) || matchFinished;
+      const hasHighlights = Array.isArray(cached?.detail?.highlights) && cached.detail.highlights.length > 0;
+      const hasLineups    = matchFinished && cached?.lineups != null;
+      const cachedAge     = cached?.syncedAt?.toDate ? Date.now() - cached.syncedAt.toDate().getTime() : Infinity;
+      const finishedFresh = matchFinished && cachedAge < SCORERS_TTL_MS;
+
+      const skipped = [
+        hasHighlights  && 'detail',
+        hasLineups     && 'lineups',
+        !matchStarted  && 'stats',
+        !matchStarted  && 'incidents',
+        finishedFresh  && 'stats (TTL)',
+        finishedFresh  && 'incidents (TTL)',
+      ].filter(Boolean);
+      console.log(`  → Match ${e.id}: ${e.home_team} vs ${e.away_team}${skipped.length ? ` (saltado: ${skipped.join(', ')})` : ''}`);
+
       const [detail, stats, lineups, incidents] = await Promise.all([
-        fetchJson(`${BASE_URL}/events/${e.id}/`).catch(() => null),
-        fetchJson(`${BASE_URL}/events/${e.id}/stats`).catch(() => null),
-        fetchJson(`${BASE_URL}/events/${e.id}/lineups`).catch(() => null),
-        fetchJson(`${BASE_URL}/events/${e.id}/incidents`).catch(() => null),
+        hasHighlights
+          ? Promise.resolve(cached.detail)
+          : fetchJson(`${BASE_URL}/events/${e.id}/`).catch(() => null),
+        (matchStarted && !finishedFresh)
+          ? fetchJson(`${BASE_URL}/events/${e.id}/stats`).catch(() => null)
+          : Promise.resolve(cached?.stats ?? null),
+        hasLineups
+          ? Promise.resolve(cached.lineups)
+          : fetchJson(`${BASE_URL}/events/${e.id}/lineups`).catch(() => null),
+        (matchStarted && !finishedFresh)
+          ? fetchJson(`${BASE_URL}/events/${e.id}/incidents`).catch(() => null)
+          : Promise.resolve(cached?.incidents ?? null),
       ]);
+
       await db.collection('match_detail_cache_segunda').doc(String(e.id)).set({
         detail, stats, lineups, incidents,
         syncedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -192,7 +226,19 @@ async function syncStandings() {
   console.log(`Standings updated: ${data.standings?.length ?? 0} equipos`);
 }
 
+const SCORERS_TTL_MS = 60 * 60 * 1000; // 1 hora
+
 async function syncScorers() {
+  // Comprobar si los datos son recientes para evitar ~20 llamadas de assists por ejecución
+  const cached = await db.collection('scorers_cache_segunda').doc('current').get();
+  if (cached.exists) {
+    const updatedAt = cached.data().updatedAt?.toDate?.();
+    if (updatedAt && Date.now() - updatedAt.getTime() < SCORERS_TTL_MS) {
+      console.log(`Scorers recientes (${Math.round((Date.now() - updatedAt.getTime()) / 60000)} min), saltando sync`);
+      return;
+    }
+  }
+
   console.log('Fetching scorers…');
   const scorersData = await fetchJson(`${BASE_URL}/leagues/${LEAGUE_ID}/top/scorers/?limit=30`);
   const scorers = scorersData.leaders ?? [];
