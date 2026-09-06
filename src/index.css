@@ -1985,6 +1985,8 @@ input  { font-family: inherit; }
   z-index: 300;
   padding: 1rem;
 }
+.match-detail-panel--laliga { --hm-accent: var(--accent); --hm-accent2: var(--accent); }
+
 .match-detail-panel {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -1998,13 +2000,13 @@ input  { font-family: inherit; }
   gap: 1.1rem;
   position: relative;
 }
-.modal-close {
+.match-detail-panel .modal-close {
   position: absolute; top: .75rem; right: .75rem;
   background: none; border: none; color: var(--muted);
   font-size: 1rem; cursor: pointer; padding: .25rem .5rem;
   line-height: 1;
 }
-.modal-close:hover { color: var(--text); }
+.match-detail-panel .modal-close:hover { color: var(--text); }
 
 /* Cabecera equipos */
 .md-header {

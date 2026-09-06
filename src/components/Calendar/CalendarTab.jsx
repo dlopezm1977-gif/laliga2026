@@ -4,6 +4,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { crestUrl } from '../../lib/crests';
 import LoadingSpinner from '../LoadingSpinner';
 import PredictionsModal from './PredictionsModal';
+import MatchDetailModalLaliga from './MatchDetailModalLaliga';
+import { useMatchDetailLaliga } from '../../hooks/useMatchDetailLaliga';
 
 function formatTime(utcDate) {
   if (!utcDate) return '';
@@ -42,15 +44,20 @@ function jornadaDates(matches) {
     : `${fmt(first)} – ${fmt(last)}`;
 }
 
-function StatusBadge({ status }) {
-  if (status === 'FINISHED') return <span className="status-badge finished">Final</span>;
-  if (status === 'IN_PLAY' || status === 'PAUSED' || status === 'LIVE') return <span className="status-badge live">En juego</span>;
+const LIVE_STATUSES = new Set(['live', 'in_progress', 'halftime', '1st_half', '2nd_half', 'extra_time', 'penalties']);
+
+function StatusBadge({ status, minute }) {
+  if (status === 'finished') return <span className="status-badge finished">Final</span>;
+  if (LIVE_STATUSES.has(status)) {
+    const label = status === 'halftime' ? 'Descanso' : minute ? `${minute}'` : 'En juego';
+    return <span className="status-badge live">{label}</span>;
+  }
   return <span className="status-badge scheduled">Próximo</span>;
 }
 
-function MatchCard({ match, favorite, onClick }) {
-  const isFinished = match.status === 'FINISHED';
-  const isLive     = match.status === 'IN_PLAY' || match.status === 'PAUSED' || match.status === 'LIVE';
+function MatchCard({ match, favorite, onClick, onOpenDetail }) {
+  const isFinished = match.status === 'finished';
+  const isLive     = LIVE_STATUSES.has(match.status);
 
   return (
     <div className={`match-card${favorite ? ' match-card--favorite' : ''}`} onClick={onClick} style={{ cursor: 'pointer' }}>
@@ -76,7 +83,13 @@ function MatchCard({ match, favorite, onClick }) {
           <span className="team-name">{match.awayTeam}</span>
         </div>
       </div>
-      <div className="match-status-col"><StatusBadge status={match.status} /></div>
+      <div
+        className="match-status-col"
+        style={{ cursor: 'pointer' }}
+        onClick={e => { e.stopPropagation(); onOpenDetail?.(match); }}
+      >
+        <StatusBadge status={match.status} minute={match.currentMinute} />
+      </div>
     </div>
   );
 }
@@ -88,6 +101,8 @@ export default function CalendarTab() {
   const [collapsed, setCollapsed] = useState(new Set());
   const [filterFav, setFilterFav] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState(null);
+  const [detailMatch, setDetailMatch] = useState(null);
+  const { detail, stats, lineups, incidents, loading: loadingDetail, error: errorDetail, open: openDetail, close: closeDetail } = useMatchDetailLaliga();
 
   const favoriteTeam = profile?.favoriteTeam || null;
 
@@ -162,6 +177,7 @@ export default function CalendarTab() {
                   match={m}
                   favorite={favoriteTeam && (m.homeTeam === favoriteTeam || m.awayTeam === favoriteTeam)}
                   onClick={() => setSelectedMatch(m)}
+                  onOpenDetail={match => { setDetailMatch(match); openDetail(match.matchId); }}
                 />
               ))}
             </div>
@@ -174,6 +190,19 @@ export default function CalendarTab() {
           match={selectedMatch}
           matchday={activeJornada}
           onClose={() => setSelectedMatch(null)}
+        />
+      )}
+
+      {(detail || loadingDetail || errorDetail) && (
+        <MatchDetailModalLaliga
+          match={detailMatch}
+          detail={detail}
+          stats={stats}
+          lineups={lineups}
+          incidents={incidents}
+          loading={loadingDetail}
+          error={errorDetail}
+          onClose={() => { closeDetail(); setDetailMatch(null); }}
         />
       )}
     </>

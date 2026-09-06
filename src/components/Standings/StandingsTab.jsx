@@ -17,6 +17,8 @@ const ABBR = {
   'Elche':         'ELC', 'Málaga':        'MAL',
 };
 
+const LIVE_STATUSES = new Set(['live', 'in_progress', 'halftime', '1st_half', '2nd_half', 'extra_time', 'penalties']);
+
 function buildStandings(matchdayData) {
   const table = {};
 
@@ -33,7 +35,7 @@ function buildStandings(matchdayData) {
 
   for (const matches of Object.values(matchdayData)) {
     for (const m of matches) {
-      const counted = m.status === 'FINISHED' || m.status === 'IN_PLAY' || m.status === 'PAUSED' || m.status === 'LIVE';
+      const counted = m.status === 'finished' || LIVE_STATUSES.has(m.status);
       if (!counted || m.homeScore === null || m.awayScore === null) continue;
       const h = table[m.homeTeam];
       const a = table[m.awayTeam];
@@ -180,7 +182,6 @@ export default function StandingsTab() {
                   <th className="col-scorer-team">Equipo</th>
                   <th className="col-pts">Goles</th>
                   <th className="col-hide">Asist</th>
-                  <th className="col-hide">Pen</th>
                   <th className="col-hide">PJ</th>
                 </tr>
               </thead>
@@ -192,13 +193,12 @@ export default function StandingsTab() {
                     <td className="col-pos">{i + 1}</td>
                     <td className="col-scorer-name">{s.name}</td>
                     <td className="col-scorer-team">
-                      <img className="team-crest team-crest--sm" src={s.crestUrl} alt="" />
+                      <img className="team-crest team-crest--sm" src={crestUrl(s.team)} alt="" />
                       <span className="team-full">{s.team}</span>
                       <span className="team-abbr">{s.teamAbbr}</span>
                     </td>
                     <td className="col-pts">{s.goals}</td>
                     <td className="col-hide">{s.assists}</td>
-                    <td className="col-hide">{s.penalties}</td>
                     <td className="col-hide">{s.playedMatches}</td>
                   </tr>
                 ))}

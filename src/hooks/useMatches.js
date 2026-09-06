@@ -18,8 +18,9 @@ function detectCurrentMatchday(matchdayData) {
   const mds = Object.keys(matchdayData).map(Number).sort((a, b) => a - b);
 
   // 1. Partidos en juego ahora mismo
+  const LIVE = new Set(['live', 'in_progress', 'halftime', '1st_half', '2nd_half', 'extra_time', 'penalties']);
   for (const md of mds) {
-    if (matchdayData[md].some(m => m.status === 'IN_PLAY' || m.status === 'PAUSED' || m.status === 'LIVE')) return md;
+    if (matchdayData[md].some(m => LIVE.has(m.status))) return md;
   }
 
   // 2. Ventana "hoy": de las 10:00 Madrid más recientes a las 10:00 Madrid del día siguiente
@@ -51,7 +52,7 @@ function detectCurrentMatchday(matchdayData) {
   let earliest = Infinity, nextMd = null;
   for (const md of mds) {
     for (const m of matchdayData[md]) {
-      if (m.status === 'FINISHED') continue;
+      if (m.status === 'finished') continue;
       const t = new Date(m.utcDate).getTime();
       if (t < earliest) { earliest = t; nextMd = md; }
     }
