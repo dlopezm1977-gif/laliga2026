@@ -128,11 +128,14 @@ function normalizeEvent(e) {
   };
 }
 
+const EXCLUDED_STATUSES = new Set(['postponed', 'cancelled', 'abandoned']);
+
 async function syncEvents(events) {
   const byRound = {};
   for (const e of events) {
     const rd = e.round_number;
     if (!rd) continue;
+    if (EXCLUDED_STATUSES.has(e.status)) continue;
     if (!byRound[rd]) byRound[rd] = [];
     byRound[rd].push(normalizeEvent(e));
   }
