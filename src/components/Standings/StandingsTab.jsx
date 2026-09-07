@@ -19,11 +19,28 @@ const ABBR = {
 
 const LIVE_STATUSES = new Set(['live', 'in_progress', 'halftime', '1st_half', '2nd_half', 'extra_time', 'penalties']);
 
+const FORM_ES = { W: 'V', D: 'E', L: 'D' };
+
+function Form({ form }) {
+  if (!form) return null;
+  return (
+    <span className="hm-form">
+      {form.split('').map((c, i) => (
+        <span key={i} className={`hm-form-dot hm-form-${c.toLowerCase()}`}>
+          {FORM_ES[c] ?? c}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 function buildStandings(matchdayData) {
   const table = {};
+  const formResults = {};
 
   const ensure = name => {
     if (!table[name]) table[name] = { name, pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0 };
+    if (!formResults[name]) formResults[name] = [];
   };
 
   for (const matches of Object.values(matchdayData)) {
@@ -42,14 +59,29 @@ function buildStandings(matchdayData) {
       h.pj++; a.pj++;
       h.gf += m.homeScore; h.gc += m.awayScore;
       a.gf += m.awayScore; a.gc += m.homeScore;
-      if (m.homeScore > m.awayScore)      { h.g++; a.p++; }
-      else if (m.homeScore < m.awayScore) { a.g++; h.p++; }
-      else                                { h.e++; a.e++; }
+      const date = new Date(m.utcDate).getTime();
+      if (m.homeScore > m.awayScore) {
+        h.g++; a.p++;
+        formResults[m.homeTeam].push({ date, r: 'W' });
+        formResults[m.awayTeam].push({ date, r: 'L' });
+      } else if (m.homeScore < m.awayScore) {
+        a.g++; h.p++;
+        formResults[m.homeTeam].push({ date, r: 'L' });
+        formResults[m.awayTeam].push({ date, r: 'W' });
+      } else {
+        h.e++; a.e++;
+        formResults[m.homeTeam].push({ date, r: 'D' });
+        formResults[m.awayTeam].push({ date, r: 'D' });
+      }
     }
   }
 
   return Object.values(table)
-    .map(t => ({ ...t, dg: t.gf - t.gc, pts: t.g * 3 + t.e }))
+    .map(t => {
+      const sorted = (formResults[t.name] || []).sort((a, b) => a.date - b.date);
+      const form = sorted.slice(-5).map(r => r.r).join('');
+      return { ...t, dg: t.gf - t.gc, pts: t.g * 3 + t.e, form };
+    })
     .sort((a, b) =>
       b.pts - a.pts || b.dg - a.dg || b.gf - a.gf || a.name.localeCompare(b.name)
     );
@@ -129,6 +161,7 @@ export default function StandingsTab() {
                   <th className="col-hide">GC</th>
                   <th>DG</th>
                   <th className="col-pts">Pts</th>
+                  <th className="col-hide">Forma</th>
                 </tr>
               </thead>
               <tbody>
@@ -151,6 +184,7 @@ export default function StandingsTab() {
                       <td className="col-hide">{team.gc}</td>
                       <td>{team.dg > 0 ? `+${team.dg}` : team.dg}</td>
                       <td className="col-pts">{team.pts}</td>
+                      <td className="col-hide"><Form form={team.form} /></td>
                     </tr>
                   );
                 })}

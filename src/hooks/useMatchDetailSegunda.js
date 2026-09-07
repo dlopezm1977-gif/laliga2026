@@ -15,7 +15,7 @@ export function useMatchDetailSegunda() {
     setLoading(true);
     try {
       const snap = await getDoc(doc(db, 'match_detail_cache_segunda', String(id)));
-      if (!snap.exists()) throw new Error('Detalle no disponible todavía. El sync lo cargará en el próximo ciclo.');
+      if (!snap.exists()) throw new Error('Detalle no disponible todavía. Estará disponible a partir del día del partido.');
       setData(snap.data());
     } catch (err) {
       setError(err.message);

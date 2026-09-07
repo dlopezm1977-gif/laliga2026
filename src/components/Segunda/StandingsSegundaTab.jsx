@@ -19,7 +19,7 @@ const FORM_ES = { W: 'V', D: 'E', L: 'D', w: 'V', d: 'E', l: 'D' };
 
 function Form({ form }) {
   if (!form) return null;
-  const chars = form.slice(-5).split('');
+  const chars = form.slice(-5).split('').reverse();
   return (
     <span className="hm-form">
       {chars.map((c, i) => (

@@ -2180,7 +2180,10 @@ input  { font-family: inherit; }
 .md-inc-min { color: var(--muted); font-weight: 700; font-size: .68rem; flex-shrink: 0; }
 .md-inc-player { font-weight: 600; }
 .md-inc-note { color: var(--muted); font-size: .68rem; }
+.md-inc-section:has(.md-inc-item--goal) { background: rgba(128,128,128,.13); border-radius: 6px; padding: .3rem .4rem; }
+.md-inc-item--goal .md-inc-player { font-size: .82rem; }
 .md-inc-assist { width: 100%; font-size: .67rem; color: var(--muted); padding-left: 2rem; }
+.md-inc-assist-icon { color: var(--accent); font-weight: 700; margin-right: .15rem; }
 .md-inc-sub-wrap { display: flex; flex-direction: column; gap: .1rem; font-size: .73rem; }
 .md-inc-arrow { font-weight: 700; }
 .md-inc-arrow--in  { color: #1a8f4e; }

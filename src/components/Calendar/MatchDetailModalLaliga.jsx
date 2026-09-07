@@ -109,11 +109,11 @@ function byMinute(a, b) {
 
 function GoalItem({ inc }) {
   return (
-    <div className="md-inc-item">
+    <div className="md-inc-item md-inc-item--goal">
       <span className="md-inc-min">{fmtMin(inc)}</span>
-      <span className="md-inc-player"> {inc.player ?? '—'}</span>
-      {inc.type === 'own_goal' && <span className="md-inc-note"> (PP)</span>}
-      {inc.assist && <div className="md-inc-assist">Asist: {inc.assist}</div>}
+      <span className="md-inc-player">⚽ {inc.player ?? '—'}</span>
+      {inc.type === 'own_goal' && <span className="md-inc-note">(PP)</span>}
+      {inc.assist && <div className="md-inc-assist"><span className="md-inc-assist-icon">↗</span> {inc.assist}</div>}
     </div>
   );
 }
@@ -366,9 +366,10 @@ export default function MatchDetailModalLaliga({ match, detail, stats, lineups, 
         {loading && <LoadingSpinner text="Cargando detalles…" />}
 
         {error && !loading && (
-          <p style={{ color: 'var(--accent)', textAlign: 'center', padding: '2rem' }}>
-            {error}
-          </p>
+          <div className="empty-state">
+            <img src={`${import.meta.env.BASE_URL}icon-empty.png`} alt="" className="empty-icon" />
+            <p>{error}</p>
+          </div>
         )}
 
         {(detail || (!loading && !error)) && !loading && (
