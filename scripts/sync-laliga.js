@@ -226,7 +226,7 @@ async function syncScorers() {
   console.log(`Scorers updated: ${leaders.length} jugadores`);
 }
 
-async function syncMatchDetails(events) {
+async function syncMatchDetails(events, { backfill = false } = {}) {
   const now = new Date();
   const fmt = d => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Madrid' }).format(d);
   const todayStr     = fmt(now);
@@ -235,6 +235,7 @@ async function syncMatchDetails(events) {
   const qualifying = events.filter(e => {
     if (LIVE_STATUSES.has(e.status)) return true;
     if (!e.event_date) return false;
+    if (backfill && e.status === 'finished') return true;
     const matchDay = fmt(new Date(e.event_date));
     return matchDay === todayStr || matchDay === yesterdayStr;
   });
@@ -301,9 +302,11 @@ async function syncMatchDetails(events) {
 }
 
 async function main() {
+  const backfill = process.argv.includes('--backfill');
+  if (backfill) console.log('Modo backfill: sincronizando todos los partidos finalizados (LaLiga)…');
   const events = await fetchAllEvents();
   await syncEvents(events);
   await syncScorers();
-  await syncMatchDetails(events);
+  await syncMatchDetails(events, { backfill });
 }
 main().catch(err => { console.error(err); process.exit(1); });

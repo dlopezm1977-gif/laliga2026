@@ -2,6 +2,11 @@ name: Sync La Liga matches
 
 on:
   workflow_dispatch:
+    inputs:
+      backfill:
+        description: 'Sincronizar detalles de todos los partidos finalizados (histórico)'
+        type: boolean
+        default: false
 
 jobs:
   sync:
@@ -22,9 +27,7 @@ jobs:
 
       - name: Run sync
         env:
-          FOOTBALL_DATA_TOKEN: ${{ secrets.FOOTBALL_DATA_TOKEN }}
           BZZOIRO_TOKEN: ${{ secrets.VITE_BZZOIRO_TOKEN }}
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        run: node sync-laliga.js
+        run: node sync-laliga.js ${{ inputs.backfill == true && '--backfill' || '' }}
         working-directory: scripts
-
