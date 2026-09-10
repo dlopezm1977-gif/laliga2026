@@ -98,6 +98,7 @@ async function syncMatchesAndStandings() {
   console.log(`\nFetching ${TOTAL_ROUNDS} jornadas de RFFM…`);
 
   const allRounds = {};
+  const actaIds = new Set();
 
   for (let round = 1; round <= TOTAL_ROUNDS; round++) {
     try {
@@ -118,6 +119,7 @@ async function syncMatchesAndStandings() {
         ]);
 
         const played = isPlayed(m);
+        if (m.acta_cerrada === '1' && m.codacta) actaIds.add(String(m.codacta));
         normalized.push({
           matchId:   m.codacta,
           homeTeam:  normalizeTeamName(m.Nombre_equipo_local),
@@ -129,6 +131,7 @@ async function syncMatchesAndStandings() {
           homeScore: played ? parseInt(m.Goles_casa,       10) : null,
           awayScore: played ? parseInt(m.Goles_visitante,  10) : null,
           status:    m.partido_en_juego === '1' ? 'live' : played ? 'finished' : 'scheduled',
+          actaCerrada: m.acta_cerrada === '1',
           fecha:     parseDate(m.fecha, m.hora),
           hora:      m.hora?.trim() ?? '',
           venue:     m.campojuego?.trim() ?? '',
@@ -231,9 +234,10 @@ async function syncMatchesAndStandings() {
   });
   console.log(`Clasificación: ${standings.length} equipos`);
 
-  return new Set(
+  const campoCodes = new Set(
     Object.values(allRounds).flat().map(m => m.venueCode).filter(Boolean)
   );
+  return { campoCodes, actaIds };
 }
 
 async function getRffmBuildId() {
@@ -244,8 +248,7 @@ async function getRffmBuildId() {
   } catch { return null; }
 }
 
-async function syncCampos(campoCodes) {
-  const buildId = await getRffmBuildId();
+async function syncCampos(campoCodes, buildId) {
   if (!buildId) { console.warn('\nNo se pudo obtener el buildId de RFFM — campos no sincronizados'); return; }
 
   console.log(`\nFetching datos de ${campoCodes.size} campos (buildId: ${buildId})…`);
@@ -283,6 +286,103 @@ async function syncCampos(campoCodes) {
   console.log('Campos sync completado.');
 }
 
+async function syncActas(actaIds, buildId) {
+  if (!buildId) { console.warn('\nNo buildId — actas no sincronizadas'); return; }
+  if (actaIds.size === 0) { console.log('\nNo hay actas cerradas que sincronizar'); return; }
+
+  console.log(`\nFetching ${actaIds.size} actas cerradas (buildId: ${buildId})…`);
+
+  const ids = [...actaIds];
+  const cachedSnaps = await Promise.all(
+    ids.map(id => db.collection('match_detail_cache_rffm').doc(id).get())
+  );
+  const toFetch = ids.filter((_, i) => !cachedSnaps[i].exists);
+  console.log(`  ${ids.length - toFetch.length} ya en caché, ${toFetch.length} a descargar`);
+
+  let batch = db.batch();
+  let ops = 0;
+
+  for (const codacta of toFetch) {
+    try {
+      const url = `https://www.rffm.es/_next/data/${buildId}/acta-partido/${codacta}.json`;
+      const data = await fetchJson(url);
+      const g = data?.pageProps?.game;
+      if (!g) { console.warn(`  Acta ${codacta}: sin datos`); continue; }
+
+      const mapPlayer = p => ({
+        cod:          p.codjugador,
+        dorsal:       p.dorsal,
+        nombre:       p.nombre_jugador,
+        titular:      p.titular === '1',
+        suplente:     p.suplente === '1',
+        capitan:      p.capitan === '1',
+        portero:      p.portero === '1',
+        posicion:     p.posicion ?? '',
+        posicionAbrev: p.posicion_jugador_abreviatura ?? '',
+      });
+
+      batch.set(db.collection('match_detail_cache_rffm').doc(codacta), {
+        syncedAt: admin.firestore.FieldValue.serverTimestamp(),
+        detail: {
+          codacta:   g.codacta,
+          suspended: g.suspendido === '1',
+          home: {
+            code:      g.codigo_equipo_local,
+            name:      normalizeTeamName(g.equipo_local),
+            score:     parseInt(g.goles_local, 10),
+            formation: g.esquema_local ?? '',
+          },
+          away: {
+            code:      g.codigo_equipo_visitante,
+            name:      normalizeTeamName(g.equipo_visitante),
+            score:     parseInt(g.goles_visitante, 10),
+            formation: g.esquema_visitante ?? '',
+          },
+          penalties: g.hay_penaltis === '1' ? {
+            home:  parseInt(g.penaltis_casa,  10),
+            away:  parseInt(g.penaltis_fuera, 10),
+            goals: g.goles_penalti ?? [],
+          } : null,
+        },
+        lineups: {
+          homeFormation: g.esquema_local      ?? '',
+          awayFormation: g.esquema_visitante  ?? '',
+          homeCoach: g.entrenador_local?.trim()
+            ? { cod: g.cod_entrenador_local,      nombre: g.entrenador_local.trim()      } : null,
+          awayCoach: g.entrenador_visitante?.trim()
+            ? { cod: g.cod_entrenador_visitante,  nombre: g.entrenador_visitante.trim()  } : null,
+          home: (g.jugadores_equipo_local     ?? []).map(mapPlayer),
+          away: (g.jugadores_equipo_visitante ?? []).map(mapPlayer),
+        },
+        incidents: {
+          goals: {
+            home: (g.goles_equipo_local     ?? []).map(gl => ({ cod: gl.codjugador, nombre: gl.nombre_jugador, minuto: parseInt(gl.minuto, 10), tipo: gl.tipo_gol })),
+            away: (g.goles_equipo_visitante ?? []).map(gl => ({ cod: gl.codjugador, nombre: gl.nombre_jugador, minuto: parseInt(gl.minuto, 10), tipo: gl.tipo_gol })),
+          },
+          cards: {
+            home: (g.tarjetas_equipo_local     ?? []).map(t => ({ cod: t.codjugador, nombre: t.nombre_jugador, minuto: parseInt(t.minuto, 10), tipo: t.codigo_tipo_amonestacion, segundaAmarilla: t.segunda_amarilla === '1' })),
+            away: (g.tarjetas_equipo_visitante ?? []).map(t => ({ cod: t.codjugador, nombre: t.nombre_jugador, minuto: parseInt(t.minuto, 10), tipo: t.codigo_tipo_amonestacion, segundaAmarilla: t.segunda_amarilla === '1' })),
+          },
+          subs: {
+            home: (g.sustituciones_equipo_local     ?? []).map(s => ({ minuto: parseInt(s.minuto, 10), entra: { cod: s.codjugador_entra, nombre: s.nombre_jugador_entra, dorsal: s.entradorsal }, sale: { cod: s.codjugador_sale, nombre: s.nombre_jugador_sale, dorsal: s.saledorsal } })),
+            away: (g.sustituciones_equipo_visitante ?? []).map(s => ({ minuto: parseInt(s.minuto, 10), entra: { cod: s.codjugador_entra, nombre: s.nombre_jugador_entra, dorsal: s.entradorsal }, sale: { cod: s.codjugador_sale, nombre: s.nombre_jugador_sale, dorsal: s.saledorsal } })),
+          },
+        },
+        referees: (g.arbitros_partido ?? []).map(r => ({ cod: r.cod_arbitro, nombre: r.nombre_arbitro, tipo: r.tipo_arbitro })),
+      });
+
+      ops++;
+      if (ops % 20 === 0) { await batch.commit(); batch = db.batch(); ops = 0; }
+      console.log(`  Acta ${codacta}: OK`);
+    } catch (e) {
+      console.warn(`  Acta ${codacta} falló: ${e.message}`);
+    }
+  }
+
+  if (ops > 0) await batch.commit();
+  console.log('Actas sync completado.');
+}
+
 async function syncScorers() {
   console.log('\nFetching goleadores…');
   try {
@@ -306,8 +406,14 @@ async function syncScorers() {
   }
 }
 
-syncMatchesAndStandings()
-  .then(campoCodes => syncCampos(campoCodes))
-  .then(() => syncScorers())
-  .then(() => { console.log('\nSync RFFM completado.'); process.exit(0); })
-  .catch(err => { console.error(err); process.exit(1); });
+async function main() {
+  const { campoCodes, actaIds } = await syncMatchesAndStandings();
+  const buildId = await getRffmBuildId();
+  if (!buildId) console.warn('No se pudo obtener el buildId de RFFM');
+  await syncCampos(campoCodes, buildId);
+  await syncActas(actaIds, buildId);
+  await syncScorers();
+  console.log('\nSync RFFM completado.');
+}
+
+main().then(() => process.exit(0)).catch(err => { console.error(err); process.exit(1); });

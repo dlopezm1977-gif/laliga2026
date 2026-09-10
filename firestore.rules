@@ -91,5 +91,10 @@ service cloud.firestore {
       allow read: if true;
       allow write: if false;
     }
+
+    match /match_detail_cache_rffm/{matchId} {
+      allow read: if true;
+      allow write: if false;
+    }
   }
 }
