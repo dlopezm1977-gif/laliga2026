@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { crestUrl } from '../../lib/crests';
+import { crestUrl, shortName } from '../../lib/crests';
 import LoadingSpinner from '../LoadingSpinner';
 
 const LIVE_STATUSES = new Set(['live', 'in_progress', 'halftime', '1st_half', '2nd_half', 'extra_time', 'penalties']);
@@ -33,10 +33,11 @@ function WeatherIcon({ code }) {
 }
 
 function H2HTeam({ name, align, dim }) {
+  const canonical = shortName(name);
   return (
     <span className={`h2h-team h2h-team--${align}${dim ? ' h2h-team--dim' : ''}`}>
-      <img className="team-crest team-crest--sm" src={crestUrl(name)} alt="" />
-      <span>{name}</span>
+      <img className="team-crest team-crest--sm" src={crestUrl(canonical)} alt="" />
+      <span>{canonical}</span>
     </span>
   );
 }

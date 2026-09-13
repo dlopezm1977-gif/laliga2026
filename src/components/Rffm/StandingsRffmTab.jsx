@@ -57,6 +57,12 @@ function LigaView({ standings }) {
   );
 }
 
+function scorerCrest(s) {
+  if (!s.escudo_equipo || !s.codigo_equipo) return crestUrlRffm(null);
+  const ext = s.escudo_equipo.split('.').pop().toLowerCase() || 'jpg';
+  return crestUrlRffm(`crests-rffm/${s.codigo_equipo}.${ext}`);
+}
+
 function GoleadoresView({ scorers }) {
   if (!scorers.length) return (
     <div className="empty-state">
@@ -80,9 +86,13 @@ function GoleadoresView({ scorers }) {
           {scorers.map((s, i) => (
             <tr key={i} className={i < 3 ? `scorer-top scorer-top${i + 1}` : ''}>
               <td className="col-pos">{i + 1}</td>
-              <td className="col-scorer-name">{s.nombre ?? s.jugador ?? s.player_name ?? s.player ?? '—'}</td>
-              <td className="col-scorer-team">{s.equipo ?? s.team_name ?? s.team ?? '—'}</td>
-              <td className="col-pts">{s.goles ?? s.goals ?? s.value ?? '—'}</td>
+              <td className="col-scorer-name">{s.jugador ?? '—'}</td>
+              <td className="col-scorer-team">
+                <img className="team-crest team-crest--sm" src={scorerCrest(s)} alt="" />
+                <span className="team-full">{shortName(s.nombre_equipo ?? '')}</span>
+                <span className="team-abbr">{abbr(s.nombre_equipo ?? '')}</span>
+              </td>
+              <td className="col-pts">{s.goles ?? '—'}</td>
             </tr>
           ))}
         </tbody>

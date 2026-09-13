@@ -25,7 +25,8 @@ const db = admin.firestore();
 
 const BASE_API    = 'https://www.rffm.es/api';
 const LOGO_BASE   = 'https://appweb.rffm.es';
-const ID_GROUP    = '26737720';
+const ID_GROUP       = '26737720';
+const ID_COMPETITION = '26737718';
 const TOTAL_ROUNDS = 34;
 const CRESTS_DIR  = path.join(__dirname, '../public/crests-rffm');
 
@@ -386,11 +387,11 @@ async function syncActas(actaIds, buildId) {
 async function syncScorers() {
   console.log('\nFetching goleadores…');
   try {
-    const url = `${BASE_API}/scorers?idGroup=${ID_GROUP}`;
+    const url = `${BASE_API}/scorers?idGroup=${ID_GROUP}&idCompetition=${ID_COMPETITION}`;
     const data = await fetchJson(url);
     const leaders = Array.isArray(data)
       ? data
-      : (data.goleadores ?? data.scorers ?? data.leaders ?? data.results ?? []);
+      : (data.goles ?? data.goleadores ?? data.scorers ?? data.leaders ?? data.results ?? []);
 
     await db.collection('scorers_cache_rffm').doc('current').set({
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),

@@ -1,6 +1,51 @@
 const slugify = name =>
   name.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, '-');
 
+const SHORT_NAMES = {
+  'Real Madrid':              'Real Madrid',
+  'FC Barcelona':             'Barcelona',
+  'Barcelona':                'Barcelona',
+  'Atletico de Madrid':       'Atlético',
+  'Atlético Madrid':          'Atlético',
+  'Club Atletico de Madrid':  'Atlético',
+  'Sevilla FC':               'Sevilla',
+  'Sevilla':                  'Sevilla',
+  'Real Betis':               'Betis',
+  'Real Sociedad':            'Real Sociedad',
+  'Villarreal CF':            'Villarreal',
+  'Villarreal':               'Villarreal',
+  'Athletic Club':            'Athletic',
+  'Valencia CF':              'Valencia',
+  'Valencia':                 'Valencia',
+  'CA Osasuna':               'Osasuna',
+  'Osasuna':                  'Osasuna',
+  'Celta de Vigo':            'Celta',
+  'Celta Vigo':               'Celta',
+  'RC Celta':                 'Celta',
+  'Getafe CF':                'Getafe',
+  'Getafe':                   'Getafe',
+  'Rayo Vallecano':           'Rayo',
+  'Deportivo Alaves':         'Alavés',
+  'Deportivo Alavés':         'Alavés',
+  'Alaves':                   'Alavés',
+  'RCD Espanyol':             'Espanyol',
+  'Espanyol':                 'Espanyol',
+  'Racing Santander':         'Racing',
+  'Real Racing Club':         'Racing',
+  'Levante UD':               'Levante',
+  'Levante':                  'Levante',
+  'Deportivo de La Coruna':   'Deportivo',
+  'Deportivo de A Coruña':    'Deportivo',
+  'RC Deportivo':             'Deportivo',
+  'Elche CF':                 'Elche',
+  'Elche':                    'Elche',
+  'Malaga CF':                'Málaga',
+  'Málaga CF':                'Málaga',
+  'Malaga':                   'Málaga',
+};
+
+export const shortName = name => (name && SHORT_NAMES[name]) || name;
+
 export const crestUrl = name =>
   name && typeof name === 'string'
     ? `${import.meta.env.BASE_URL}crests/${slugify(name)}.png`
