@@ -1977,6 +1977,137 @@ input  { font-family: inherit; }
   .logo-chevron { display: none; }
 }
 
+/* ── My Schedule (perfil) ──────────────────────────────────────────────── */
+.sched-divider {
+  height: 1px;
+  background: var(--border);
+  margin: .1rem 0;
+}
+.sched-wrap { display: flex; flex-direction: column; gap: .4rem; }
+.sched-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sched-nav {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+.sched-week-label {
+  flex: 1;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: .72rem;
+  color: var(--text);
+}
+.sched-today-btn {
+  background: none;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: 5px;
+  padding: .2rem .5rem;
+  font-size: .68rem;
+  font-family: var(--mono);
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.sched-today-btn:hover { background: var(--accent); color: #fff; }
+.sched-row {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: .45rem .65rem;
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+}
+.sched-row-meta {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+.sched-comp-badge {
+  font-family: var(--mono);
+  font-size: .6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  padding: .1rem .35rem;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--badge-color) 20%, transparent);
+  color: var(--badge-color);
+  border: 1px solid color-mix(in srgb, var(--badge-color) 35%, transparent);
+}
+.sched-time {
+  font-family: var(--mono);
+  font-size: .72rem;
+  color: var(--muted);
+}
+.sched-live {
+  font-family: var(--mono);
+  font-size: .6rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  animation: sched-blink 1.2s ease infinite;
+}
+@keyframes sched-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .35; }
+}
+.sched-teams {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: .35rem;
+}
+.sched-team {
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+  min-width: 0;
+}
+.sched-team--home { justify-content: flex-end; }
+.sched-team--away { justify-content: flex-start; }
+.sched-crest {
+  width: 20px; height: 20px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.sched-name {
+  font-size: .78rem;
+  font-weight: 500;
+  color: var(--text);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.sched-score-col { text-align: center; flex-shrink: 0; }
+.sched-score {
+  font-family: var(--display);
+  font-size: 1.1rem;
+  color: var(--text);
+  white-space: nowrap;
+}
+.sched-vs {
+  font-size: .72rem;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+.sched-empty {
+  font-size: .8rem;
+  color: var(--muted);
+  text-align: center;
+  padding: .75rem 0;
+  font-family: var(--mono);
+}
+
 /* ── Match detail modal (Segunda) ──────────────────────────────────────── */
 .modal-overlay {
   position: fixed; inset: 0;

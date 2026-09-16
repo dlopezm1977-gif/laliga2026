@@ -1,61 +1,57 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useMatches } from '../../hooks/useMatches';
-import { crestUrl } from '../../lib/crests';
+import { useMatchesSegunda } from '../../hooks/useMatchesSegunda';
+import { crestUrl, crestUrlSegunda } from '../../lib/crests';
+import { canonicalize } from '../../lib/segundaTeams';
 import { AVATARS } from '../../lib/avatars';
+import MySchedule from './MySchedule';
 
 export default function ProfileModal({ onClose }) {
   const { profile, updateProfile } = useAuth();
   const { matchdayData } = useMatches();
+  const { roundData: roundDataSegunda } = useMatchesSegunda();
 
-  const [username, setUsername] = useState(profile?.username || '');
-  const [favoriteTeam, setFavoriteTeam] = useState(profile?.favoriteTeam || null);
-  const [avatar, setAvatar] = useState(profile?.avatar || null);
-  const [showAvatarPicker, setShowAvatarPicker] = useState(!profile?.avatar);
-  const [carouselIdx, setCarouselIdx] = useState(() => {
+  const [username, setUsername]                       = useState(profile?.username || '');
+  const [favoriteTeam, setFavoriteTeam]               = useState(profile?.favoriteTeam || null);
+  const [favoriteTeamSegunda, setFavoriteTeamSegunda] = useState(profile?.favoriteTeamSegunda || null);
+  const [avatar, setAvatar]                           = useState(profile?.avatar || null);
+  const [showAvatarPicker, setShowAvatarPicker]       = useState(!profile?.avatar);
+  const [carouselIdx, setCarouselIdx]                 = useState(() => {
     const idx = profile?.avatar ? AVATARS.indexOf(profile.avatar) : 0;
     return idx >= 0 ? idx : 0;
   });
-  const [showTeamPicker, setShowTeamPicker] = useState(!profile?.favoriteTeam);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState('');
+  const [showTeamPicker, setShowTeamPicker]           = useState(!profile?.favoriteTeam);
+  const [showTeamPickerSegunda, setShowTeamPickerSegunda] = useState(!profile?.favoriteTeamSegunda);
+  const [saving, setSaving]                           = useState(false);
+  const [saved, setSaved]                             = useState(false);
+  const [error, setError]                             = useState('');
 
-  const teams = [...new Set(
+  const teams = useMemo(() => [...new Set(
     Object.values(matchdayData).flat().flatMap(m => [m.homeTeam, m.awayTeam])
-  )].sort((a, b) => a.localeCompare(b));
+  )].sort((a, b) => a.localeCompare(b)), [matchdayData]);
 
-  function selectAvatar(file) {
-    setAvatar(file);
-    setShowAvatarPicker(false);
-    setSaved(false);
-  }
+  const teamsSegunda = useMemo(() => [...new Set(
+    Object.values(roundDataSegunda).flat().flatMap(m => [canonicalize(m.homeTeam), canonicalize(m.awayTeam)])
+  )].filter(Boolean).sort((a, b) => a.localeCompare(b)), [roundDataSegunda]);
 
-  function clearAvatar() {
-    setAvatar(null);
-    setShowAvatarPicker(true);
-    setSaved(false);
-  }
-
-  function selectTeam(t) {
-    setFavoriteTeam(t);
-    setShowTeamPicker(false);
-    setSaved(false);
-  }
-
-  function clearTeam() {
-    setFavoriteTeam(null);
-    setShowTeamPicker(true);
-    setSaved(false);
-  }
+  function selectAvatar(file) { setAvatar(file); setShowAvatarPicker(false); setSaved(false); }
+  function clearAvatar()      { setAvatar(null);  setShowAvatarPicker(true);  setSaved(false); }
+  function selectTeam(t)          { setFavoriteTeam(t);        setShowTeamPicker(false);        setSaved(false); }
+  function clearTeam()            { setFavoriteTeam(null);     setShowTeamPicker(true);         setSaved(false); }
+  function selectTeamSegunda(t)   { setFavoriteTeamSegunda(t); setShowTeamPickerSegunda(false); setSaved(false); }
+  function clearTeamSegunda()     { setFavoriteTeamSegunda(null); setShowTeamPickerSegunda(true); setSaved(false); }
 
   async function handleSave() {
     if (!username.trim()) return;
-    setSaving(true);
-    setSaved(false);
-    setError('');
+    setSaving(true); setSaved(false); setError('');
     try {
-      await updateProfile({ username: username.trim(), favoriteTeam: favoriteTeam || null, avatar: avatar || null });
+      await updateProfile({
+        username: username.trim(),
+        favoriteTeam: favoriteTeam || null,
+        favoriteTeamSegunda: favoriteTeamSegunda || null,
+        avatar: avatar || null,
+      });
       setSaved(true);
       setTimeout(onClose, 800);
     } catch (err) {
@@ -121,8 +117,8 @@ export default function ProfileModal({ onClose }) {
           </div>
         )}
 
-        {/* ── Equipo favorito ── */}
-        <div className="modal-label" style={{ marginTop: '.8rem' }}>Equipo favorito</div>
+        {/* ── Equipo favorito (Primera) ── */}
+        <div className="modal-label" style={{ marginTop: '.8rem' }}>Equipo favorito · LaLiga</div>
         {favoriteTeam && !showTeamPicker ? (
           <div className="selection-preview">
             <img className="selection-preview-crest" src={crestUrl(favoriteTeam)} alt={favoriteTeam} />
@@ -146,10 +142,44 @@ export default function ProfileModal({ onClose }) {
           </div>
         )}
 
+        {/* ── Equipo favorito (Segunda) ── */}
+        <div className="modal-label" style={{ marginTop: '.8rem' }}>Equipo favorito · 2ª División</div>
+        {favoriteTeamSegunda && !showTeamPickerSegunda ? (
+          <div className="selection-preview">
+            <img className="selection-preview-crest" src={crestUrlSegunda(favoriteTeamSegunda)} alt={favoriteTeamSegunda} />
+            <span className="selection-preview-name">{favoriteTeamSegunda}</span>
+            <button className="team-clear" onClick={() => setShowTeamPickerSegunda(true)}>Cambiar</button>
+            <button className="team-clear" onClick={clearTeamSegunda}>Quitar</button>
+          </div>
+        ) : (
+          <div className="team-grid">
+            {teamsSegunda.map(t => (
+              <button
+                key={t}
+                className={`team-option${favoriteTeamSegunda === t ? ' selected' : ''}`}
+                onClick={() => selectTeamSegunda(t)}
+                title={t}
+              >
+                <img src={crestUrlSegunda(t)} alt={t} />
+                <span>{t}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
         {error && <div className="auth-error">{error}</div>}
         <button className="btn-save" onClick={handleSave} disabled={saving || !username.trim()}>
           {saving ? 'Guardando…' : saved ? '✓ Guardado' : 'Guardar'}
         </button>
+
+        {/* ── Calendario de partidos ── */}
+        <div className="sched-divider" />
+        <MySchedule
+          matchdayData={matchdayData}
+          roundDataSegunda={roundDataSegunda}
+          favoriteTeam={favoriteTeam}
+          favoriteTeamSegunda={favoriteTeamSegunda}
+        />
       </div>
     </div>
   );
