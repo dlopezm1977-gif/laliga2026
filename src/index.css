@@ -2029,6 +2029,14 @@ input  { font-family: inherit; }
   flex-direction: column;
   gap: .3rem;
 }
+.sched-row--clickable {
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.sched-row--clickable:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface2));
+}
 .sched-row-meta {
   display: flex;
   align-items: center;

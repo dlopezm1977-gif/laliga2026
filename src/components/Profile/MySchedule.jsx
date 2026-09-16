@@ -1,8 +1,14 @@
 import { useMemo, useState } from 'react';
 import { useMatchesRffm } from '../../hooks/useMatchesRffm';
+import { useMatchDetailLaliga } from '../../hooks/useMatchDetailLaliga';
+import { useMatchDetailSegunda } from '../../hooks/useMatchDetailSegunda';
+import { useMatchDetailRffm } from '../../hooks/useMatchDetailRffm';
 import { crestUrl, crestUrlSegunda, crestUrlRffm } from '../../lib/crests';
 import { shortName as rffmShortName } from '../../lib/rffmTeams';
 import { canonicalize } from '../../lib/segundaTeams';
+import MatchDetailModalLaliga from '../Calendar/MatchDetailModalLaliga';
+import MatchDetailModal from '../Segunda/MatchDetailModal';
+import MatchDetailModalRffm from '../Rffm/MatchDetailModalRffm';
 
 const CANAL = 'S.A.D. OCIO Y DEPORTE CANAL A';
 const LIVE_STATUSES = new Set(['live', 'in_progress', 'halftime', '1st_half', '2nd_half', 'extra_time', 'penalties']);
@@ -17,13 +23,13 @@ function getWeekRange(offset) {
   const now = new Date();
   const day = now.getDay();
   const diff = -((day - 2 + 7) % 7); // semana empieza el martes
-  const monday = new Date(now);
-  monday.setDate(now.getDate() + diff + offset * 7);
-  monday.setHours(0, 0, 0, 0);
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  sunday.setHours(23, 59, 59, 999);
-  return { monday, sunday };
+  const tuesday = new Date(now);
+  tuesday.setDate(now.getDate() + diff + offset * 7);
+  tuesday.setHours(0, 0, 0, 0);
+  const monday = new Date(tuesday);
+  monday.setDate(tuesday.getDate() + 6);
+  monday.setHours(23, 59, 59, 999);
+  return { start: tuesday, end: monday };
 }
 
 function madridStr(date) {
@@ -43,9 +49,9 @@ function getMatchTimestamp(m, comp) {
   return m.utcDate ? new Date(m.utcDate).getTime() : null;
 }
 
-function formatWeekLabel(monday, sunday) {
+function formatWeekLabel(start, end) {
   const opts = { day: 'numeric', month: 'short', timeZone: 'Europe/Madrid' };
-  return `${monday.toLocaleDateString('es-ES', opts)} – ${sunday.toLocaleDateString('es-ES', opts)}`;
+  return `${start.toLocaleDateString('es-ES', opts)} – ${end.toLocaleDateString('es-ES', opts)}`;
 }
 
 function formatDayLabel(dateStr) {
@@ -77,7 +83,7 @@ function getTime(m, comp) {
   return t === '00:00' ? null : t;
 }
 
-function MatchRow({ m, comp }) {
+function MatchRow({ m, comp, onClick }) {
   const badge = COMP_BADGE[comp];
   const status = getStatus(m, comp);
   const isFinished = status === 'finished';
@@ -97,7 +103,7 @@ function MatchRow({ m, comp }) {
   }
 
   return (
-    <div className="sched-row">
+    <div className="sched-row sched-row--clickable" onClick={onClick}>
       <div className="sched-row-meta">
         <span className="sched-comp-badge" style={{ '--badge-color': badge.color }}>{badge.label}</span>
         {time && <span className="sched-time">{time}</span>}
@@ -124,20 +130,25 @@ function MatchRow({ m, comp }) {
 
 export default function MySchedule({ matchdayData, roundDataSegunda, favoriteTeam, favoriteTeamSegunda }) {
   const [weekOffset, setWeekOffset] = useState(0);
-  const { roundData: roundDataRffm, loading: loadingRffm } = useMatchesRffm();
+  const [selectedMatch, setSelectedMatch] = useState(null); // { match, comp }
 
-  const { monday, sunday } = useMemo(() => getWeekRange(weekOffset), [weekOffset]);
+  const { roundData: roundDataRffm, loading: loadingRffm } = useMatchesRffm();
+  const laliga  = useMatchDetailLaliga();
+  const segunda = useMatchDetailSegunda();
+  const rffm    = useMatchDetailRffm();
+
+  const { start, end } = useMemo(() => getWeekRange(weekOffset), [weekOffset]);
 
   const grouped = useMemo(() => {
-    const monStr = madridStr(monday);
-    const sunStr = madridStr(sunday);
+    const startStr = madridStr(start);
+    const endStr   = madridStr(end);
     const all = [];
 
     if (favoriteTeam) {
       Object.values(matchdayData).flat().forEach(m => {
         if (m.homeTeam !== favoriteTeam && m.awayTeam !== favoriteTeam) return;
         const dateStr = getMatchDateStr(m, 'primera');
-        if (!dateStr || dateStr < monStr || dateStr > sunStr) return;
+        if (!dateStr || dateStr < startStr || dateStr > endStr) return;
         all.push({ m, comp: 'primera', dateStr, ts: getMatchTimestamp(m, 'primera') ?? 0 });
       });
     }
@@ -148,7 +159,7 @@ export default function MySchedule({ matchdayData, roundDataSegunda, favoriteTea
         const away = canonicalize(m.awayTeam);
         if (home !== favoriteTeamSegunda && away !== favoriteTeamSegunda) return;
         const dateStr = getMatchDateStr(m, 'segunda');
-        if (!dateStr || dateStr < monStr || dateStr > sunStr) return;
+        if (!dateStr || dateStr < startStr || dateStr > endStr) return;
         all.push({ m, comp: 'segunda', dateStr, ts: getMatchTimestamp(m, 'segunda') ?? 0 });
       });
     }
@@ -156,7 +167,7 @@ export default function MySchedule({ matchdayData, roundDataSegunda, favoriteTea
     Object.values(roundDataRffm).flat().forEach(m => {
       if (m.homeTeam !== CANAL && m.awayTeam !== CANAL) return;
       const dateStr = getMatchDateStr(m, 'juvenil');
-      if (!dateStr || dateStr < monStr || dateStr > sunStr) return;
+      if (!dateStr || dateStr < startStr || dateStr > endStr) return;
       all.push({ m, comp: 'juvenil', dateStr, ts: getMatchTimestamp(m, 'juvenil') ?? 0 });
     });
 
@@ -169,7 +180,21 @@ export default function MySchedule({ matchdayData, roundDataSegunda, favoriteTea
       else groups.push({ dateStr: item.dateStr, items: [item] });
     }
     return groups;
-  }, [monday, sunday, matchdayData, roundDataSegunda, roundDataRffm, favoriteTeam, favoriteTeamSegunda]);
+  }, [start, end, matchdayData, roundDataSegunda, roundDataRffm, favoriteTeam, favoriteTeamSegunda]);
+
+  function handleMatchClick(m, comp) {
+    setSelectedMatch({ match: m, comp });
+    if (comp === 'primera') laliga.open(m.matchId);
+    else if (comp === 'segunda') segunda.open(m.matchId);
+    else rffm.open(m.matchId);
+  }
+
+  function handleClose() {
+    setSelectedMatch(null);
+    laliga.close();
+    segunda.close();
+    rffm.close();
+  }
 
   return (
     <div className="sched-wrap">
@@ -181,7 +206,7 @@ export default function MySchedule({ matchdayData, roundDataSegunda, favoriteTea
       </div>
       <div className="sched-nav">
         <button className="btn-nav" onClick={() => setWeekOffset(o => o - 1)}>‹</button>
-        <span className="sched-week-label">{formatWeekLabel(monday, sunday)}</span>
+        <span className="sched-week-label">{formatWeekLabel(start, end)}</span>
         <button className="btn-nav" onClick={() => setWeekOffset(o => o + 1)}>›</button>
       </div>
 
@@ -194,10 +219,51 @@ export default function MySchedule({ matchdayData, roundDataSegunda, favoriteTea
               {formatDayLabel(group.dateStr)}
             </div>
             {group.items.map(({ m, comp }, i) => (
-              <MatchRow key={`${comp}-${m.matchId ?? i}`} m={m} comp={comp} />
+              <MatchRow
+                key={`${comp}-${m.matchId ?? i}`}
+                m={m}
+                comp={comp}
+                onClick={() => handleMatchClick(m, comp)}
+              />
             ))}
           </div>
         ))
+      )}
+
+      {selectedMatch?.comp === 'primera' && (
+        <MatchDetailModalLaliga
+          match={selectedMatch.match}
+          detail={laliga.detail}
+          stats={laliga.stats}
+          lineups={laliga.lineups}
+          incidents={laliga.incidents}
+          loading={laliga.loading}
+          error={laliga.error}
+          onClose={handleClose}
+        />
+      )}
+      {selectedMatch?.comp === 'segunda' && (
+        <MatchDetailModal
+          detail={segunda.detail}
+          stats={segunda.stats}
+          lineups={segunda.lineups}
+          incidents={segunda.incidents}
+          loading={segunda.loading}
+          error={segunda.error}
+          onClose={handleClose}
+        />
+      )}
+      {selectedMatch?.comp === 'juvenil' && (
+        <MatchDetailModalRffm
+          match={selectedMatch.match}
+          detail={rffm.detail}
+          lineups={rffm.lineups}
+          incidents={rffm.incidents}
+          referees={rffm.referees}
+          loading={rffm.loading}
+          error={rffm.error}
+          onClose={handleClose}
+        />
       )}
     </div>
   );
