@@ -874,6 +874,7 @@ input  { font-family: inherit; }
   display: flex; align-items: center; justify-content: center;
   z-index: 200;
   padding: 1rem;
+  touch-action: none;
 }
 .modal-box {
   background: var(--surface);
@@ -884,6 +885,7 @@ input  { font-family: inherit; }
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+  touch-action: pan-y;
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
