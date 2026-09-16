@@ -2119,6 +2119,7 @@ input  { font-family: inherit; }
   display: flex; align-items: center; justify-content: center;
   z-index: 300;
   padding: 1rem;
+  touch-action: none;
 }
 .match-detail-panel--laliga { --hm-accent: var(--accent); --hm-accent2: var(--accent); }
 
@@ -2131,6 +2132,7 @@ input  { font-family: inherit; }
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+  touch-action: pan-y;
   padding: 1.5rem 1.25rem 1.25rem;
   display: flex;
   flex-direction: column;

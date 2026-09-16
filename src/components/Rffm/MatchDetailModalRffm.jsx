@@ -3,6 +3,7 @@ import { crestUrlRffm } from '../../lib/crests';
 import { shortName } from '../../lib/rffmTeams';
 import { useCampoRffm } from '../../hooks/useCampoRffm';
 import LoadingSpinner from '../LoadingSpinner';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 /* ── Formato de nombre ─────────────────────────────────────── */
 
@@ -227,6 +228,7 @@ function StatusBadge({ status }) {
 }
 
 export default function MatchDetailModalRffm({ match, detail, lineups, incidents, referees, loading, error, onClose }) {
+  useScrollLock('match-detail-panel');
   const [activeTab, setActiveTab] = useState('campo');
   const { campo, loading: campoLoading } = useCampoRffm(match?.venueCode);
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { crestUrl, shortName } from '../../lib/crests';
 import LoadingSpinner from '../LoadingSpinner';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 const LIVE_STATUSES = new Set(['live', 'in_progress', 'halftime', '1st_half', '2nd_half', 'extra_time', 'penalties']);
 
@@ -331,6 +332,7 @@ const TABS = [
 ];
 
 export default function MatchDetailModalLaliga({ match, detail, stats, lineups, incidents, loading, error, onClose }) {
+  useScrollLock('match-detail-panel');
   const [activeTab, setActiveTab] = useState('resumen');
 
   useEffect(() => {
