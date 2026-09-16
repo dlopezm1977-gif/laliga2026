@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getAllMatchdayPredictions } from '../../lib/firestore';
 import { crestUrl, teamAbbr } from '../../lib/crests';
 import LoadingSpinner from '../LoadingSpinner';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 function getSign(h, a) {
   if (h > a) return 'H';
@@ -47,6 +48,7 @@ const TIER_PTS    = [6, 3, 2, 1, 0];
 const GROUP_LABELS = ['Local', 'Empate', 'Visitante'];
 
 export default function PredictionsModal({ match, matchday, onClose }) {
+  useScrollLock();
   const [loading, setLoading] = useState(true);
   const [rows, setRows]       = useState([]);
   const [error, setError]     = useState(null);

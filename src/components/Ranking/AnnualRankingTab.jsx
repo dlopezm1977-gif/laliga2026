@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getAllSeasonPredictions, getSeasonResults } from '../../lib/firestore';
 import { crestUrl } from '../../lib/crests';
 import LoadingSpinner from '../LoadingSpinner';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 const SECTIONS = [
   { key: 'ganadorLiga',   label: '🏆 Campeón de Liga',   pts: '25 pts',     ptsEach: 25, type: 'single' },
@@ -28,6 +29,7 @@ function groupByTeam(preds, sec) {
 }
 
 function PredModal({ sec, preds, onClose }) {
+  useScrollLock();
   const groups = groupByTeam(preds, sec);
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -61,6 +63,7 @@ function PredModal({ sec, preds, onClose }) {
 }
 
 function ResultModal({ sec, result, preds, onClose }) {
+  useScrollLock();
   const resultVal   = result[sec.key];
   const resultTeams = sec.type === 'multi'
     ? (Array.isArray(resultVal) ? resultVal : [])

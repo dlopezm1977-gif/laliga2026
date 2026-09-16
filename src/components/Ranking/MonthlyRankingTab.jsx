@@ -3,6 +3,7 @@ import { getAllMonthlyResults, getAllMonthPredictions } from '../../lib/firestor
 import { crestUrl, teamAbbr } from '../../lib/crests';
 import { SEASON_MONTHS, MONTHLY_CATEGORIES, isMonthClosed } from '../../lib/months';
 import LoadingSpinner from '../LoadingSpinner';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 function groupPredsByTeam(preds, catKey) {
   const map = {};
@@ -15,6 +16,7 @@ function groupPredsByTeam(preds, catKey) {
 }
 
 function CategoryModal({ cat, groups, onClose }) {
+  useScrollLock();
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-box" onClick={e => e.stopPropagation()}>
@@ -87,6 +89,7 @@ function NextMonthSection({ month, preds, loading }) {
 }
 
 function HistoryResultModal({ cat, result, monthKey, onClose }) {
+  useScrollLock();
   const [preds, setPreds]   = useState([]);
   const [loading, setLoading] = useState(true);
 

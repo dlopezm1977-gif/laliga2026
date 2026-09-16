@@ -6,8 +6,10 @@ import { crestUrl, crestUrlSegunda } from '../../lib/crests';
 import { canonicalize } from '../../lib/segundaTeams';
 import { AVATARS } from '../../lib/avatars';
 import MySchedule from './MySchedule';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 export default function ProfileModal({ onClose }) {
+  useScrollLock();
   const { profile, updateProfile } = useAuth();
   const { matchdayData } = useMatches();
   const { roundData: roundDataSegunda } = useMatchesSegunda();
