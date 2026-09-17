@@ -32,10 +32,17 @@ const CRESTS_DIR  = path.join(__dirname, '../public/crests-rffm');
 
 if (!fs.existsSync(CRESTS_DIR)) fs.mkdirSync(CRESTS_DIR, { recursive: true });
 
-async function fetchJson(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`HTTP ${res.status} — ${url}`);
-  return res.json();
+async function fetchJson(url, retries = 3, delayMs = 2000) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    const res = await fetch(url);
+    if (res.ok) return res.json();
+    if (attempt < retries && (res.status === 504 || res.status === 502 || res.status === 503)) {
+      console.warn(`  HTTP ${res.status} en intento ${attempt}/${retries}, reintentando en ${delayMs / 1000}s…`);
+      await new Promise(r => setTimeout(r, delayMs));
+      continue;
+    }
+    throw new Error(`HTTP ${res.status} — ${url}`);
+  }
 }
 
 function getExt(url) {
