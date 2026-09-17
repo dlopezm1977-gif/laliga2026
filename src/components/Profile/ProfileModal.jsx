@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, Fragment } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useMatches } from '../../hooks/useMatches';
 import { useMatchesSegunda } from '../../hooks/useMatchesSegunda';
@@ -28,6 +28,7 @@ export default function ProfileModal({ onClose }) {
   const [saving, setSaving]                           = useState(false);
   const [saved, setSaved]                             = useState(false);
   const [error, setError]                             = useState('');
+  const [tab, setTab]                                 = useState('perfil');
 
   const teams = useMemo(() => [...new Set(
     Object.values(matchdayData).flat().flatMap(m => [m.homeTeam, m.awayTeam])
@@ -69,119 +70,123 @@ export default function ProfileModal({ onClose }) {
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-box" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>Mi perfil</h3>
+          <div className="profile-tabs">
+            <button className={`profile-tab${tab === 'perfil' ? ' active' : ''}`} onClick={() => setTab('perfil')}>Mi perfil</button>
+            <button className={`profile-tab${tab === 'partidos' ? ' active' : ''}`} onClick={() => setTab('partidos')}>Mis partidos</button>
+          </div>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
 
-        <label className="modal-label">
-          Nombre / Nickname
-          <input
-            className="modal-input"
-            value={username}
-            maxLength={30}
-            onChange={e => { setUsername(e.target.value); setSaved(false); }}
-          />
-        </label>
-
-        {/* ── Avatar ── */}
-        <div className="modal-label" style={{ marginTop: '.8rem' }}>Avatar</div>
-        {avatar && !showAvatarPicker ? (
-          <div className="selection-preview">
-            <img
-              className="selection-preview-avatar"
-              src={`${import.meta.env.BASE_URL}avatars/${avatar}`}
-              alt="avatar"
+        {tab === 'perfil' && <Fragment>
+          <label className="modal-label">
+            Nombre / Nickname
+            <input
+              className="modal-input"
+              value={username}
+              maxLength={30}
+              onChange={e => { setUsername(e.target.value); setSaved(false); }}
             />
-            <button className="team-clear" onClick={() => setShowAvatarPicker(true)}>Cambiar</button>
-            <button className="team-clear" onClick={clearAvatar}>Quitar</button>
-          </div>
-        ) : (
-          <div className="avatar-carousel-wrap">
-            <div className="avatar-carousel">
-              <button
-                className="avatar-carousel-btn"
-                onClick={() => setCarouselIdx(i => (i - 1 + AVATARS.length) % AVATARS.length)}
-              >‹</button>
+          </label>
+
+          {/* ── Avatar ── */}
+          <div className="modal-label" style={{ marginTop: '.8rem' }}>Avatar</div>
+          {avatar && !showAvatarPicker ? (
+            <div className="selection-preview">
               <img
-                className="avatar-carousel-img"
-                src={`${import.meta.env.BASE_URL}avatars/${AVATARS[carouselIdx]}`}
+                className="selection-preview-avatar"
+                src={`${import.meta.env.BASE_URL}avatars/${avatar}`}
                 alt="avatar"
               />
-              <button
-                className="avatar-carousel-btn"
-                onClick={() => setCarouselIdx(i => (i + 1) % AVATARS.length)}
-              >›</button>
+              <button className="team-clear" onClick={() => setShowAvatarPicker(true)}>Cambiar</button>
+              <button className="team-clear" onClick={clearAvatar}>Quitar</button>
             </div>
-            <div className="avatar-carousel-counter">{carouselIdx + 1} / {AVATARS.length}</div>
-            <button className="btn-save" style={{ marginTop: '.5rem' }} onClick={() => selectAvatar(AVATARS[carouselIdx])}>
-              Seleccionar
-            </button>
-          </div>
-        )}
-
-        {/* ── Equipo favorito (Primera) ── */}
-        <div className="modal-label" style={{ marginTop: '.8rem' }}>Equipo favorito · LaLiga</div>
-        {favoriteTeam && !showTeamPicker ? (
-          <div className="selection-preview">
-            <img className="selection-preview-crest" src={crestUrl(favoriteTeam)} alt={favoriteTeam} />
-            <span className="selection-preview-name">{favoriteTeam}</span>
-            <button className="team-clear" onClick={() => setShowTeamPicker(true)}>Cambiar</button>
-            <button className="team-clear" onClick={clearTeam}>Quitar</button>
-          </div>
-        ) : (
-          <div className="team-grid">
-            {teams.map(t => (
-              <button
-                key={t}
-                className={`team-option${favoriteTeam === t ? ' selected' : ''}`}
-                onClick={() => selectTeam(t)}
-                title={t}
-              >
-                <img src={crestUrl(t)} alt={t} />
-                <span>{t}</span>
+          ) : (
+            <div className="avatar-carousel-wrap">
+              <div className="avatar-carousel">
+                <button
+                  className="avatar-carousel-btn"
+                  onClick={() => setCarouselIdx(i => (i - 1 + AVATARS.length) % AVATARS.length)}
+                >‹</button>
+                <img
+                  className="avatar-carousel-img"
+                  src={`${import.meta.env.BASE_URL}avatars/${AVATARS[carouselIdx]}`}
+                  alt="avatar"
+                />
+                <button
+                  className="avatar-carousel-btn"
+                  onClick={() => setCarouselIdx(i => (i + 1) % AVATARS.length)}
+                >›</button>
+              </div>
+              <div className="avatar-carousel-counter">{carouselIdx + 1} / {AVATARS.length}</div>
+              <button className="btn-save" style={{ marginTop: '.5rem' }} onClick={() => selectAvatar(AVATARS[carouselIdx])}>
+                Seleccionar
               </button>
-            ))}
-          </div>
-        )}
+            </div>
+          )}
 
-        {/* ── Equipo favorito (Segunda) ── */}
-        <div className="modal-label" style={{ marginTop: '.8rem' }}>Equipo favorito · 2ª División</div>
-        {favoriteTeamSegunda && !showTeamPickerSegunda ? (
-          <div className="selection-preview">
-            <img className="selection-preview-crest" src={crestUrlSegunda(favoriteTeamSegunda)} alt={favoriteTeamSegunda} />
-            <span className="selection-preview-name">{favoriteTeamSegunda}</span>
-            <button className="team-clear" onClick={() => setShowTeamPickerSegunda(true)}>Cambiar</button>
-            <button className="team-clear" onClick={clearTeamSegunda}>Quitar</button>
-          </div>
-        ) : (
-          <div className="team-grid">
-            {teamsSegunda.map(t => (
-              <button
-                key={t}
-                className={`team-option${favoriteTeamSegunda === t ? ' selected' : ''}`}
-                onClick={() => selectTeamSegunda(t)}
-                title={t}
-              >
-                <img src={crestUrlSegunda(t)} alt={t} />
-                <span>{t}</span>
-              </button>
-            ))}
-          </div>
-        )}
+          {/* ── Equipo favorito (Primera) ── */}
+          <div className="modal-label" style={{ marginTop: '.8rem' }}>Equipo favorito · LaLiga</div>
+          {favoriteTeam && !showTeamPicker ? (
+            <div className="selection-preview">
+              <img className="selection-preview-crest" src={crestUrl(favoriteTeam)} alt={favoriteTeam} />
+              <span className="selection-preview-name">{favoriteTeam}</span>
+              <button className="team-clear" onClick={() => setShowTeamPicker(true)}>Cambiar</button>
+              <button className="team-clear" onClick={clearTeam}>Quitar</button>
+            </div>
+          ) : (
+            <div className="team-grid">
+              {teams.map(t => (
+                <button
+                  key={t}
+                  className={`team-option${favoriteTeam === t ? ' selected' : ''}`}
+                  onClick={() => selectTeam(t)}
+                  title={t}
+                >
+                  <img src={crestUrl(t)} alt={t} />
+                  <span>{t}</span>
+                </button>
+              ))}
+            </div>
+          )}
 
-        {error && <div className="auth-error">{error}</div>}
-        <button className="btn-save" onClick={handleSave} disabled={saving || !username.trim()}>
-          {saving ? 'Guardando…' : saved ? '✓ Guardado' : 'Guardar'}
-        </button>
+          {/* ── Equipo favorito (Segunda) ── */}
+          <div className="modal-label" style={{ marginTop: '.8rem' }}>Equipo favorito · 2ª División</div>
+          {favoriteTeamSegunda && !showTeamPickerSegunda ? (
+            <div className="selection-preview">
+              <img className="selection-preview-crest" src={crestUrlSegunda(favoriteTeamSegunda)} alt={favoriteTeamSegunda} />
+              <span className="selection-preview-name">{favoriteTeamSegunda}</span>
+              <button className="team-clear" onClick={() => setShowTeamPickerSegunda(true)}>Cambiar</button>
+              <button className="team-clear" onClick={clearTeamSegunda}>Quitar</button>
+            </div>
+          ) : (
+            <div className="team-grid">
+              {teamsSegunda.map(t => (
+                <button
+                  key={t}
+                  className={`team-option${favoriteTeamSegunda === t ? ' selected' : ''}`}
+                  onClick={() => selectTeamSegunda(t)}
+                  title={t}
+                >
+                  <img src={crestUrlSegunda(t)} alt={t} />
+                  <span>{t}</span>
+                </button>
+              ))}
+            </div>
+          )}
 
-        {/* ── Calendario de partidos ── */}
-        <div className="sched-divider" />
-        <MySchedule
+          {error && <div className="auth-error">{error}</div>}
+          <button className="btn-save" onClick={handleSave} disabled={saving || !username.trim()}>
+            {saving ? 'Guardando…' : saved ? '✓ Guardado' : 'Guardar'}
+          </button>
+        </Fragment>}
+
+        {tab === 'partidos' && <MySchedule
           matchdayData={matchdayData}
           roundDataSegunda={roundDataSegunda}
           favoriteTeam={favoriteTeam}
           favoriteTeamSegunda={favoriteTeamSegunda}
-        />
+          showTitle={false}
+        />}
       </div>
     </div>
   );

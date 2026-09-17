@@ -128,7 +128,7 @@ function MatchRow({ m, comp, onClick }) {
   );
 }
 
-export default function MySchedule({ matchdayData, roundDataSegunda, favoriteTeam, favoriteTeamSegunda }) {
+export default function MySchedule({ matchdayData, roundDataSegunda, favoriteTeam, favoriteTeamSegunda, showTitle = true }) {
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedMatch, setSelectedMatch] = useState(null); // { match, comp }
 
@@ -199,7 +199,7 @@ export default function MySchedule({ matchdayData, roundDataSegunda, favoriteTea
   return (
     <div className="sched-wrap">
       <div className="sched-title-row">
-        <span className="modal-label">Mis partidos</span>
+        {showTitle && <span className="modal-label">Mis partidos</span>}
         {weekOffset !== 0 && (
           <button className="sched-today-btn" onClick={() => setWeekOffset(0)}>Hoy</button>
         )}

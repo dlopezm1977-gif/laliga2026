@@ -897,6 +897,15 @@ input  { font-family: inherit; }
   justify-content: space-between;
 }
 .modal-header h3 { margin: 0; font-size: .9rem; font-family: var(--mono); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+.profile-tabs { display: flex; gap: .5rem; }
+.profile-tab {
+  background: none; border: none; border-bottom: 2px solid transparent;
+  cursor: pointer; padding: .1rem .05rem .25rem;
+  font-size: .9rem; font-family: var(--mono); font-weight: 600;
+  text-transform: uppercase; letter-spacing: .05em;
+  color: var(--muted); transition: color .15s, border-color .15s;
+}
+.profile-tab.active { color: var(--fg); border-bottom-color: var(--accent); }
 .modal-close {
   background: none; border: none; color: var(--muted);
   font-size: 1rem; cursor: pointer; padding: .2rem .4rem;
