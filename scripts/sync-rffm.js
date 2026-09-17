@@ -259,6 +259,15 @@ async function getRffmBuildId() {
 async function syncCampos(campoCodes, buildId) {
   if (!buildId) { console.warn('\nNo se pudo obtener el buildId de RFFM — campos no sincronizados'); return; }
 
+  const metaSnap = await db.collection('campos_cache_rffm').doc('meta').get();
+  if (metaSnap.exists) {
+    const lastSync = metaSnap.data().updatedAt?.toDate();
+    if (lastSync && (Date.now() - lastSync.getTime()) < 24 * 60 * 60 * 1000) {
+      console.log(`\nCampos sync omitido (última sync: ${lastSync.toISOString()})`);
+      return;
+    }
+  }
+
   console.log(`\nFetching datos de ${campoCodes.size} campos (buildId: ${buildId})…`);
   let batch = db.batch();
   let ops = 0;
@@ -291,6 +300,9 @@ async function syncCampos(campoCodes, buildId) {
   }
 
   if (ops > 0) await batch.commit();
+  await db.collection('campos_cache_rffm').doc('meta').set({
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
   console.log('Campos sync completado.');
 }
 
