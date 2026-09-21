@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import MemoryPairsGame from './MemoryPairsGame';
+import SwapPuzzleGame from './SwapPuzzleGame';
 
 export default function MinigameCard({ game, result, uid, onResultUpdate }) {
   const [playing, setPlaying] = useState(false);
@@ -28,6 +29,9 @@ export default function MinigameCard({ game, result, uid, onResultUpdate }) {
   }
 
   if (playing) {
+    if (game.type === 'puzzle') {
+      return <SwapPuzzleGame game={game} uid={uid} onFinish={handleFinish} />;
+    }
     return <MemoryPairsGame game={game} uid={uid} onFinish={handleFinish} />;
   }
 
@@ -72,8 +76,11 @@ export default function MinigameCard({ game, result, uid, onResultUpdate }) {
 
       {isActive && !started && (
         <p className="minigame-desc">
-          Encuentra las {game.pairsCount ?? 10} parejas de escudos en {game.timeLimit ?? 60}s.
-          Completarlo suma <strong>{game.pointsComplete ?? 10} pts</strong>;
+          {game.type === 'puzzle'
+            ? <>Reconstruye el logo en {game.timeLimit ?? 90}s intercambiando piezas.</>
+            : <>Encuentra las {game.pairsCount ?? 10} parejas de escudos en {game.timeLimit ?? 60}s.</>
+          }
+          {' '}Completarlo suma <strong>{game.pointsComplete ?? 10} pts</strong>;
           empezar ya garantiza <strong>{game.pointsStarted ?? 5} pts</strong>.
         </p>
       )}

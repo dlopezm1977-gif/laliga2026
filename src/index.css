@@ -1832,6 +1832,51 @@ input  { font-family: inherit; }
   .memory-timer-bar { width: 60px; }
 }
 
+/* ── Swap puzzle game ───────────────────────────────────────────────────── */
+.puzzle-grid {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+}
+.puzzle-tile {
+  aspect-ratio: 1;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 0;
+  background-repeat: no-repeat;
+  transition: border-color .15s, transform .1s, opacity .15s;
+}
+.puzzle-tile:hover { border-color: var(--accent2); }
+.puzzle-tile--selected {
+  border-color: var(--accent);
+  transform: scale(1.04);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+.puzzle-tile--correct { border-color: var(--green); opacity: .85; }
+.puzzle-tile--selected.puzzle-tile--correct {
+  border-color: var(--accent);
+  opacity: 1;
+}
+.puzzle-reveal-img {
+  width: 140px;
+  height: 140px;
+  object-fit: contain;
+  border-radius: 20px;
+  animation: puzzle-pop .4s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes puzzle-pop {
+  from { transform: scale(.5); opacity: 0; }
+  to   { transform: scale(1);  opacity: 1; }
+}
+@media (max-width: 480px) {
+  .puzzle-grid { max-width: 300px; gap: 2px; }
+  .puzzle-tile { border-radius: 4px; }
+  .puzzle-reveal-img { width: 110px; height: 110px; }
+}
+
 /* ── LaLiga Hypermotion (Segunda División) ──────────────────────────────── */
 :root {
   --hm-accent:  #00c4b4;

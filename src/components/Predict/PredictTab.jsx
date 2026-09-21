@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useMatches } from '../../hooks/useMatches';
 import { crestUrl, teamAbbr } from '../../lib/crests';
 import { useAuth } from '../../contexts/AuthContext';
@@ -143,15 +143,34 @@ export default function PredictTab() {
   const [loadingPreds, setLoadingPreds] = useState(false);
 
   const { visibleMinigames, userResults: minigameResults, refresh: refreshMinigames } = useMinigames(user?.uid);
-  const [showingMinigame, setShowingMinigame] = useState(null);
+  const [showingMinigames, setShowingMinigames] = useState(null); // null | Game[]
+  const hasAutoNavigated = useRef(false);
+
+  useEffect(() => {
+    if (hasAutoNavigated.current || !currentMatchday || !visibleMinigames.length) return;
+    const now = Date.now();
+    const todayMidnight = new Date();
+    todayMidnight.setHours(0, 0, 0, 0);
+    const gamesInSlot = visibleMinigames.filter(g => {
+      const start = g.startDate?.toMillis?.() ?? 0;
+      const end   = g.endDate?.toMillis?.() ?? 0;
+      const isActive    = now >= start && now <= end;
+      const endedToday  = end >= todayMidnight.getTime() && end <= now;
+      return g.afterMatchday === currentMatchday - 1 && (isActive || endedToday);
+    });
+    if (gamesInSlot.length) {
+      setShowingMinigames(gamesInSlot);
+      hasAutoNavigated.current = true;
+    }
+  }, [currentMatchday, visibleMinigames]);
 
   function goNext() {
-    if (showingMinigame) {
-      setShowingMinigame(null);
-      setJornada(showingMinigame.afterMatchday + 1);
+    if (showingMinigames) {
+      setShowingMinigames(null);
+      setJornada(showingMinigames[0].afterMatchday + 1);
       setSaved(false);
-    } else if (minigameAfter) {
-      setShowingMinigame(minigameAfter);
+    } else if (minigameAfter.length) {
+      setShowingMinigames(minigameAfter);
     } else {
       setJornada(Math.min(38, activeJornada + 1));
       setSaved(false);
@@ -159,12 +178,12 @@ export default function PredictTab() {
   }
 
   function goPrev() {
-    if (showingMinigame) {
-      setShowingMinigame(null);
-      setJornada(showingMinigame.afterMatchday);
+    if (showingMinigames) {
+      setShowingMinigames(null);
+      setJornada(showingMinigames[0].afterMatchday);
       setSaved(false);
-    } else if (minigameBefore) {
-      setShowingMinigame(minigameBefore);
+    } else if (minigameBefore.length) {
+      setShowingMinigames(minigameBefore);
     } else {
       setJornada(Math.max(1, activeJornada - 1));
       setSaved(false);
@@ -174,8 +193,8 @@ export default function PredictTab() {
   const activeJornada = jornada ?? currentMatchday;
   const matches = getMatches(activeJornada);
 
-  const minigameAfter  = visibleMinigames.find(g => g.afterMatchday === activeJornada) ?? null;
-  const minigameBefore = visibleMinigames.find(g => g.afterMatchday === activeJornada - 1) ?? null;
+  const minigameAfter  = visibleMinigames.filter(g => g.afterMatchday === activeJornada);
+  const minigameBefore = visibleMinigames.filter(g => g.afterMatchday === activeJornada - 1);
 
   const firstMatchTime = matches.length
     ? Math.min(...matches.map(m => new Date(m.utcDate).getTime()).filter(Boolean))
@@ -264,18 +283,23 @@ export default function PredictTab() {
       ) : (
         <>
           <div className="jornada-nav">
-            <button className="btn-nav" onClick={goPrev} disabled={!showingMinigame && activeJornada <= 1 && !minigameBefore}>‹</button>
+            <button className="btn-nav" onClick={goPrev} disabled={!showingMinigames && activeJornada <= 1 && !minigameBefore.length}>‹</button>
             <div>
-              {showingMinigame
+              {showingMinigames
                 ? (() => {
-                    const endDate = showingMinigame.endDate?.toDate?.();
-                    const endLabel = endDate ? endDate.toLocaleString('es-ES', {
+                    const first = showingMinigames[0];
+                    const latestEnd = showingMinigames.reduce((latest, g) => {
+                      const d = g.endDate?.toDate?.();
+                      return d && (!latest || d > latest) ? d : latest;
+                    }, null);
+                    const endLabel = latestEnd ? latestEnd.toLocaleString('es-ES', {
                       weekday: 'short', day: 'numeric', month: 'short',
                       hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid',
                     }) : '';
-                    const isPast = endDate && Date.now() > endDate.getTime();
+                    const isPast = latestEnd && Date.now() > latestEnd.getTime();
+                    const weekLabel = first.weekLabel || `SEMANA ${first.afterMatchday}-${first.afterMatchday + 1}`;
                     return <>
-                      <h2 style={{ fontSize: '1rem' }}>🎮 {showingMinigame.title || 'Juego de Parejas'}</h2>
+                      <h2 style={{ fontSize: '1rem' }}>🎮 JUEGOS · {weekLabel}</h2>
                       <span className="dates">
                         {isPast
                           ? <span className="deadline-badge">Cerrado</span>
@@ -295,16 +319,19 @@ export default function PredictTab() {
                     )}</>
               }
             </div>
-            <button className="btn-nav" onClick={goNext} disabled={!showingMinigame && activeJornada >= 38 && !minigameAfter}>›</button>
+            <button className="btn-nav" onClick={goNext} disabled={!showingMinigames && activeJornada >= 38 && !minigameAfter.length}>›</button>
           </div>
 
-          {showingMinigame ? (
-            <MinigameCard
-              game={showingMinigame}
-              result={minigameResults[showingMinigame.id]}
-              uid={user?.uid}
-              onResultUpdate={refreshMinigames}
-            />
+          {showingMinigames ? (
+            showingMinigames.map(game => (
+              <MinigameCard
+                key={game.id}
+                game={game}
+                result={minigameResults[game.id]}
+                uid={user?.uid}
+                onResultUpdate={refreshMinigames}
+              />
+            ))
           ) : matches.length === 0 ? (
             <div className="loading">No hay datos para esta jornada</div>
           ) : (

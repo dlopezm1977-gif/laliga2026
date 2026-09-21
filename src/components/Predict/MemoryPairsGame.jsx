@@ -147,7 +147,7 @@ export default function MemoryPairsGame({ game, uid, onFinish }) {
             >
               <div className="memory-card-inner">
                 <div className="memory-card-back">
-                  <img src={`${import.meta.env.BASE_URL}app-icon.png`} alt="" />
+                  <img src={game.imageUrl ?? `${import.meta.env.BASE_URL}app-icon.png`} alt="" />
                 </div>
                 <div className="memory-card-front">
                   <img src={crestUrl(card.team)} alt={card.team} />
