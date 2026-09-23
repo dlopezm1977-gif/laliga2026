@@ -30,6 +30,9 @@ const ID_COMPETITION = '26737718';
 const TOTAL_ROUNDS = 34;
 const CRESTS_DIR  = path.join(__dirname, '../public/crests-rffm');
 
+const FAVORITE_TEAM_RFFM = 'S.A.D. OCIO Y DEPORTE CANAL A';
+const NOTIF_URL_RFFM     = '/laliga2026/?league=juvenil&tab=resultados';
+
 if (!fs.existsSync(CRESTS_DIR)) fs.mkdirSync(CRESTS_DIR, { recursive: true });
 
 async function fetchJson(url, retries = 3, delayMs = 2000) {
@@ -208,6 +211,31 @@ async function syncMatchesAndStandings() {
     .map(t => ({ ...t, gd: t.gf - t.gc }))
     .sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf || a.name.localeCompare(b.name));
 
+  // Detectar cambios de horario: leer datos actuales de Firestore y comparar
+  const roundKeys = Object.keys(allRounds);
+  const existingSnaps = await Promise.all(
+    roundKeys.map(rd => db.collection('matches_cache_rffm').doc(rd).get())
+  );
+  const changedMatches = [];
+  for (let i = 0; i < roundKeys.length; i++) {
+    const snap = existingSnaps[i];
+    if (!snap.exists) continue;
+    const prevByKey = {};
+    for (const m of (snap.data().matches ?? [])) {
+      const key = m.matchId || `${m.homeCode}_${m.awayCode}`;
+      prevByKey[key] = m;
+    }
+    for (const m of allRounds[roundKeys[i]]) {
+      if (m.status !== 'scheduled') continue;
+      const key = m.matchId || `${m.homeCode}_${m.awayCode}`;
+      const prev = prevByKey[key];
+      if (!prev) continue;
+      if (prev.fecha !== m.fecha || prev.hora !== m.hora) {
+        changedMatches.push(m);
+      }
+    }
+  }
+
   // Firestore — escribir en batches de 500 ops
   const BATCH_SIZE = 400;
   let batch = db.batch();
@@ -245,7 +273,7 @@ async function syncMatchesAndStandings() {
   const campoCodes = new Set(
     Object.values(allRounds).flat().map(m => m.venueCode).filter(Boolean)
   );
-  return { campoCodes, actaIds };
+  return { campoCodes, actaIds, changedMatches };
 }
 
 async function getRffmBuildId() {
@@ -426,13 +454,79 @@ async function syncScorers() {
   }
 }
 
+async function getRecipientsForScheduleChange(changedMatches) {
+  const hasFavChange = changedMatches.some(
+    m => m.homeTeam === FAVORITE_TEAM_RFFM || m.awayTeam === FAVORITE_TEAM_RFFM
+  );
+
+  const usersSnap = await db.collection('users').get();
+  const tokens = [];
+
+  await Promise.all(usersSnap.docs.map(async doc => {
+    const pref = doc.data()?.notifPrefs?.scheduleChange?.rffm;
+    if (!pref || pref === 'disabled') return;
+    if (pref === 'favorite' && !hasFavChange) return;
+
+    const tokSnap = await db.collection('users').doc(doc.id).collection('fcmTokens').get();
+    tokSnap.forEach(t => {
+      const d = t.data();
+      if (d.enabled && d.token) tokens.push({ token: d.token, label: d.label });
+    });
+  }));
+
+  return tokens;
+}
+
+async function sendScheduleChangeNotifications(changedMatches) {
+  if (changedMatches.length === 0) return;
+
+  console.log(`\nCambios de horario: ${changedMatches.length} partido(s)`);
+  changedMatches.forEach(m =>
+    console.log(`  · J${m.round}: ${m.homeTeam} vs ${m.awayTeam} → ${m.fecha} ${m.hora}`)
+  );
+
+  const recipients = await getRecipientsForScheduleChange(changedMatches);
+  if (recipients.length === 0) {
+    console.log('  Sin destinatarios con notificaciones activas');
+    return;
+  }
+
+  const matchLine = changedMatches.length === 1
+    ? `${changedMatches[0].homeTeam} vs ${changedMatches[0].awayTeam}`
+    : `${changedMatches.length} partidos`;
+
+  const results = await Promise.all(recipients.map(async r => {
+    try {
+      await admin.messaging().send({
+        token: r.token,
+        webpush: {
+          headers: { Urgency: 'normal' },
+          data: {
+            title: '🗓️ Cambio de horario — RFFM Juvenil',
+            body:  `Cambio de horario: ${matchLine}`,
+            url:   NOTIF_URL_RFFM,
+          },
+        },
+      });
+      return { label: r.label, ok: true };
+    } catch (err) {
+      return { label: r.label, ok: false, error: err.message };
+    }
+  }));
+
+  const ok  = results.filter(r => r.ok).length;
+  const err = results.filter(r => !r.ok).length;
+  console.log(`  Notificaciones enviadas: ${ok} OK, ${err} error(es)`);
+}
+
 async function main() {
-  const { campoCodes, actaIds } = await syncMatchesAndStandings();
+  const { campoCodes, actaIds, changedMatches } = await syncMatchesAndStandings();
   const buildId = await getRffmBuildId();
   if (!buildId) console.warn('No se pudo obtener el buildId de RFFM');
   await syncCampos(campoCodes, buildId);
   await syncActas(actaIds, buildId);
   await syncScorers();
+  await sendScheduleChangeNotifications(changedMatches);
   console.log('\nSync RFFM completado.');
 }
 

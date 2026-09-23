@@ -6,8 +6,9 @@ import {
 } from '../../lib/notifications';
 
 const DEFAULT_PREFS = {
-  goals:    { primera: 'disabled', segunda: 'disabled' },
-  matchEnd: { primera: 'disabled', segunda: 'disabled', rffm: 'disabled' },
+  goals:          { primera: 'disabled', segunda: 'disabled' },
+  matchEnd:       { primera: 'disabled', segunda: 'disabled', rffm: 'disabled' },
+  scheduleChange: { primera: 'disabled', segunda: 'disabled', rffm: 'disabled' },
   predReminder: false,
   newGame:      false,
 };
@@ -187,6 +188,14 @@ export default function NotificationsTab() {
             <LeagueRow label="LaLiga"     value={prefs.matchEnd?.primera ?? 'disabled'} onChange={v => setPref('matchEnd.primera', v)} />
             <LeagueRow label="2ª División" value={prefs.matchEnd?.segunda ?? 'disabled'} onChange={v => setPref('matchEnd.segunda', v)} />
             <LeagueRow label="RFFM"       value={prefs.matchEnd?.rffm    ?? 'disabled'} onChange={v => setPref('matchEnd.rffm', v)} />
+          </div>
+
+          {/* Cambios de horario */}
+          <div className="notif-section">
+            <div className="notif-section-title">🗓️ Cambios de horario</div>
+            <LeagueRow label="LaLiga"     value={prefs.scheduleChange?.primera ?? 'disabled'} onChange={v => setPref('scheduleChange.primera', v)} />
+            <LeagueRow label="2ª División" value={prefs.scheduleChange?.segunda ?? 'disabled'} onChange={v => setPref('scheduleChange.segunda', v)} />
+            <LeagueRow label="RFFM"       value={prefs.scheduleChange?.rffm    ?? 'disabled'} onChange={v => setPref('scheduleChange.rffm', v)} />
           </div>
 
           {/* Simples */}
