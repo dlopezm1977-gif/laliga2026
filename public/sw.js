@@ -1,4 +1,4 @@
-const CACHE = 'quiniela-v39';
+const CACHE = 'quiniela-v40';
 const PRECACHE = ['/laliga2026/', '/laliga2026/index.html'];
 
 self.addEventListener('install', e => {
@@ -39,7 +39,8 @@ self.addEventListener('notificationclick', e => {
   e.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
       const existing = list.find(c => c.url.includes('/laliga2026/'));
-      return existing ? existing.focus() : clients.openWindow(url);
+      if (existing) return existing.navigate(url).then(() => existing.focus());
+      return clients.openWindow(url);
     })
   );
 });
