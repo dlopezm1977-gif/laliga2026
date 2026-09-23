@@ -6,6 +6,7 @@ import { crestUrl, crestUrlSegunda } from '../../lib/crests';
 import { canonicalize } from '../../lib/segundaTeams';
 import { AVATARS } from '../../lib/avatars';
 import MySchedule from './MySchedule';
+import NotificationsTab from './NotificationsTab';
 import { useScrollLock } from '../../hooks/useScrollLock';
 
 export default function ProfileModal({ onClose }) {
@@ -71,8 +72,15 @@ export default function ProfileModal({ onClose }) {
       <div className="modal-box" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <div className="profile-tabs">
-            <button className={`profile-tab${tab === 'perfil' ? ' active' : ''}`} onClick={() => setTab('perfil')}>Mi perfil</button>
-            <button className={`profile-tab${tab === 'partidos' ? ' active' : ''}`} onClick={() => setTab('partidos')}>Mis partidos</button>
+            <button className={`profile-tab${tab === 'perfil' ? ' active' : ''}`} onClick={() => setTab('perfil')}>
+              <span className="tab-icon">👤</span><span className="tab-text"> Mi perfil</span>
+            </button>
+            <button className={`profile-tab${tab === 'partidos' ? ' active' : ''}`} onClick={() => setTab('partidos')}>
+              <span className="tab-icon">📅</span><span className="tab-text"> Mis partidos</span>
+            </button>
+            <button className={`profile-tab${tab === 'notificaciones' ? ' active' : ''}`} onClick={() => setTab('notificaciones')}>
+              <span className="tab-icon">🔔</span><span className="tab-text"> Notificaciones</span>
+            </button>
           </div>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
@@ -179,6 +187,8 @@ export default function ProfileModal({ onClose }) {
             {saving ? 'Guardando…' : saved ? '✓ Guardado' : 'Guardar'}
           </button>
         </Fragment>}
+
+        {tab === 'notificaciones' && <NotificationsTab />}
 
         {tab === 'partidos' && <MySchedule
           matchdayData={matchdayData}

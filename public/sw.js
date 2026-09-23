@@ -1,4 +1,4 @@
-const CACHE = 'quiniela-v37';
+const CACHE = 'quiniela-v38';
 const PRECACHE = ['/laliga2026/', '/laliga2026/index.html'];
 
 self.addEventListener('install', e => {
@@ -13,6 +13,35 @@ self.addEventListener('activate', e => {
     )
   );
   self.clients.claim();
+});
+
+// ── Push notifications ───────────────────────────────────────────────────
+self.addEventListener('push', e => {
+  if (!e.data) return;
+  let payload = {};
+  try { payload = e.data.json(); } catch { return; }
+  // FCM Admin SDK v1 wraps data fields under payload.data
+  const d = payload.data ?? payload;
+  const { title = 'LaLiga 26/27', body = '', icon, url } = d;
+  e.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      icon: icon ?? '/laliga2026/app-icon.png',
+      badge: '/laliga2026/app-icon.png',
+      data: { url: url ?? '/laliga2026/' },
+    })
+  );
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = e.notification.data?.url ?? '/laliga2026/';
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      const existing = list.find(c => c.url.includes('/laliga2026/'));
+      return existing ? existing.focus() : clients.openWindow(url);
+    })
+  );
 });
 
 self.addEventListener('fetch', e => {
