@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Header  from './components/Layout/Header';
 import TabBar  from './components/Layout/TabBar';
@@ -29,6 +29,17 @@ function AppShell() {
     return p.get('tab') || DEFAULT_TAB_PRIMERA;
   });
   const [showAuth, setShowAuth] = useState(false);
+
+  useEffect(() => {
+    if (!navigator.serviceWorker) return;
+    const handler = ({ data }) => {
+      if (data?.type !== 'NAVIGATE') return;
+      handleLeagueChange(data.league);
+      if (data.tab) setTab(data.tab);
+    };
+    navigator.serviceWorker.addEventListener('message', handler);
+    return () => navigator.serviceWorker.removeEventListener('message', handler);
+  }, []);
 
   if (isLoading) return <LoadingSpinner />;
 

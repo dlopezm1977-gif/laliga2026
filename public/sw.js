@@ -1,4 +1,4 @@
-const CACHE = 'quiniela-v40';
+const CACHE = 'quiniela-v41';
 const PRECACHE = ['/laliga2026/', '/laliga2026/index.html'];
 
 self.addEventListener('install', e => {
@@ -36,10 +36,16 @@ self.addEventListener('push', e => {
 self.addEventListener('notificationclick', e => {
   e.notification.close();
   const url = e.notification.data?.url ?? '/laliga2026/';
+  const params = new URL(url, self.location.origin).searchParams;
+  const league = params.get('league') || 'primera';
+  const tab    = params.get('tab') || null;
   e.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
       const existing = list.find(c => c.url.includes('/laliga2026/'));
-      if (existing) return existing.navigate(url).then(() => existing.focus());
+      if (existing) {
+        existing.postMessage({ type: 'NAVIGATE', league, tab });
+        return existing.focus();
+      }
       return clients.openWindow(url);
     })
   );
