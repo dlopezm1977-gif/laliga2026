@@ -454,27 +454,14 @@ async function syncScorers() {
   }
 }
 
-async function getRecipientsForScheduleChange(changedMatches) {
-  const hasFavChange = changedMatches.some(
-    m => m.homeTeam === FAVORITE_TEAM_RFFM || m.awayTeam === FAVORITE_TEAM_RFFM
-  );
-
-  const usersSnap = await db.collection('users').get();
-  const tokens = [];
-
-  await Promise.all(usersSnap.docs.map(async doc => {
-    const pref = doc.data()?.notifPrefs?.scheduleChange?.rffm;
-    if (!pref || pref === 'disabled') return;
-    if (pref === 'favorite' && !hasFavChange) return;
-
-    const tokSnap = await db.collection('users').doc(doc.id).collection('fcmTokens').get();
-    tokSnap.forEach(t => {
-      const d = t.data();
-      if (d.enabled && d.token) tokens.push({ token: d.token, label: d.label });
-    });
-  }));
-
-  return tokens;
+function formatMatchWhen(fecha, hora) {
+  const dateStr = fecha?.slice(0, 10) ?? '';
+  if (!dateStr) return hora || '';
+  const d = new Date(dateStr + 'T12:00:00');
+  const label = d.toLocaleDateString('es-ES', {
+    weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Europe/Madrid',
+  });
+  return hora ? `${label} · ${hora}` : label;
 }
 
 async function sendScheduleChangeNotifications(changedMatches) {
@@ -485,38 +472,55 @@ async function sendScheduleChangeNotifications(changedMatches) {
     console.log(`  · J${m.round}: ${m.homeTeam} vs ${m.awayTeam} → ${m.fecha} ${m.hora}`)
   );
 
-  const recipients = await getRecipientsForScheduleChange(changedMatches);
-  if (recipients.length === 0) {
-    console.log('  Sin destinatarios con notificaciones activas');
-    return;
-  }
+  // Recopilar tokens por nivel de preferencia
+  const usersSnap = await db.collection('users').get();
+  const allTokens = [];   // usuarios con 'all'
+  const favTokens = [];   // usuarios con 'favorite'
 
-  const matchLine = changedMatches.length === 1
-    ? `${changedMatches[0].homeTeam} vs ${changedMatches[0].awayTeam}`
-    : `${changedMatches.length} partidos`;
+  await Promise.all(usersSnap.docs.map(async doc => {
+    const pref = doc.data()?.notifPrefs?.scheduleChange?.rffm;
+    if (!pref || pref === 'disabled') return;
 
-  const results = await Promise.all(recipients.map(async r => {
-    try {
-      await admin.messaging().send({
-        token: r.token,
-        webpush: {
-          headers: { Urgency: 'normal' },
-          data: {
-            title: '🗓️ Cambio de horario — RFFM Juvenil',
-            body:  `Cambio de horario: ${matchLine}`,
-            url:   NOTIF_URL_RFFM,
-          },
-        },
-      });
-      return { label: r.label, ok: true };
-    } catch (err) {
-      return { label: r.label, ok: false, error: err.message };
-    }
+    const tokSnap = await db.collection('users').doc(doc.id).collection('fcmTokens').get();
+    const enabled = [];
+    tokSnap.forEach(t => {
+      const d = t.data();
+      if (d.enabled && d.token) enabled.push({ token: d.token, label: d.label });
+    });
+
+    if (pref === 'all')      allTokens.push(...enabled);
+    else if (pref === 'favorite') favTokens.push(...enabled);
   }));
 
-  const ok  = results.filter(r => r.ok).length;
-  const err = results.filter(r => !r.ok).length;
-  console.log(`  Notificaciones enviadas: ${ok} OK, ${err} error(es)`);
+  let totalOk = 0, totalErr = 0;
+
+  // Una notificación por partido
+  for (const m of changedMatches) {
+    const isFav = m.homeTeam === FAVORITE_TEAM_RFFM || m.awayTeam === FAVORITE_TEAM_RFFM;
+    const recipients = isFav ? [...allTokens, ...favTokens] : [...allTokens];
+    if (recipients.length === 0) continue;
+
+    const when = formatMatchWhen(m.fecha, m.hora);
+    const body = `${m.homeTeam} vs ${m.awayTeam}${when ? ` · ${when}` : ''}`;
+
+    const results = await Promise.all(recipients.map(async r => {
+      try {
+        await admin.messaging().send({
+          token: r.token,
+          webpush: {
+            headers: { Urgency: 'normal' },
+            data: { title: '🗓️ Cambio de horario — RFFM Juvenil', body, url: NOTIF_URL_RFFM },
+          },
+        });
+        return true;
+      } catch { return false; }
+    }));
+
+    totalOk  += results.filter(Boolean).length;
+    totalErr += results.filter(r => !r).length;
+  }
+
+  console.log(`  Notificaciones enviadas: ${totalOk} OK, ${totalErr} error(es)`);
 }
 
 async function main() {
