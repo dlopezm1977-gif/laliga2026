@@ -908,8 +908,8 @@ input  { font-family: inherit; }
 .profile-tab.active { color: var(--fg); border-bottom-color: var(--accent); }
 .tab-icon { font-style: normal; }
 @media (max-width: 480px) {
-  .profile-tabs { gap: .6rem; }
-  .profile-tab { font-size: .78rem; letter-spacing: .02em; }
+  .profile-tabs { gap: 0; width: 100%; }
+  .profile-tab { font-size: .78rem; letter-spacing: .02em; flex: 1; text-align: center; }
   .tab-text { display: none; }
 }
 

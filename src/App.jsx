@@ -20,8 +20,14 @@ const DEFAULT_TAB_JUVENIL = 'resultados';
 
 function AppShell() {
   const { isLoading, isGuest } = useAuth();
-  const [league, setLeague] = useState('primera');
-  const [tab, setTab]       = useState(DEFAULT_TAB_PRIMERA);
+  const [league, setLeague] = useState(() => {
+    const p = new URLSearchParams(location.search);
+    return ['primera', 'segunda', 'juvenil'].includes(p.get('league')) ? p.get('league') : 'primera';
+  });
+  const [tab, setTab] = useState(() => {
+    const p = new URLSearchParams(location.search);
+    return p.get('tab') || DEFAULT_TAB_PRIMERA;
+  });
   const [showAuth, setShowAuth] = useState(false);
 
   if (isLoading) return <LoadingSpinner />;
