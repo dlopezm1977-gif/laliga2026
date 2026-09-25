@@ -882,19 +882,29 @@ input  { font-family: inherit; }
   border-radius: 12px;
   width: 100%; max-width: 420px;
   max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.modal-body {
   overflow-y: auto;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   touch-action: pan-y;
-  padding: 1.25rem;
+  padding: .9rem 1.25rem 1.25rem;
   display: flex;
   flex-direction: column;
   gap: .9rem;
+  flex: 1;
+  min-height: 0;
 }
 .modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 1.25rem 1.25rem 0;
+  flex-shrink: 0;
 }
 .modal-header h3 { margin: 0; font-size: .9rem; font-family: var(--mono); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
 .profile-tabs { display: flex; gap: .7rem; }
@@ -1113,6 +1123,9 @@ input  { font-family: inherit; }
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid var(--accent);
+}
+.team-clear + .team-clear {
+  margin-left: 0;
 }
 .selection-preview-crest {
   width: 40px; height: 40px;
@@ -2545,4 +2558,103 @@ input  { font-family: inherit; }
 .md-tab-error {
   color: var(--hm-accent); text-align: center;
   font-size: .82rem; padding: 1rem 0; margin: 0;
+}
+
+/* ── Liga Municipal (JDM) ───────────────────────────────────────────────── */
+:root { --municipal-accent: #0055A0; }
+
+.app-shell--municipal { --accent: var(--municipal-accent); }
+
+.app-header--municipal {
+  border-bottom-color: color-mix(in srgb, var(--municipal-accent) 40%, var(--border));
+}
+.app-header--municipal .logo span { color: var(--municipal-accent); }
+
+.tab-bar--municipal .tab-btn.active {
+  color: var(--municipal-accent);
+  border-bottom-color: var(--municipal-accent);
+}
+
+/* ── Mini Calendar (Mis partidos) ───────────────────────────────────────── */
+.sched-week-label--btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  color: var(--text);
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background .15s;
+}
+.sched-week-label--btn:hover,
+.sched-week-label--btn.active {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--accent);
+}
+
+.mini-cal {
+  margin: 0 1rem .75rem;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: .5rem .6rem;
+}
+.mini-cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: .4rem;
+}
+.mini-cal-month {
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.mini-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.mini-cal-dow {
+  text-align: center;
+  font-size: .65rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  padding: 2px 0 4px;
+}
+.mini-cal-empty { min-height: 36px; }
+.mini-cal-day {
+  text-align: center;
+  padding: 3px 1px 2px;
+  border-radius: 5px;
+  cursor: pointer;
+  min-height: 36px;
+}
+.mini-cal-day:hover { background: var(--surface-raised, rgba(255,255,255,.06)); }
+.mini-cal-day--in-week {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+.mini-cal-day--today .mini-cal-num {
+  font-weight: 700;
+  color: var(--accent);
+}
+.mini-cal-num {
+  font-size: .78rem;
+  display: block;
+  line-height: 1.4;
+}
+.mini-cal-dots {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+  margin-top: 1px;
+  flex-wrap: wrap;
+}
+.mini-cal-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
 }

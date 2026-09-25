@@ -11,18 +11,21 @@ import RankingTab   from './components/Ranking/RankingTab';
 import HistoryTab   from './components/History/HistoryTab';
 import CalendarSegundaTab  from './components/Segunda/CalendarSegundaTab';
 import StandingsSegundaTab from './components/Segunda/StandingsSegundaTab';
-import CalendarRffmTab     from './components/Rffm/CalendarRffmTab';
-import StandingsRffmTab    from './components/Rffm/StandingsRffmTab';
+import CalendarRffmTab       from './components/Rffm/CalendarRffmTab';
+import StandingsRffmTab      from './components/Rffm/StandingsRffmTab';
+import CalendarMunicipalTab  from './components/Municipal/CalendarMunicipalTab';
+import StandingsMunicipalTab from './components/Municipal/StandingsMunicipalTab';
 
-const DEFAULT_TAB_PRIMERA = 'calendar';
-const DEFAULT_TAB_SEGUNDA = 'resultados';
-const DEFAULT_TAB_JUVENIL = 'resultados';
+const DEFAULT_TAB_PRIMERA   = 'calendar';
+const DEFAULT_TAB_SEGUNDA   = 'resultados';
+const DEFAULT_TAB_JUVENIL   = 'resultados';
+const DEFAULT_TAB_MUNICIPAL = 'resultados';
 
 function AppShell() {
   const { isLoading, isGuest } = useAuth();
   const [league, setLeague] = useState(() => {
     const p = new URLSearchParams(location.search);
-    return ['primera', 'segunda', 'juvenil'].includes(p.get('league')) ? p.get('league') : 'primera';
+    return ['primera', 'segunda', 'juvenil', 'municipal'].includes(p.get('league')) ? p.get('league') : 'primera';
   });
   const [tab, setTab] = useState(() => {
     const p = new URLSearchParams(location.search);
@@ -50,8 +53,9 @@ function AppShell() {
   function handleLeagueChange(newLeague) {
     setLeague(newLeague);
     setTab(
-      newLeague === 'segunda' ? DEFAULT_TAB_SEGUNDA :
-      newLeague === 'juvenil' ? DEFAULT_TAB_JUVENIL :
+      newLeague === 'segunda'   ? DEFAULT_TAB_SEGUNDA   :
+      newLeague === 'juvenil'   ? DEFAULT_TAB_JUVENIL   :
+      newLeague === 'municipal' ? DEFAULT_TAB_MUNICIPAL :
       DEFAULT_TAB_PRIMERA
     );
   }
@@ -66,7 +70,7 @@ function AppShell() {
   }
 
   return (
-    <div className={`app-shell${league === 'segunda' ? ' app-shell--segunda' : league === 'juvenil' ? ' app-shell--juvenil' : ''}`}>
+    <div className={`app-shell${league === 'segunda' ? ' app-shell--segunda' : league === 'juvenil' ? ' app-shell--juvenil' : league === 'municipal' ? ' app-shell--municipal' : ''}`}>
       <Header
         onLogin={() => setShowAuth(true)}
         league={league}
@@ -81,8 +85,10 @@ function AppShell() {
         {league === 'primera' && tab === 'history'        && <HistoryTab />}
         {league === 'segunda' && tab === 'resultados'     && <CalendarSegundaTab />}
         {league === 'segunda' && tab === 'clasificacion'  && <StandingsSegundaTab />}
-        {league === 'juvenil' && tab === 'resultados'     && <CalendarRffmTab />}
-        {league === 'juvenil' && tab === 'clasificacion'  && <StandingsRffmTab />}
+        {league === 'juvenil'   && tab === 'resultados'     && <CalendarRffmTab />}
+        {league === 'juvenil'   && tab === 'clasificacion'  && <StandingsRffmTab />}
+        {league === 'municipal' && tab === 'resultados'     && <CalendarMunicipalTab />}
+        {league === 'municipal' && tab === 'clasificacion'  && <StandingsMunicipalTab />}
       </main>
     </div>
   );

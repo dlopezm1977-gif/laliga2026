@@ -78,6 +78,16 @@ function LeagueDropdown({ current, onChange, onClose }) {
           <span className="league-option-sub">Temporada 26/27</span>
         </div>
       </button>
+      <button
+        className={`league-option${current === 'municipal' ? ' active' : ''}`}
+        onClick={() => { onChange('municipal'); onClose(); }}
+      >
+        <img src={`${import.meta.env.BASE_URL}municipal-logo.png`} alt="JDM" className="league-option-logo league-option-logo--rffm" />
+        <div>
+          <span className="league-option-name">Juegos Municipales</span>
+          <span className="league-option-sub">Fútbol Sala</span>
+        </div>
+      </button>
     </div>
   );
 }
@@ -91,12 +101,13 @@ export default function Header({ onLogin, league, onLeagueChange }) {
   const [instructionsOpen, setInstructionsOpen]   = useState(false);
   const [leagueOpen, setLeagueOpen]               = useState(false);
 
-  const isSegunda = league === 'segunda';
-  const isJuvenil = league === 'juvenil';
+  const isSegunda   = league === 'segunda';
+  const isJuvenil   = league === 'juvenil';
+  const isMunicipal = league === 'municipal';
 
   return (
     <>
-      <header className={`app-header${isSegunda ? ' app-header--segunda' : isJuvenil ? ' app-header--juvenil' : ''}`}>
+      <header className={`app-header${isSegunda ? ' app-header--segunda' : isJuvenil ? ' app-header--juvenil' : isMunicipal ? ' app-header--municipal' : ''}`}>
         <div
           className="logo logo--clickable"
           onClick={() => setLeagueOpen(v => !v)}
@@ -110,6 +121,8 @@ export default function Header({ onLogin, league, onLeagueChange }) {
             />
           ) : isJuvenil ? (
             <img src={`${import.meta.env.BASE_URL}rffm-logo.png`} alt="RFFM" className="logo-laliga logo-laliga--rffm" />
+          ) : isMunicipal ? (
+            <img src={`${import.meta.env.BASE_URL}municipal-logo.png`} alt="JDM" className="logo-laliga logo-laliga--rffm" />
           ) : (
             <img
               src={`${import.meta.env.BASE_URL}laliga-logo.png`}
@@ -117,7 +130,7 @@ export default function Header({ onLogin, league, onLeagueChange }) {
               className="logo-laliga"
             />
           )}
-          <span>{isSegunda ? 'Hypermotion' : isJuvenil ? 'Pref. Juvenil' : 'Quiniela 26/27'}</span>
+          <span>{isSegunda ? 'Hypermotion' : isJuvenil ? 'Pref. Juvenil' : isMunicipal ? 'Liga Municipal' : 'Quiniela 26/27'}</span>
           <span className="logo-chevron">▾</span>
           <span className="app-version">v{version}</span>
         </div>

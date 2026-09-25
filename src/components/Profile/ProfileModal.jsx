@@ -85,6 +85,7 @@ export default function ProfileModal({ onClose }) {
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
 
+        <div className="modal-body">
         {tab === 'perfil' && <Fragment>
           <label className="modal-label">
             Nombre / Nickname
@@ -197,6 +198,7 @@ export default function ProfileModal({ onClose }) {
           favoriteTeamSegunda={favoriteTeamSegunda}
           showTitle={false}
         />}
+        </div>
       </div>
     </div>
   );

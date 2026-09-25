@@ -4,6 +4,7 @@ import { useMatchDetailSegunda } from '../../hooks/useMatchDetailSegunda';
 import { crestUrlSegunda } from '../../lib/crests';
 import LoadingSpinner from '../LoadingSpinner';
 import MatchDetailModal from './MatchDetailModal';
+import { useAuth } from '../../contexts/AuthContext';
 
 function formatTime(utcDate) {
   if (!utcDate) return '';
@@ -55,12 +56,13 @@ function StatusBadge({ status, minute }) {
   return <span className="status-badge scheduled">Próximo</span>;
 }
 
-function MatchCard({ match, onOpenDetail }) {
+function MatchCard({ match, onOpenDetail, favorite }) {
   const isFinished = match.status === 'finished';
   const isLive     = LIVE_STATUSES.has(match.status);
+  const isFav      = favorite && (match.homeTeam === favorite || match.awayTeam === favorite);
 
   return (
-    <div className="match-card" onClick={() => onOpenDetail(match.matchId)} style={{ cursor: 'pointer' }}>
+    <div className={`match-card${isFav ? ' match-card--favorite' : ''}`} onClick={() => onOpenDetail(match.matchId)} style={{ cursor: 'pointer' }}>
       <span className="match-time-col">{formatTime(match.utcDate)}</span>
       <div className="match-middle">
         <div className="match-team home">
@@ -91,10 +93,14 @@ function MatchCard({ match, onOpenDetail }) {
 }
 
 export default function CalendarSegundaTab() {
+  const { profile } = useAuth();
   const { currentRound, getMatches, totalRounds, loading, error, refresh } = useMatchesSegunda();
   const { detail, stats, lineups, incidents, loading: loadingDetail, error: errorDetail, matchId, open, close } = useMatchDetailSegunda();
   const [jornada, setJornada]     = useState(null);
   const [collapsed, setCollapsed] = useState(new Set());
+  const [filterFav, setFilterFav] = useState(false);
+
+  const favoriteTeam = profile?.favoriteTeamSegunda || null;
 
   const toggleGroup = useCallback(label => {
     setCollapsed(prev => {
@@ -146,14 +152,27 @@ export default function CalendarSegundaTab() {
           disabled={activeRound >= (totalRounds || 42)}
         >›</button>
       </div>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 1rem .25rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 1rem .25rem' }}>
+        {favoriteTeam ? (
+          <button
+            className={`fav-filter-btn${filterFav ? ' active' : ''}`}
+            onClick={() => setFilterFav(f => !f)}
+          >
+            <img src={crestUrlSegunda(favoriteTeam)} alt="" className="team-crest team-crest--sm" />
+            {filterFav ? `Solo ${favoriteTeam}` : favoriteTeam}
+          </button>
+        ) : <span />}
         <button className="btn-refresh" onClick={refresh} disabled={loading} title="Actualizar partidos">↻ Actualizar</button>
       </div>
 
       {matches.length === 0 ? (
         <div className="loading">No hay datos para esta jornada</div>
       ) : (
-        groupByDate(matches).map(({ label, matches: group }) => {
+        groupByDate(
+          filterFav && favoriteTeam
+            ? matches.filter(m => m.homeTeam === favoriteTeam || m.awayTeam === favoriteTeam)
+            : matches
+        ).map(({ label, matches: group }) => {
           const isCollapsed = collapsed.has(label);
           return (
             <div key={label}>
@@ -162,7 +181,7 @@ export default function CalendarSegundaTab() {
                 <span className="date-group-chevron">{isCollapsed ? '›' : '‹'}</span>
               </div>
               {!isCollapsed && group.map(m => (
-                <MatchCard key={m.matchId} match={m} onOpenDetail={open} />
+                <MatchCard key={m.matchId} match={m} onOpenDetail={open} favorite={favoriteTeam} />
               ))}
             </div>
           );

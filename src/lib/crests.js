@@ -73,3 +73,13 @@ export const crestUrlRffm = logoPath =>
   logoPath
     ? `${import.meta.env.BASE_URL}${logoPath}`
     : `${import.meta.env.BASE_URL}crests-rffm/unknown.png`;
+
+export const crestUrlMunicipal = name =>
+  name && typeof name === 'string'
+    ? `${import.meta.env.BASE_URL}crests-municipal/${slugify(name)}.png`
+    : `${import.meta.env.BASE_URL}crests-municipal/unknown.svg`;
+
+export const crestUrlMunicipalFallback = name =>
+  name && typeof name === 'string'
+    ? `${import.meta.env.BASE_URL}crests-municipal/${slugify(name)}.svg`
+    : `${import.meta.env.BASE_URL}crests-municipal/unknown.svg`;

@@ -100,5 +100,15 @@ service cloud.firestore {
       allow read: if true;
       allow write: if false;
     }
+
+    match /matches_cache_municipal/{round} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /standings_cache_municipal/{document} {
+      allow read: if true;
+      allow write: if false;
+    }
   }
 }

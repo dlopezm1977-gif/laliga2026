@@ -4,6 +4,7 @@ import { useScorersSegunda } from '../../hooks/useScorersSegunda';
 import { crestUrlSegunda } from '../../lib/crests';
 import { ABBR } from '../../lib/segundaTeams';
 import LoadingSpinner from '../LoadingSpinner';
+import { useAuth } from '../../contexts/AuthContext';
 
 function zoneClass(zones, position) {
   if (!zones?.length) return '';
@@ -31,7 +32,7 @@ function Form({ form }) {
   );
 }
 
-function LigaView({ standings, zones }) {
+function LigaView({ standings, zones, favoriteTeam }) {
   if (!standings.length) return (
     <div className="empty-state">
       <img src={`${import.meta.env.BASE_URL}icon-empty.png`} alt="" className="empty-icon" />
@@ -59,7 +60,8 @@ function LigaView({ standings, zones }) {
         </thead>
         <tbody>
           {standings.map(team => {
-            const cls = zoneClass(zones, team.position);
+            const isFav = team.team_name === favoriteTeam;
+            const cls   = [zoneClass(zones, team.position), isFav ? 'row-favorite' : ''].filter(Boolean).join(' ');
             return (
               <tr key={team.team_id} className={cls}>
                 <td className="col-pos">{team.position}</td>
@@ -141,8 +143,10 @@ function GoleadoresView({ leaders }) {
 
 export default function StandingsSegundaTab() {
   const [view, setView] = useState('liga');
+  const { profile } = useAuth();
   const { standings, zones, loading: loadingStandings, error: errorStandings } = useStandingsSegunda();
   const { leaders, loading: loadingScorers, error: errorScorers } = useScorersSegunda();
+  const favoriteTeam = profile?.favoriteTeamSegunda || null;
 
   const loading = view === 'liga' ? loadingStandings : loadingScorers;
   const error   = view === 'liga' ? errorStandings   : errorScorers;
@@ -169,7 +173,7 @@ export default function StandingsSegundaTab() {
         </div>
       )}
 
-      {!loading && !error && view === 'liga'       && <LigaView standings={standings} zones={zones} />}
+      {!loading && !error && view === 'liga'       && <LigaView standings={standings} zones={zones} favoriteTeam={favoriteTeam} />}
       {!loading && !error && view === 'goleadores'  && <GoleadoresView leaders={leaders} />}
     </div>
   );
