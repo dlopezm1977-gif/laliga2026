@@ -173,14 +173,19 @@ async function syncEvents() {
 
   let updated = 0;
   const batch = db.batch();
+  const changedMatches = [];
+  const finishedMatches = [];
+  const goalMatches = [];
 
   for (const [rd, rdMatches] of Object.entries(byRound)) {
     const prev = existing[rd];
+    const prevById = prev?.matches
+      ? Object.fromEntries(prev.matches.map(m => [m.matchId, m]))
+      : {};
 
     // Merge: nunca sobreescribir resultado con null (protección ante glitches de API)
     let merged = rdMatches;
     if (prev?.matches) {
-      const prevById = Object.fromEntries(prev.matches.map(m => [m.matchId, m]));
       merged = rdMatches.map(m => {
         const old = prevById[m.matchId];
         const apiLostScore = old && old.homeScore != null && m.homeScore == null;
@@ -190,6 +195,18 @@ async function syncEvents() {
         }
         return m;
       });
+    }
+
+    for (const m of merged) {
+      const old = prevById[m.matchId];
+      if (!old) continue;
+      if (m.status === 'notstarted' && old.utcDate !== m.utcDate) changedMatches.push(m);
+      if (m.status === 'finished' && old.status !== 'finished') finishedMatches.push(m);
+      if (LIVE_STATUSES.has(m.status) && m.homeScore !== null) {
+        const homeGoals = (m.homeScore ?? 0) - (old.homeScore ?? 0);
+        const awayGoals = (m.awayScore ?? 0) - (old.awayScore ?? 0);
+        if (homeGoals > 0 || awayGoals > 0) goalMatches.push(m);
+      }
     }
 
     const changed = !prev || JSON.stringify(prev.matches) !== JSON.stringify(merged);
@@ -209,7 +226,7 @@ async function syncEvents() {
     console.log('No changes in events — Firestore not updated');
   }
 
-  return events;
+  return { events, changedMatches, finishedMatches, goalMatches };
 }
 
 async function syncStandings() {
@@ -226,7 +243,8 @@ async function syncStandings() {
   console.log(`Standings updated: ${data.standings?.length ?? 0} equipos`);
 }
 
-const SCORERS_TTL_MS = 60 * 60 * 1000; // 1 hora
+const SCORERS_TTL_MS    = 60 * 60 * 1000; // 1 hora
+const NOTIF_URL_SEGUNDA = '/laliga2026/?league=segunda&tab=resultados';
 
 async function syncScorers() {
   // Comprobar si los datos son recientes para evitar ~20 llamadas de assists por ejecución
@@ -277,11 +295,161 @@ async function syncScorers() {
   console.log(`Scorers updated: ${leaders.length} jugadores`);
 }
 
+function formatMatchDate(utcDate) {
+  if (!utcDate) return '';
+  return new Date(utcDate).toLocaleString('es-ES', {
+    weekday: 'short', day: 'numeric', month: 'short',
+    hour: '2-digit', minute: '2-digit',
+    timeZone: 'Europe/Madrid',
+  });
+}
+
+async function collectTokensByPref(prefPath, favTeamField) {
+  const usersSnap = await db.collection('users').get();
+  const allTokens = [];
+  const favEntries = [];
+
+  await Promise.all(usersSnap.docs.map(async doc => {
+    const data = doc.data();
+    const pref = prefPath.split('.').reduce((o, k) => o?.[k], data?.notifPrefs);
+    if (!pref || pref === 'disabled') return;
+
+    const tokSnap = await db.collection('users').doc(doc.id).collection('fcmTokens').get();
+    const enabled = [];
+    tokSnap.forEach(t => {
+      const d = t.data();
+      if (d.enabled && d.token) enabled.push({ token: d.token, label: d.label });
+    });
+
+    if (pref === 'all') {
+      allTokens.push(...enabled);
+    } else if (pref === 'favorite') {
+      const fav = data[favTeamField] ?? null;
+      favEntries.push(...enabled.map(e => ({ ...e, favoriteTeam: fav })));
+    }
+  }));
+
+  return { allTokens, favEntries };
+}
+
+async function sendScheduleChangeNotifications(changedMatches) {
+  if (changedMatches.length === 0) return;
+
+  console.log(`\nCambios de horario: ${changedMatches.length} partido(s)`);
+  changedMatches.forEach(m =>
+    console.log(`  · ${m.homeTeam} vs ${m.awayTeam} → ${m.utcDate}`)
+  );
+
+  const { allTokens, favEntries } = await collectTokensByPref('scheduleChange.segunda', 'favoriteTeamSegunda');
+  let totalOk = 0, totalErr = 0;
+
+  for (const m of changedMatches) {
+    const matchingFav = favEntries.filter(e => e.favoriteTeam === m.homeTeam || e.favoriteTeam === m.awayTeam);
+    const recipients = [...allTokens, ...matchingFav];
+    if (recipients.length === 0) continue;
+
+    const when = formatMatchDate(m.utcDate);
+    const body = `${m.homeTeam} vs ${m.awayTeam}${when ? ` · ${when}` : ''}`;
+    const results = await Promise.all(recipients.map(async r => {
+      try {
+        await admin.messaging().send({
+          token: r.token,
+          webpush: {
+            headers: { Urgency: 'normal' },
+            data: { title: '🗓️ Cambio de horario — LaLiga Hypermotion', body, url: NOTIF_URL_SEGUNDA },
+          },
+        });
+        return true;
+      } catch { return false; }
+    }));
+    totalOk  += results.filter(Boolean).length;
+    totalErr += results.filter(r => !r).length;
+  }
+
+  console.log(`  Notificaciones enviadas: ${totalOk} OK, ${totalErr} error(es)`);
+}
+
+async function sendMatchEndNotifications(finishedMatches) {
+  if (finishedMatches.length === 0) return;
+
+  console.log(`\nFinales de partido: ${finishedMatches.length} partido(s)`);
+  finishedMatches.forEach(m =>
+    console.log(`  · ${m.homeTeam} ${m.homeScore} - ${m.awayScore} ${m.awayTeam}`)
+  );
+
+  const { allTokens, favEntries } = await collectTokensByPref('matchEnd.segunda', 'favoriteTeamSegunda');
+  let totalOk = 0, totalErr = 0;
+
+  for (const m of finishedMatches) {
+    const matchingFav = favEntries.filter(e => e.favoriteTeam === m.homeTeam || e.favoriteTeam === m.awayTeam);
+    const recipients = [...allTokens, ...matchingFav];
+    if (recipients.length === 0) continue;
+
+    const body = `${m.homeTeam} ${m.homeScore} - ${m.awayScore} ${m.awayTeam}`;
+    const results = await Promise.all(recipients.map(async r => {
+      try {
+        await admin.messaging().send({
+          token: r.token,
+          webpush: {
+            headers: { Urgency: 'high' },
+            data: { title: '⚽ Final — LaLiga Hypermotion', body, url: NOTIF_URL_SEGUNDA },
+          },
+        });
+        return true;
+      } catch { return false; }
+    }));
+    totalOk  += results.filter(Boolean).length;
+    totalErr += results.filter(r => !r).length;
+  }
+
+  console.log(`  Notificaciones enviadas: ${totalOk} OK, ${totalErr} error(es)`);
+}
+
+async function sendGoalNotifications(goalMatches) {
+  if (goalMatches.length === 0) return;
+
+  console.log(`\nGoles en vivo: ${goalMatches.length} partido(s) con cambio de marcador`);
+  goalMatches.forEach(m =>
+    console.log(`  · ${m.homeTeam} ${m.homeScore} - ${m.awayScore} ${m.awayTeam}${m.currentMinute ? ` (min. ${m.currentMinute})` : ''}`)
+  );
+
+  const { allTokens, favEntries } = await collectTokensByPref('goals.segunda', 'favoriteTeamSegunda');
+  let totalOk = 0, totalErr = 0;
+
+  for (const m of goalMatches) {
+    const matchingFav = favEntries.filter(e => e.favoriteTeam === m.homeTeam || e.favoriteTeam === m.awayTeam);
+    const recipients = [...allTokens, ...matchingFav];
+    if (recipients.length === 0) continue;
+
+    const min = m.currentMinute ? ` · min. ${m.currentMinute}` : '';
+    const body = `${m.homeTeam} ${m.homeScore} - ${m.awayScore} ${m.awayTeam}${min}`;
+    const results = await Promise.all(recipients.map(async r => {
+      try {
+        await admin.messaging().send({
+          token: r.token,
+          webpush: {
+            headers: { Urgency: 'high' },
+            data: { title: '⚽ Gol — LaLiga Hypermotion', body, url: NOTIF_URL_SEGUNDA },
+          },
+        });
+        return true;
+      } catch { return false; }
+    }));
+    totalOk  += results.filter(Boolean).length;
+    totalErr += results.filter(r => !r).length;
+  }
+
+  console.log(`  Notificaciones enviadas: ${totalOk} OK, ${totalErr} error(es)`);
+}
+
 async function main() {
   const backfill = process.argv.includes('--backfill');
   if (backfill) console.log('Modo backfill: sincronizando todos los partidos finalizados…');
-  const events = await syncEvents();
+  const { events, changedMatches, finishedMatches, goalMatches } = await syncEvents();
   await Promise.all([syncStandings(), syncScorers()]);
   await syncMatchDetails(events, { backfill });
+  await sendScheduleChangeNotifications(changedMatches);
+  await sendMatchEndNotifications(finishedMatches);
+  await sendGoalNotifications(goalMatches);
 }
 main().catch(err => { console.error(err); process.exit(1); });
