@@ -11,7 +11,7 @@ function shuffle(arr) {
   return a;
 }
 
-export default function SwapPuzzleGame({ game, uid, onFinish }) {
+export default function SwapPuzzleGame({ game, uid, onFinish, replay = false }) {
   const N         = game.gridSize ?? 4;
   const total     = N * N;
   const timeLimit = game.timeLimit ?? 90;
@@ -28,7 +28,7 @@ export default function SwapPuzzleGame({ game, uid, onFinish }) {
   const imageUrl = game.imageUrl ?? `${import.meta.env.BASE_URL}app-icon.png`;
 
   useEffect(() => {
-    if (!savedStartRef.current && uid) {
+    if (!replay && !savedStartRef.current && uid) {
       savedStartRef.current = true;
       saveMinigameStarted(uid, game.id).catch(() => {});
     }
@@ -48,7 +48,7 @@ export default function SwapPuzzleGame({ game, uid, onFinish }) {
     if (tiles.every((t, i) => t === i)) {
       const elapsed = Math.round((Date.now() - startTimeRef.current) / 1000);
       setPhase('won');
-      if (!savedEndRef.current && uid) {
+      if (!replay && !savedEndRef.current && uid) {
         savedEndRef.current = true;
         saveMinigameCompleted(uid, game.id, elapsed).catch(() => {});
       }
@@ -107,7 +107,10 @@ export default function SwapPuzzleGame({ game, uid, onFinish }) {
             className="puzzle-reveal-img"
           />
           <div className="memory-result-title">¡Puzzle completado!</div>
-          <div className="memory-result-pts">+{game.pointsComplete ?? 10} pts</div>
+          {replay
+            ? <div className="memory-result-pts" style={{ color: 'var(--muted)', fontSize: '.85rem' }}>Modo repaso — sin puntos extra</div>
+            : <div className="memory-result-pts">+{game.pointsComplete ?? 10} pts</div>
+          }
           <button className="btn-save" style={{ marginTop: '1rem' }} onClick={onFinish}>Continuar</button>
         </div>
       )}
@@ -115,7 +118,10 @@ export default function SwapPuzzleGame({ game, uid, onFinish }) {
         <div className="memory-result memory-result--timeout">
           <div className="memory-result-icon">⏰</div>
           <div className="memory-result-title">¡Tiempo agotado!</div>
-          <div className="memory-result-pts" style={{ color: '#f59e0b' }}>+{game.pointsStarted ?? 5} pts por participar</div>
+          {replay
+            ? <div className="memory-result-pts" style={{ color: 'var(--muted)', fontSize: '.85rem' }}>Modo repaso — sin puntos extra</div>
+            : <div className="memory-result-pts" style={{ color: '#f59e0b' }}>+{game.pointsStarted ?? 5} pts por participar</div>
+          }
           <button className="btn-save" style={{ marginTop: '1rem' }} onClick={onFinish}>Continuar</button>
         </div>
       )}

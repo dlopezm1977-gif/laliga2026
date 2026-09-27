@@ -37,14 +37,23 @@ if (!fs.existsSync(CRESTS_DIR)) fs.mkdirSync(CRESTS_DIR, { recursive: true });
 
 async function fetchJson(url, retries = 3, delayMs = 2000) {
   for (let attempt = 1; attempt <= retries; attempt++) {
-    const res = await fetch(url);
-    if (res.ok) return res.json();
-    if (attempt < retries && (res.status === 504 || res.status === 502 || res.status === 503)) {
-      console.warn(`  HTTP ${res.status} en intento ${attempt}/${retries}, reintentando en ${delayMs / 1000}s…`);
-      await new Promise(r => setTimeout(r, delayMs));
-      continue;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10_000);
+    try {
+      const res = await fetch(url, { signal: controller.signal });
+      clearTimeout(timer);
+      if (res.ok) return res.json();
+      if (attempt < retries && (res.status === 504 || res.status === 502 || res.status === 503)) {
+        console.warn(`  HTTP ${res.status} en intento ${attempt}/${retries}, reintentando en ${delayMs / 1000}s…`);
+        await new Promise(r => setTimeout(r, delayMs));
+        continue;
+      }
+      throw new Error(`HTTP ${res.status} — ${url}`);
+    } catch (e) {
+      clearTimeout(timer);
+      if (e.name === 'AbortError') throw new Error(`Timeout (10s) — ${url}`);
+      throw e;
     }
-    throw new Error(`HTTP ${res.status} — ${url}`);
   }
 }
 

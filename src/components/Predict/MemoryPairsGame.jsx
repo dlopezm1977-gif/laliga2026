@@ -27,7 +27,7 @@ function buildCards(pairsCount) {
   return shuffle(cards);
 }
 
-export default function MemoryPairsGame({ game, uid, onFinish }) {
+export default function MemoryPairsGame({ game, uid, onFinish, replay = false }) {
   const pairsCount = game.pairsCount ?? 10;
   const timeLimit  = game.timeLimit ?? 60;
 
@@ -40,9 +40,8 @@ export default function MemoryPairsGame({ game, uid, onFinish }) {
   const savedStartRef = useRef(false);
   const savedEndRef   = useRef(false);
 
-  // Save "started" once on mount → 5 pts guaranteed
   useEffect(() => {
-    if (!savedStartRef.current && uid) {
+    if (!replay && !savedStartRef.current && uid) {
       savedStartRef.current = true;
       saveMinigameStarted(uid, game.id).catch(() => {});
     }
@@ -62,7 +61,7 @@ export default function MemoryPairsGame({ game, uid, onFinish }) {
     if (cards.length > 0 && cards.every(c => c.matched)) {
       const elapsed = Math.round((Date.now() - startTimeRef.current) / 1000);
       setPhase('won');
-      if (!savedEndRef.current && uid) {
+      if (!replay && !savedEndRef.current && uid) {
         savedEndRef.current = true;
         saveMinigameCompleted(uid, game.id, elapsed).catch(() => {});
       }
@@ -121,7 +120,10 @@ export default function MemoryPairsGame({ game, uid, onFinish }) {
         <div className="memory-result memory-result--won">
           <div className="memory-result-icon">🎉</div>
           <div className="memory-result-title">¡Todas las parejas!</div>
-          <div className="memory-result-pts">+{game.pointsComplete ?? 10} pts</div>
+          {replay
+            ? <div className="memory-result-pts" style={{ color: 'var(--muted)', fontSize: '.85rem' }}>Modo repaso — sin puntos extra</div>
+            : <div className="memory-result-pts">+{game.pointsComplete ?? 10} pts</div>
+          }
           <button className="btn-save" style={{ marginTop: '1rem' }} onClick={onFinish}>Continuar</button>
         </div>
       )}
@@ -129,7 +131,10 @@ export default function MemoryPairsGame({ game, uid, onFinish }) {
         <div className="memory-result memory-result--timeout">
           <div className="memory-result-icon">⏰</div>
           <div className="memory-result-title">¡Tiempo agotado!</div>
-          <div className="memory-result-pts" style={{ color: '#f59e0b' }}>+{game.pointsStarted ?? 5} pts por participar</div>
+          {replay
+            ? <div className="memory-result-pts" style={{ color: 'var(--muted)', fontSize: '.85rem' }}>Modo repaso — sin puntos extra</div>
+            : <div className="memory-result-pts" style={{ color: '#f59e0b' }}>+{game.pointsStarted ?? 5} pts por participar</div>
+          }
           <button className="btn-save" style={{ marginTop: '1rem' }} onClick={onFinish}>Continuar</button>
         </div>
       )}

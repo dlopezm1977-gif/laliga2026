@@ -1824,7 +1824,7 @@ input  { font-family: inherit; }
 .minigame-title { font-weight: 700; font-size: .9rem; color: var(--text); }
 .minigame-meta { font-family: var(--mono); font-size: .72rem; color: var(--muted); margin-top: .1rem; }
 .minigame-desc { font-size: .82rem; color: var(--muted); margin-top: .65rem; line-height: 1.5; }
-.minigame-card-right { flex-shrink: 0; }
+.minigame-card-right { flex-shrink: 0; display: flex; align-items: center; gap: .5rem; }
 .minigame-play-btn {
   background: var(--accent2);
   color: #fff;
@@ -2119,7 +2119,6 @@ input  { font-family: inherit; }
 
 
 /* Equipo favorito RFFM en clasificación */
-.standings-table tr.zone-rffm-fav td:first-child { border-left: 3px solid var(--accent); }
 .standings-table tr.zone-rffm-fav { background: color-mix(in srgb, var(--accent) 8%, transparent); }
 
 /* Logo RFFM en cabecera y dropdown */

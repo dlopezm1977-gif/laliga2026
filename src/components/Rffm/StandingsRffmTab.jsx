@@ -7,6 +7,17 @@ import LoadingSpinner from '../LoadingSpinner';
 
 const FAVORITE_TEAM = 'S.A.D. OCIO Y DEPORTE CANAL A';
 
+const PROMO_SPOTS = 2;
+const REL_SPOTS   = 4;
+
+function rowClass(pos, total, isFav) {
+  const zones = [];
+  if (pos <= PROMO_SPOTS)                   zones.push('zone-hm-promo');
+  if (!isFav && pos > total - REL_SPOTS)    zones.push('zone-rel');
+  if (isFav)                                zones.push('zone-rffm-fav');
+  return zones.join(' ');
+}
+
 function LigaView({ standings }) {
   if (!standings.length) return (
     <div className="empty-state">
@@ -14,6 +25,8 @@ function LigaView({ standings }) {
       <p>La temporada aún no ha comenzado.</p>
     </div>
   );
+
+  const total = standings.length;
 
   return (
     <div className="standings">
@@ -34,7 +47,7 @@ function LigaView({ standings }) {
         </thead>
         <tbody>
           {standings.map((t, i) => (
-            <tr key={t.code} className={t.name === FAVORITE_TEAM ? 'zone-rffm-fav' : ''}>
+            <tr key={t.code} className={rowClass(i + 1, total, t.name === FAVORITE_TEAM)}>
               <td className="col-pos">{i + 1}</td>
               <td className="col-team">
                 <img className="team-crest team-crest--sm" src={crestUrlRffm(t.logo)} alt="" />
@@ -53,6 +66,10 @@ function LigaView({ standings }) {
           ))}
         </tbody>
       </table>
+      <div className="standings-legend">
+        <span className="legend-dot zone-hm-promo" />Ascenso
+        <span className="legend-dot zone-rel" />Descenso
+      </div>
     </div>
   );
 }

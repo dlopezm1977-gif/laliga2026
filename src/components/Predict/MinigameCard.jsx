@@ -4,6 +4,7 @@ import SwapPuzzleGame from './SwapPuzzleGame';
 
 export default function MinigameCard({ game, result, uid, onResultUpdate }) {
   const [playing, setPlaying] = useState(false);
+  const [replay, setReplay]   = useState(false);
 
   const now     = Date.now();
   const start   = game.startDate?.toMillis?.() ?? 0;
@@ -25,14 +26,15 @@ export default function MinigameCard({ game, result, uid, onResultUpdate }) {
 
   async function handleFinish() {
     setPlaying(false);
+    setReplay(false);
     await onResultUpdate?.();
   }
 
   if (playing) {
     if (game.type === 'puzzle') {
-      return <SwapPuzzleGame game={game} uid={uid} onFinish={handleFinish} />;
+      return <SwapPuzzleGame game={game} uid={uid} onFinish={handleFinish} replay={replay} />;
     }
-    return <MemoryPairsGame game={game} uid={uid} onFinish={handleFinish} />;
+    return <MemoryPairsGame game={game} uid={uid} onFinish={handleFinish} replay={replay} />;
   }
 
   return (
@@ -69,6 +71,11 @@ export default function MinigameCard({ game, result, uid, onResultUpdate }) {
           {isActive && !started && (
             <button className="minigame-play-btn" onClick={() => setPlaying(true)}>
               Jugar →
+            </button>
+          )}
+          {started && (
+            <button className="minigame-play-btn" style={{ opacity: 0.65 }} onClick={() => { setReplay(true); setPlaying(true); }}>
+              Repetir →
             </button>
           )}
         </div>
