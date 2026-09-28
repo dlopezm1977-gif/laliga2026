@@ -65,11 +65,13 @@ export default function MinigameCard({ game, result, uid, onResultUpdate }) {
               +{pts} pts
             </span>
           )}
-          {!started && !isActive && (
-            <span className="minigame-pts-badge badge-red">0 pts</span>
-          )}
           {isActive && !started && (
             <button className="minigame-play-btn" onClick={() => setPlaying(true)}>
+              Jugar →
+            </button>
+          )}
+          {!isActive && !started && (
+            <button className="minigame-play-btn" style={{ opacity: 0.65 }} onClick={() => { setReplay(true); setPlaying(true); }}>
               Jugar →
             </button>
           )}
@@ -81,14 +83,16 @@ export default function MinigameCard({ game, result, uid, onResultUpdate }) {
         </div>
       </div>
 
-      {isActive && !started && (
+      {!started && (
         <p className="minigame-desc">
           {game.type === 'puzzle'
             ? <>Reconstruye el logo en {game.timeLimit ?? 90}s intercambiando piezas.</>
             : <>Encuentra las {game.pairsCount ?? 10} parejas de escudos en {game.timeLimit ?? 60}s.</>
           }
-          {' '}Completarlo suma <strong>{game.pointsComplete ?? 10} pts</strong>;
-          empezar ya garantiza <strong>{game.pointsStarted ?? 5} pts</strong>.
+          {isActive
+            ? <>{' '}Completarlo suma <strong>{game.pointsComplete ?? 10} pts</strong>; empezar ya garantiza <strong>{game.pointsStarted ?? 5} pts</strong>.</>
+            : <>{' '}El plazo ha terminado — puedes jugarlo pero <strong>no suma puntos</strong>.</>
+          }
         </p>
       )}
     </div>
