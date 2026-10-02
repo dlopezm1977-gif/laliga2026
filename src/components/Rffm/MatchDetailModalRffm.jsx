@@ -172,7 +172,7 @@ function GoalItemRffm({ g }) {
 }
 
 function CardItemRffm({ c }) {
-  const isRed = c.tipo === '200' || c.segundaAmarilla;
+  const isRed = c.tipo === '101' || c.tipo === '200' || c.segundaAmarilla;
   const cls   = isRed ? 'red' : 'yellow';
   return (
     <div className="md-inc-item">

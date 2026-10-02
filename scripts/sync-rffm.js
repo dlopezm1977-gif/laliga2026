@@ -415,14 +415,28 @@ async function syncActas(actaIds, buildId) {
           away: (g.jugadores_equipo_visitante ?? []).map(mapPlayer),
         },
         incidents: {
-          goals: {
-            home: (g.goles_equipo_local     ?? []).map(gl => ({ cod: gl.codjugador, nombre: gl.nombre_jugador, minuto: parseInt(gl.minuto, 10), tipo: gl.tipo_gol })),
-            away: (g.goles_equipo_visitante ?? []).map(gl => ({ cod: gl.codjugador, nombre: gl.nombre_jugador, minuto: parseInt(gl.minuto, 10), tipo: gl.tipo_gol })),
-          },
-          cards: {
-            home: (g.tarjetas_equipo_local     ?? []).map(t => ({ cod: t.codjugador, nombre: t.nombre_jugador, minuto: parseInt(t.minuto, 10), tipo: t.codigo_tipo_amonestacion, segundaAmarilla: t.segunda_amarilla === '1' })),
-            away: (g.tarjetas_equipo_visitante ?? []).map(t => ({ cod: t.codjugador, nombre: t.nombre_jugador, minuto: parseInt(t.minuto, 10), tipo: t.codigo_tipo_amonestacion, segundaAmarilla: t.segunda_amarilla === '1' })),
-          },
+          goals: (() => {
+            const mapGoal = (gl, ownGoal) => ({ cod: gl.codjugador, nombre: gl.nombre_jugador, minuto: parseInt(gl.minuto, 10), tipo: gl.tipo_gol, ...(ownGoal && { ownGoal: true }) });
+            const loc = g.goles_equipo_local     ?? [];
+            const vis = g.goles_equipo_visitante ?? [];
+            return {
+              home: [...loc.filter(gl => gl.tipo_gol !== '102').map(gl => mapGoal(gl, false)), ...vis.filter(gl => gl.tipo_gol === '102').map(gl => mapGoal(gl, true))].sort((a, b) => a.minuto - b.minuto),
+              away: [...vis.filter(gl => gl.tipo_gol !== '102').map(gl => mapGoal(gl, false)), ...loc.filter(gl => gl.tipo_gol === '102').map(gl => mapGoal(gl, true))].sort((a, b) => a.minuto - b.minuto),
+            };
+          })(),
+          cards: (() => {
+            const mapCards = raw => {
+              const seen = {};
+              return [...(raw ?? [])].sort((a, b) => parseInt(a.minuto) - parseInt(b.minuto)).map(t => {
+                let segundaAmarilla = t.segunda_amarilla === '1';
+                if (t.codigo_tipo_amonestacion === '100' && !segundaAmarilla) {
+                  if (seen[t.codjugador]) { segundaAmarilla = true; } else { seen[t.codjugador] = true; }
+                }
+                return { cod: t.codjugador, nombre: t.nombre_jugador, minuto: parseInt(t.minuto, 10), tipo: t.codigo_tipo_amonestacion, segundaAmarilla };
+              });
+            };
+            return { home: mapCards(g.tarjetas_equipo_local), away: mapCards(g.tarjetas_equipo_visitante) };
+          })(),
           subs: {
             home: (g.sustituciones_equipo_local     ?? []).map(s => ({ minuto: parseInt(s.minuto, 10), entra: { cod: s.codjugador_entra, nombre: s.nombre_jugador_entra, dorsal: s.entradorsal }, sale: { cod: s.codjugador_sale, nombre: s.nombre_jugador_sale, dorsal: s.saledorsal } })),
             away: (g.sustituciones_equipo_visitante ?? []).map(s => ({ minuto: parseInt(s.minuto, 10), entra: { cod: s.codjugador_entra, nombre: s.nombre_jugador_entra, dorsal: s.entradorsal }, sale: { cod: s.codjugador_sale, nombre: s.nombre_jugador_sale, dorsal: s.saledorsal } })),
