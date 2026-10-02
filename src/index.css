@@ -1077,7 +1077,7 @@ input  { font-family: inherit; }
 .pred-group-label {
   font-size: .68rem; font-family: var(--mono);
   text-transform: uppercase; letter-spacing: .07em;
-  color: var(--muted); padding: .3rem 0 .2rem;
+  color: var(--muted); padding: .3rem 1.25rem .2rem;
   border-bottom: 1px solid var(--border); margin-bottom: .2rem;
 }
 .pred-group-label--exact { color: #22c55e; }
@@ -1085,7 +1085,7 @@ input  { font-family: inherit; }
 .pred-group-label--miss  { color: var(--muted); }
 .pred-modal-row {
   display: flex; justify-content: space-between; align-items: center;
-  padding: .35rem .1rem; font-size: .85rem;
+  padding: .35rem 1.25rem; font-size: .85rem;
 }
 .pred-modal-row + .pred-modal-row { border-top: 1px solid var(--border); }
 .pred-modal-user { color: var(--text); }
@@ -1922,6 +1922,107 @@ input  { font-family: inherit; }
 .memory-result-title { font-family: var(--display); font-size: 1.4rem; letter-spacing: .05em; color: var(--text); }
 .memory-result-pts { font-family: var(--mono); font-size: 1rem; font-weight: 700; color: var(--green); }
 .memory-result--timeout .memory-result-pts { color: #f59e0b; }
+
+/* ── Sequence Recall Game ────────────────────────────────────────────────── */
+.seq-game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: .5rem 0 .75rem;
+  gap: .8rem;
+}
+.seq-instruction {
+  font-size: .82rem;
+  font-family: var(--mono);
+  color: var(--muted);
+  text-align: center;
+  margin: 0;
+  min-height: 1.3em;
+}
+.seq-display {
+  display: flex;
+  gap: .45rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.seq-slot {
+  width: 60px;
+  height: 60px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--surface);
+  transition: border-color .15s, transform .15s, box-shadow .15s;
+}
+.seq-slot img { width: 80%; height: 80%; object-fit: contain; }
+.seq-back-img { opacity: 0.25 !important; }
+.seq-slot--lit {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 28%, transparent);
+  transform: scale(1.1);
+}
+.seq-slot--done {
+  border-color: #22c55e;
+  background: color-mix(in srgb, #22c55e 12%, var(--surface));
+}
+.seq-slot--wrong {
+  border-color: #ef4444;
+  animation: seq-shake .35s ease;
+}
+@keyframes seq-shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-5px); }
+  60%       { transform: translateX(5px); }
+  80%       { transform: translateX(-3px); }
+}
+.seq-options-label {
+  font-size: .68rem;
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--muted);
+  margin: 0;
+}
+.seq-options {
+  display: flex;
+  gap: .5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.seq-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .2rem;
+  padding: .4rem .3rem;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color .12s, transform .1s, background .12s;
+  min-width: 62px;
+}
+.seq-option img { width: 42px; height: 42px; object-fit: contain; }
+.seq-option span {
+  font-size: .6rem;
+  color: var(--muted);
+  text-align: center;
+  font-family: var(--mono);
+  line-height: 1.2;
+  max-width: 58px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.seq-option:not(:disabled):hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  transform: translateY(-2px);
+}
+.seq-option:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 
 /* ── Minigame badge in ranking ──────────────────────────────────────────── */
 .minigame-badge-sm {

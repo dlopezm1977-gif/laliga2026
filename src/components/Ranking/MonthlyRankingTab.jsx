@@ -127,7 +127,7 @@ function HistoryResultModal({ cat, result, monthKey, onClose }) {
         </div>
 
         {resultTeam && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', padding: '.3rem 0 .6rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', padding: '.3rem 1.25rem .6rem' }}>
             <img className="team-crest team-crest--sm" src={crestUrl(resultTeam)} alt={resultTeam} />
             <span style={{ fontWeight: 700, fontSize: '.9rem' }}>
               {resultName ? `${resultName}` : resultTeam}
@@ -138,59 +138,82 @@ function HistoryResultModal({ cat, result, monthKey, onClose }) {
 
         {loading ? <LoadingSpinner /> : (
           <>
-            {correct.length > 0 && (
-              <>
-                <div className="pred-group-label">
-                  ✓ Acertados
-                  <span className="pred-group-pts">{correct.length}</span>
-                </div>
-                {correct.map(({ username, team }) => (
-                  <div className="pred-modal-row" key={username}>
-                    <span className="pred-modal-user">{username}</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '.3rem' }}>
-                      {team && <img className="team-crest team-crest--sm" src={crestUrl(team)} alt={team} />}
-                      {team && <span className="pred-modal-team--full" style={{ fontSize: '.78rem', color: 'var(--muted)' }}>{team}</span>}
-                      {team && <span className="pred-modal-team--abbr" style={{ fontSize: '.78rem', color: 'var(--muted)' }}>{teamAbbr(team)}</span>}
-                      <span className="pred-modal-score result-badge exact">+10 pts</span>
-                    </span>
+            {!resultTeam ? (
+              groupPredsByTeam(preds, cat.key).length === 0 ? (
+                <p className="pred-modal-empty">Nadie ha predicho aún.</p>
+              ) : (
+                groupPredsByTeam(preds, cat.key).map(([team, users]) => (
+                  <div key={team}>
+                    <div className="pred-group-label">
+                      <img className="team-crest team-crest--sm" src={crestUrl(team)} alt={team} style={{ marginRight: '.3rem' }} />
+                      {team}
+                      <span className="pred-group-pts">{users.length}</span>
+                    </div>
+                    {users.map(u => (
+                      <div className="pred-modal-row" key={u}>
+                        <span className="pred-modal-user">{u}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </>
-            )}
-
-            {wrong.length > 0 && (
+                ))
+              )
+            ) : (
               <>
-                <div className="pred-group-label">
-                  ✗ Fallados
-                  <span className="pred-group-pts">{wrong.length}</span>
-                </div>
-                {wrong.map(({ username, team }) => (
-                  <div className="pred-modal-row" key={username}>
-                    <span className="pred-modal-user">{username}</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '.3rem' }}>
-                      {team && <img className="team-crest team-crest--sm" src={crestUrl(team)} alt={team} />}
-                      {team && <span className="pred-modal-team--full" style={{ fontSize: '.78rem', color: 'var(--muted)' }}>{team}</span>}
-                      {team && <span className="pred-modal-team--abbr" style={{ fontSize: '.78rem', color: 'var(--muted)' }}>{teamAbbr(team)}</span>}
-                      <span className="pred-modal-score result-badge miss">0 pts</span>
-                    </span>
-                  </div>
-                ))}
-              </>
-            )}
+                {correct.length > 0 && (
+                  <>
+                    <div className="pred-group-label">
+                      ✓ Acertados
+                      <span className="pred-group-pts">{correct.length}</span>
+                    </div>
+                    {correct.map(({ username, team }) => (
+                      <div className="pred-modal-row" key={username}>
+                        <span className="pred-modal-user">{username}</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '.3rem' }}>
+                          {team && <img className="team-crest team-crest--sm" src={crestUrl(team)} alt={team} />}
+                          {team && <span className="pred-modal-team--full" style={{ fontSize: '.78rem', color: 'var(--muted)' }}>{team}</span>}
+                          {team && <span className="pred-modal-team--abbr" style={{ fontSize: '.78rem', color: 'var(--muted)' }}>{teamAbbr(team)}</span>}
+                          <span className="pred-modal-score result-badge exact">+10 pts</span>
+                        </span>
+                      </div>
+                    ))}
+                  </>
+                )}
 
-            {noVote.length > 0 && (
-              <>
-                <div className="pred-group-label">Sin predicción</div>
-                {noVote.map(({ username }) => (
-                  <div className="pred-modal-row" key={username}>
-                    <span className="pred-modal-user" style={{ color: 'var(--muted)' }}>{username}</span>
-                  </div>
-                ))}
-              </>
-            )}
+                {wrong.length > 0 && (
+                  <>
+                    <div className="pred-group-label">
+                      ✗ Fallados
+                      <span className="pred-group-pts">{wrong.length}</span>
+                    </div>
+                    {wrong.map(({ username, team }) => (
+                      <div className="pred-modal-row" key={username}>
+                        <span className="pred-modal-user">{username}</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '.3rem' }}>
+                          {team && <img className="team-crest team-crest--sm" src={crestUrl(team)} alt={team} />}
+                          {team && <span className="pred-modal-team--full" style={{ fontSize: '.78rem', color: 'var(--muted)' }}>{team}</span>}
+                          {team && <span className="pred-modal-team--abbr" style={{ fontSize: '.78rem', color: 'var(--muted)' }}>{teamAbbr(team)}</span>}
+                          <span className="pred-modal-score result-badge miss">0 pts</span>
+                        </span>
+                      </div>
+                    ))}
+                  </>
+                )}
 
-            {preds.length === 0 && (
-              <p className="pred-modal-empty">Nadie predijo este mes.</p>
+                {noVote.length > 0 && (
+                  <>
+                    <div className="pred-group-label">Sin predicción</div>
+                    {noVote.map(({ username }) => (
+                      <div className="pred-modal-row" key={username}>
+                        <span className="pred-modal-user" style={{ color: 'var(--muted)' }}>{username}</span>
+                      </div>
+                    ))}
+                  </>
+                )}
+
+                {preds.length === 0 && (
+                  <p className="pred-modal-empty">Nadie predijo este mes.</p>
+                )}
+              </>
             )}
           </>
         )}
@@ -215,8 +238,8 @@ function HistoryMonthSection({ month, result }) {
           <div
             key={cat.key}
             className="monthly-rank-row"
-            style={{ cursor: team ? 'pointer' : 'default' }}
-            onClick={() => team && setSelected(cat.key)}
+            style={{ cursor: 'pointer' }}
+            onClick={() => setSelected(cat.key)}
           >
             <span className="monthly-rank-cat">{cat.emoji} {cat.label}</span>
             {team ? (

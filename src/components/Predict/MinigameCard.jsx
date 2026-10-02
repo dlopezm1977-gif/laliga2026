@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import MemoryPairsGame from './MemoryPairsGame';
 import SwapPuzzleGame from './SwapPuzzleGame';
+import SequenceRecallGame from './SequenceRecallGame';
 
 export default function MinigameCard({ game, result, uid, onResultUpdate }) {
   const [playing, setPlaying] = useState(false);
@@ -33,6 +34,9 @@ export default function MinigameCard({ game, result, uid, onResultUpdate }) {
   if (playing) {
     if (game.type === 'puzzle') {
       return <SwapPuzzleGame game={game} uid={uid} onFinish={handleFinish} replay={replay} />;
+    }
+    if (game.type === 'sequence') {
+      return <SequenceRecallGame game={game} uid={uid} onFinish={handleFinish} replay={replay} />;
     }
     return <MemoryPairsGame game={game} uid={uid} onFinish={handleFinish} replay={replay} />;
   }
@@ -87,7 +91,9 @@ export default function MinigameCard({ game, result, uid, onResultUpdate }) {
         <p className="minigame-desc">
           {game.type === 'puzzle'
             ? <>Reconstruye el logo en {game.timeLimit ?? 90}s intercambiando piezas.</>
-            : <>Encuentra las {game.pairsCount ?? 10} parejas de escudos en {game.timeLimit ?? 60}s.</>
+            : game.type === 'sequence'
+              ? <>Repite la secuencia de escudos al estilo Simon. 4 niveles, {game.timeLimit ?? 60}s.</>
+              : <>Encuentra las {game.pairsCount ?? 10} parejas de escudos en {game.timeLimit ?? 60}s.</>
           }
           {isActive
             ? <>{' '}Completarlo suma <strong>{game.pointsComplete ?? 10} pts</strong>; empezar ya garantiza <strong>{game.pointsStarted ?? 5} pts</strong>.</>
