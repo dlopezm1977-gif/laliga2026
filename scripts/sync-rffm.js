@@ -164,6 +164,13 @@ async function syncMatchesAndStandings() {
       console.log(`  Jornada ${round}: ${partidos.length} partidos`);
     } catch (e) {
       console.warn(`  Jornada ${round} falló: ${e.message}`);
+      try {
+        const cached = await db.collection('matches_cache_rffm').doc(String(round)).get();
+        if (cached.exists && cached.data().matches?.length) {
+          allRounds[round] = cached.data().matches;
+          console.log(`  Jornada ${round}: usando caché (${allRounds[round].length} partidos)`);
+        }
+      } catch {}
     }
   }
 
