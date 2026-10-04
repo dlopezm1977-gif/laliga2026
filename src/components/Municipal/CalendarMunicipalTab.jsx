@@ -81,8 +81,8 @@ function MatchCard({ match, onClick }) {
   );
 }
 
-export default function CalendarMunicipalTab() {
-  const { currentRound, getMatches, totalRounds, loading, error, refresh } = useMatchesMunicipal();
+export default function CalendarMunicipalTab({ season = null }) {
+  const { currentRound, getMatches, totalRounds, loading, error, refresh } = useMatchesMunicipal(season);
   const [jornada, setJornada]         = useState(null);
   const [collapsed, setCollapsed]     = useState(new Set());
   const [filterFav, setFilterFav]     = useState(false);

@@ -69,8 +69,8 @@ function LigaView({ standings }) {
   );
 }
 
-export default function StandingsMunicipalTab() {
-  const { standings, loading, error } = useStandingsMunicipal();
+export default function StandingsMunicipalTab({ season = null }) {
+  const { standings, loading, error } = useStandingsMunicipal(season);
 
   return (
     <div className="standings-wrap">

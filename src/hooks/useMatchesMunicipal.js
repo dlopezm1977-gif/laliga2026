@@ -13,12 +13,14 @@ function detectCurrentRound(roundData) {
   return rounds[rounds.length - 1];
 }
 
-export function useMatchesMunicipal() {
-  const [roundData, setRoundData]       = useState({});
-  const [currentRound, setCurrentRound] = useState(1);
-  const [totalRounds, setTotalRounds]   = useState(22);
-  const [loading, setLoading]           = useState(true);
-  const [error, setError]               = useState(null);
+export function useMatchesMunicipal(season = null) {
+  const [roundData, setRoundData]         = useState({});
+  const [currentRound, setCurrentRound]   = useState(1);
+  const [totalRounds, setTotalRounds]     = useState(22);
+  const [currentSeason, setCurrentSeason] = useState(null);
+  const [seasons, setSeasons]             = useState([]);
+  const [loading, setLoading]             = useState(true);
+  const [error, setError]                 = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -30,25 +32,42 @@ export function useMatchesMunicipal() {
       ]);
 
       const meta = metaSnap.exists() ? metaSnap.data() : {};
+      const activeSeason = season ?? meta.currentSeason ?? null;
+      setCurrentSeason(meta.currentSeason ?? null);
+      setSeasons(meta.seasons ?? (activeSeason ? [activeSeason] : []));
+
       const all = {};
       roundsSnap.forEach(d => {
         if (d.id === 'meta') return;
-        const rd = parseInt(d.id, 10);
-        if (!isNaN(rd)) all[rd] = d.data().matches ?? [];
+        if (activeSeason) {
+          const prefix = `${activeSeason}_`;
+          if (d.id.startsWith(prefix)) {
+            const rd = parseInt(d.id.slice(prefix.length), 10);
+            if (!isNaN(rd)) all[rd] = d.data().matches ?? [];
+          }
+        } else {
+          // Formato antiguo: IDs numéricos sin prefijo de temporada
+          const rd = parseInt(d.id, 10);
+          if (!isNaN(rd)) all[rd] = d.data().matches ?? [];
+        }
       });
 
       setRoundData(all);
       const knownRounds = Object.keys(all).length;
-      setTotalRounds(meta.totalRounds != null ? meta.totalRounds : (knownRounds > 0 ? knownRounds : 22));
+      setTotalRounds(knownRounds > 0 ? knownRounds : 22);
+
+      const isCurrentSeason = !season || season === meta.currentSeason;
       setCurrentRound(
-        meta.currentRound != null ? meta.currentRound : detectCurrentRound(all)
+        isCurrentSeason && meta.currentRound != null
+          ? meta.currentRound
+          : detectCurrentRound(all)
       );
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [season]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -56,5 +75,5 @@ export function useMatchesMunicipal() {
     return roundData[rd] ?? [];
   }
 
-  return { roundData, currentRound, getMatches, totalRounds, loading, error, refresh: load };
+  return { roundData, currentRound, getMatches, totalRounds, currentSeason, seasons, loading, error, refresh: load };
 }

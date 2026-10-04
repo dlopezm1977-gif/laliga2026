@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { getDoc, doc } from 'firebase/firestore';
+import { db } from './lib/firebase';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Header  from './components/Layout/Header';
 import TabBar  from './components/Layout/TabBar';
@@ -32,6 +34,21 @@ function AppShell() {
     return p.get('tab') || DEFAULT_TAB_PRIMERA;
   });
   const [showAuth, setShowAuth] = useState(false);
+  const [municipalSeason, setMunicipalSeason]         = useState(null);
+  const [municipalSeasons, setMunicipalSeasons]       = useState([]);
+  const [municipalCurrentSeason, setMunicipalCurrentSeason] = useState(null);
+
+  useEffect(() => {
+    if (league !== 'municipal') return;
+    getDoc(doc(db, 'matches_cache_municipal', 'meta')).then(snap => {
+      if (!snap.exists()) return;
+      const meta = snap.data();
+      const cur = meta.currentSeason ?? null;
+      setMunicipalSeasons(meta.seasons ?? (cur ? [cur] : []));
+      setMunicipalCurrentSeason(cur);
+      setMunicipalSeason(s => s ?? cur);
+    }).catch(() => {});
+  }, [league]);
 
   useEffect(() => {
     if (!navigator.serviceWorker) return;
@@ -77,6 +94,20 @@ function AppShell() {
         onLeagueChange={handleLeagueChange}
       />
       <TabBar activeTab={tab} onTabChange={handleTabChange} league={league} />
+      {league === 'municipal' && municipalSeasons.length >= 1 && (
+        <div className="season-selector season-selector--municipal">
+          {[...municipalSeasons].reverse().map(s => (
+            <button
+              key={s}
+              className={`season-btn${municipalSeason === s ? ' active' : ''}`}
+              onClick={() => setMunicipalSeason(s)}
+            >
+              {s.slice(0, 2)}/{s.slice(2)}
+              {s === municipalCurrentSeason && <span className="season-btn__now" />}
+            </button>
+          ))}
+        </div>
+      )}
       <main className="main-content">
         {league === 'primera' && tab === 'calendar'       && <CalendarTab />}
         {league === 'primera' && tab === 'standings'      && <StandingsTab />}
@@ -87,8 +118,8 @@ function AppShell() {
         {league === 'segunda' && tab === 'clasificacion'  && <StandingsSegundaTab />}
         {league === 'juvenil'   && tab === 'resultados'     && <CalendarRffmTab />}
         {league === 'juvenil'   && tab === 'clasificacion'  && <StandingsRffmTab />}
-        {league === 'municipal' && tab === 'resultados'     && <CalendarMunicipalTab />}
-        {league === 'municipal' && tab === 'clasificacion'  && <StandingsMunicipalTab />}
+        {league === 'municipal' && tab === 'resultados'     && <CalendarMunicipalTab season={municipalSeason} />}
+        {league === 'municipal' && tab === 'clasificacion'  && <StandingsMunicipalTab season={municipalSeason} />}
       </main>
     </div>
   );

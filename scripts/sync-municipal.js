@@ -23,6 +23,7 @@ const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 const db = admin.firestore();
 
+const SEASON        = '2526';
 const MATCHES_URL   = 'https://datos.madrid.es/api/3/action/datastore_search?resource_id=300257-45-deportes-colectivos-historico&limit=500&q=27601';
 const STANDINGS_URL = 'https://datos.madrid.es/api/3/action/datastore_search?resource_id=300257-43-deportes-colectivos-historico&limit=100&q=27601';
 
@@ -78,7 +79,7 @@ async function syncMatches() {
   };
 
   for (const [rd, matches] of Object.entries(all)) {
-    batch.set(db.collection('matches_cache_municipal').doc(String(rd)), {
+    batch.set(db.collection('matches_cache_municipal').doc(`${SEASON}_${rd}`), {
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       matches,
     });
@@ -86,8 +87,14 @@ async function syncMatches() {
     if (ops >= BATCH_SIZE) await flush();
   }
 
+  const existingMeta = await db.collection('matches_cache_municipal').doc('meta').get();
+  const existingSeasons = existingMeta.exists ? (existingMeta.data().seasons ?? []) : [];
+  const seasons = [...new Set([...existingSeasons, SEASON])].sort();
+
   batch.set(db.collection('matches_cache_municipal').doc('meta'), {
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    currentSeason: SEASON,
+    seasons,
     currentRound,
     totalRounds,
   });
@@ -119,7 +126,7 @@ async function syncStandings() {
     }))
     .sort((a, b) => a.position - b.position);
 
-  await db.collection('standings_cache_municipal').doc('current').set({
+  await db.collection('standings_cache_municipal').doc(SEASON).set({
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     standings,
   });

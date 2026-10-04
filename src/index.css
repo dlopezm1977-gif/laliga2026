@@ -2675,6 +2675,44 @@ input  { font-family: inherit; }
   border-bottom-color: var(--municipal-accent);
 }
 
+.season-selector {
+  display: flex;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.season-btn {
+  padding: 3px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--fg-muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.season-selector--municipal .season-btn.active {
+  background: var(--municipal-accent);
+  color: #fff;
+  border-color: var(--municipal-accent);
+}
+.season-btn__now {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  margin-left: 5px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+}
+.season-btn.active .season-btn__now {
+  background: #fff;
+}
+
 /* ── Mini Calendar (Mis partidos) ───────────────────────────────────────── */
 .sched-week-label--btn {
   background: none;
