@@ -148,7 +148,11 @@ export default function PredictTab() {
 
   useEffect(() => {
     if (hasAutoNavigated.current || !currentMatchday || !visibleMinigames.length) return;
-    const gamesInSlot = visibleMinigames.filter(g => g.afterMatchday === currentMatchday - 1);
+    const now = Date.now();
+    const gamesInSlot = visibleMinigames.filter(g =>
+      g.afterMatchday === currentMatchday - 1 &&
+      (g.endDate?.toMillis?.() ?? 0) >= now
+    );
     if (gamesInSlot.length) {
       setShowingMinigames(gamesInSlot);
       hasAutoNavigated.current = true;
