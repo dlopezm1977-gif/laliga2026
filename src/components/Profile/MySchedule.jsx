@@ -104,6 +104,20 @@ function getTime(m, comp) {
   return t === '00:00' ? null : t;
 }
 
+function ByeRow() {
+  const badge = COMP_BADGE.municipal;
+  return (
+    <div className="sched-row bye-card" style={{ cursor: 'default', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+      <span className="sched-comp-badge" style={{ '--badge-color': badge.color }}>{badge.label}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
+        <img className="sched-crest" src={crestUrlMunicipal(MUNICIPAL_TEAM)} alt="" onError={e => { e.target.onerror = null; e.target.src = crestUrlMunicipalFallback(MUNICIPAL_TEAM); }} />
+        <span className="sched-name">{MUNICIPAL_TEAM}</span>
+      </div>
+      <span className="status-badge bye">Descansa</span>
+    </div>
+  );
+}
+
 function MatchRow({ m, comp, onClick }) {
   const badge = COMP_BADGE[comp];
   const status = getStatus(m, comp);
@@ -362,17 +376,19 @@ export default function MySchedule({ matchdayData, roundDataSegunda, favoriteTea
         <p className="sched-empty">{(loadingRffm || loadingMunicipal) ? 'Cargando…' : 'Sin partidos esta semana'}</p>
       ) : (
         grouped.map(group => (
-          <div key={group.dateStr}>
+          <div key={group.dateStr} className="sched-day-group">
             <div className="date-group-header" style={{ cursor: 'default' }}>
               {formatDayLabel(group.dateStr)}
             </div>
             {group.items.map(({ m, comp }, i) => (
-              <MatchRow
-                key={`${comp}-${m.matchId ?? i}`}
-                m={m}
-                comp={comp}
-                onClick={() => handleMatchClick(m, comp)}
-              />
+              comp === 'municipal' && (m.homeTeam === '** DESCANSA **' || m.awayTeam === '** DESCANSA **')
+                ? <ByeRow key={`${comp}-bye-${i}`} />
+                : <MatchRow
+                    key={`${comp}-${m.matchId ?? i}`}
+                    m={m}
+                    comp={comp}
+                    onClick={() => handleMatchClick(m, comp)}
+                  />
             ))}
           </div>
         ))

@@ -2261,6 +2261,7 @@ input  { font-family: inherit; }
   margin: .1rem 0;
 }
 .sched-wrap { display: flex; flex-direction: column; gap: .4rem; }
+.sched-day-group { display: flex; flex-direction: column; gap: .35rem; }
 .sched-title-row {
   display: flex;
   align-items: center;
