@@ -23,9 +23,9 @@ const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 const db = admin.firestore();
 
-const SEASON        = '2526';
-const MATCHES_URL   = 'https://datos.madrid.es/api/3/action/datastore_search?resource_id=300257-45-deportes-colectivos-historico&limit=500&q=27601';
-const STANDINGS_URL = 'https://datos.madrid.es/api/3/action/datastore_search?resource_id=300257-43-deportes-colectivos-historico&limit=100&q=27601';
+const SEASON        = '2627';
+const MATCHES_URL   = 'https://datos.madrid.es/api/3/action/datastore_search?resource_id=211549-0-juegos-deportivos-actual-csv&limit=500&q=30797';
+const STANDINGS_URL = 'https://datos.madrid.es/api/3/action/datastore_search?resource_id=211549-2-juegos-deportivos-actual-csv&limit=100&q=30797';
 
 function normalizeMatch(r) {
   const finished = r.Estado === 'F';
@@ -105,37 +105,52 @@ async function syncMatches() {
   return all;
 }
 
-async function syncStandings() {
+async function syncStandings(matchData = {}) {
   console.log('\nFetching clasificación de la Liga Municipal…');
   const res     = await fetch(STANDINGS_URL);
   const json    = await res.json();
   const records = json.result?.records ?? [];
 
-  const standings = records
-    .map(r => ({
-      position: Number(r.Posicion),
-      name:     r.Nombre_equipo,
-      pts:      Number(r.Puntos),
-      pj:       Number(r.Partidos_jugados),
-      pg:       Number(r.Partidos_ganados),
-      pe:       Number(r.Partidos_empatados),
-      pp:       Number(r.Partidos_perdidos),
-      gf:       Number(r.Goles_favor),
-      gc:       Number(r.Goles_contra),
-      gd:       Number(r.Goles_favor) - Number(r.Goles_contra),
-    }))
-    .sort((a, b) => a.position - b.position);
+  let standings;
+  if (records.length > 0) {
+    standings = records
+      .map(r => ({
+        position: Number(r.Posicion),
+        name:     r.Nombre_equipo,
+        pts:      Number(r.Puntos),
+        pj:       Number(r.Partidos_jugados),
+        pg:       Number(r.Partidos_ganados),
+        pe:       Number(r.Partidos_empatados),
+        pp:       Number(r.Partidos_perdidos),
+        gf:       Number(r.Goles_favor),
+        gc:       Number(r.Goles_contra),
+        gd:       Number(r.Goles_favor) - Number(r.Goles_contra),
+      }))
+      .sort((a, b) => a.position - b.position);
+  } else {
+    // La API aún no tiene datos: clasificación provisional con equipos en orden alfabético, todo a 0
+    const teams = new Set();
+    for (const matches of Object.values(matchData)) {
+      for (const m of matches) {
+        if (m.homeTeam && m.homeTeam !== '** DESCANSA **') teams.add(m.homeTeam);
+        if (m.awayTeam && m.awayTeam !== '** DESCANSA **') teams.add(m.awayTeam);
+      }
+    }
+    standings = [...teams].sort((a, b) => a.localeCompare(b, 'es')).map((name, i) => ({
+      position: i + 1, name, pts: 0, pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, gd: 0,
+    }));
+  }
 
   await db.collection('standings_cache_municipal').doc(SEASON).set({
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     standings,
   });
-  console.log(`Clasificación: ${standings.length} equipos`);
+  console.log(`Clasificación: ${standings.length} equipos${records.length === 0 ? ' (provisional, ordenada alfabéticamente)' : ''}`);
 }
 
 async function main() {
-  await syncMatches();
-  await syncStandings();
+  const matchData = await syncMatches();
+  await syncStandings(matchData);
   console.log('\nSync Liga Municipal completado.');
 }
 
