@@ -632,6 +632,17 @@ input  { font-family: inherit; }
 .status-badge.finished  { background: rgba(34,197,94,.15);  color: #22c55e; }
 .status-badge.live      { background: rgba(238,53,36,.15);  color: #ee3524; }
 .status-badge.scheduled { background: rgba(100,116,139,.1); color: var(--muted); }
+.status-badge.bye       { background: rgba(251,191,36,.12); color: #f59e0b; }
+
+.bye-card { opacity: .72; cursor: default !important; }
+.bye-card__body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  min-width: 0;
+}
 
 /* ── Jornada header ─────────────────────────────────────────────────────── */
 .jornada-nav {

@@ -45,6 +45,26 @@ function isFav(match) {
   return match.homeTeam === FAVORITE_TEAM || match.awayTeam === FAVORITE_TEAM;
 }
 
+function isBye(match) {
+  return match.homeTeam === '** DESCANSA **' || match.awayTeam === '** DESCANSA **';
+}
+
+function ByeCard({ match }) {
+  const team = match.homeTeam === '** DESCANSA **' ? match.awayTeam : match.homeTeam;
+  return (
+    <div className={`match-card bye-card${team === FAVORITE_TEAM ? ' match-card--favorite' : ''}`}>
+      <span className="match-time-col" />
+      <div className="bye-card__body">
+        <img className="team-crest" src={crestUrlMunicipal(team)} alt="" onError={e => { e.target.onerror = null; e.target.src = crestUrlMunicipalFallback(team); }} />
+        <span className="team-name">{team}</span>
+      </div>
+      <div className="match-status-col">
+        <span className="status-badge bye">Descansa</span>
+      </div>
+    </div>
+  );
+}
+
 function MatchCard({ match, onClick }) {
   const isFinished = match.status === 'finished';
   return (
@@ -163,7 +183,9 @@ export default function CalendarMunicipalTab({ season = null }) {
                 <span className="date-group-chevron">{isCollapsed ? '›' : '‹'}</span>
               </div>
               {!isCollapsed && visible.map((m, i) => (
-                <MatchCard key={`${m.fecha}-${m.hora}-${i}`} match={m} onClick={() => setSelectedMatch(m)} />
+                isBye(m)
+                  ? <ByeCard key={`${m.fecha}-bye-${i}`} match={m} />
+                  : <MatchCard key={`${m.fecha}-${m.hora}-${i}`} match={m} onClick={() => setSelectedMatch(m)} />
               ))}
             </div>
           );
