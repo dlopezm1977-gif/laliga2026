@@ -5,6 +5,7 @@
 const fs    = require('fs');
 const path  = require('path');
 const admin = require('firebase-admin');
+const { handleSendError } = require('./fcm-utils');
 
 if (!process.env.BZZOIRO_TOKEN) {
   try {
@@ -348,7 +349,7 @@ async function collectTokensByPref(prefPath, favTeamField) {
     const enabled = [];
     tokSnap.forEach(t => {
       const d = t.data();
-      if (d.enabled && d.token) enabled.push({ token: d.token, label: d.label });
+      if (d.enabled && d.token) enabled.push({ token: d.token, label: d.label, ref: t.ref });
     });
 
     if (pref === 'all') {
@@ -390,7 +391,7 @@ async function sendScheduleChangeNotifications(changedMatches) {
           },
         });
         return true;
-      } catch { return false; }
+      } catch (e) { await handleSendError(r, e); return false; }
     }));
     totalOk  += results.filter(Boolean).length;
     totalErr += results.filter(r => !r).length;
@@ -426,7 +427,7 @@ async function sendMatchEndNotifications(finishedMatches) {
           },
         });
         return true;
-      } catch { return false; }
+      } catch (e) { await handleSendError(r, e); return false; }
     }));
     totalOk  += results.filter(Boolean).length;
     totalErr += results.filter(r => !r).length;
@@ -463,7 +464,7 @@ async function sendGoalNotifications(goalMatches) {
           },
         });
         return true;
-      } catch { return false; }
+      } catch (e) { await handleSendError(r, e); return false; }
     }));
     totalOk  += results.filter(Boolean).length;
     totalErr += results.filter(r => !r).length;
@@ -480,7 +481,7 @@ async function collectBoolPrefTokens(prefKey) {
     const tokSnap = await db.collection('users').doc(doc.id).collection('fcmTokens').get();
     tokSnap.forEach(t => {
       const d = t.data();
-      if (d.enabled && d.token) tokens.push({ token: d.token });
+      if (d.enabled && d.token) tokens.push({ token: d.token, ref: t.ref });
     });
   }));
   return tokens;
@@ -506,7 +507,7 @@ async function sendNewGameNotification(game) {
         },
       });
       return true;
-    } catch { return false; }
+    } catch (e) { await handleSendError(r, e); return false; }
   }));
   console.log(`  Notificaciones enviadas: ${results.filter(Boolean).length} OK, ${results.filter(r => !r).length} error(es)`);
 }
@@ -534,7 +535,7 @@ async function sendPredReminderNotification(round, deadline) {
         },
       });
       return true;
-    } catch { return false; }
+    } catch (e) { await handleSendError(r, e); return false; }
   }));
   console.log(`  Notificaciones enviadas: ${results.filter(Boolean).length} OK, ${results.filter(r => !r).length} error(es)`);
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getDoc, doc } from 'firebase/firestore';
 import { db } from './lib/firebase';
+import { refreshDeviceToken } from './lib/notifications';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Header  from './components/Layout/Header';
 import TabBar  from './components/Layout/TabBar';
@@ -24,7 +25,7 @@ const DEFAULT_TAB_JUVENIL   = 'resultados';
 const DEFAULT_TAB_MUNICIPAL = 'resultados';
 
 function AppShell() {
-  const { isLoading, isGuest } = useAuth();
+  const { user, isLoading, isGuest } = useAuth();
   const [league, setLeague] = useState(() => {
     const p = new URLSearchParams(location.search);
     return ['primera', 'segunda', 'juvenil', 'municipal'].includes(p.get('league')) ? p.get('league') : 'primera';
@@ -34,6 +35,11 @@ function AppShell() {
     return p.get('tab') || DEFAULT_TAB_PRIMERA;
   });
   const [showAuth, setShowAuth] = useState(false);
+
+  // Renueva el token de notificaciones de este dispositivo si ha cambiado
+  useEffect(() => {
+    if (user) refreshDeviceToken(user.uid).catch(() => {});
+  }, [user]);
   const [municipalSeason, setMunicipalSeason]         = useState(null);
   const [municipalSeasons, setMunicipalSeasons]       = useState([]);
   const [municipalCurrentSeason, setMunicipalCurrentSeason] = useState(null);
