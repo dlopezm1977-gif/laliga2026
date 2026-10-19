@@ -171,6 +171,9 @@ export default function MatchDetailModalMunicipal({ match, season, round, onClos
                     <span className="md-inc-player">⚽ {g.nombre}</span>
                     {g.tipo === 'pp' && <span className="md-inc-note">(PP)</span>}
                     {g.tipo === 'penalti' && <span className="md-inc-note">(P)</span>}
+                    {g.video && (
+                      <a className="md-inc-video" href={g.video} target="_blank" rel="noopener noreferrer" title="Ver vídeo del gol">▶</a>
+                    )}
                   </div>
                 )}
               />

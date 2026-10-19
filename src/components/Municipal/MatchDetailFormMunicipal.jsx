@@ -88,13 +88,13 @@ function RosterPlayers({ roster, setRoster, played, setPlayed, captain, setCapta
 
 /* ── Goles / tarjetas ──────────────────────────────────────── */
 
-function EventList({ title, items, setItems, types, options, defaultType }) {
+function EventList({ title, items, setItems, types, options, defaultType, withVideo }) {
   const update = (i, patch) => setItems(items.map((it, j) => (j === i ? { ...it, ...patch } : it)));
   return (
     <div className="mdf-section">
       <div className="mdf-title">{title}</div>
       {items.map((it, i) => (
-        <div key={i} className="mdf-row">
+        <div key={i} className="mdf-row mdf-row--wrap">
           <select className="mdf-select" value={it.pid} onChange={e => update(i, { pid: e.target.value })}>
             <option value="">— Jugador —</option>
             {options.map(o => <option key={o.pid} value={o.pid}>{o.text}</option>)}
@@ -103,9 +103,13 @@ function EventList({ title, items, setItems, types, options, defaultType }) {
             {types.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
           </select>
           <button type="button" className="mdf-del" onClick={() => setItems(items.filter((_, j) => j !== i))}>✕</button>
+          {withVideo && (
+            <input className="mdf-video" type="url" placeholder="Enlace de YouTube (opcional)" value={it.video ?? ''}
+              onChange={e => update(i, { video: e.target.value })} />
+          )}
         </div>
       ))}
-      <button type="button" className="mdf-add" onClick={() => setItems([...items, { pid: '', tipo: defaultType }])}>
+      <button type="button" className="mdf-add" onClick={() => setItems([...items, { pid: '', tipo: defaultType, video: '' }])}>
         + Añadir
       </button>
     </div>
@@ -160,7 +164,7 @@ export default function MatchDetailFormMunicipal({ match, season, round, onSaved
       setFavCaptain(capFav);
       setRival(rivalRows);
       setRivalCaptain(capRival >= 0 ? capRival : null);
-      setGoals((d?.goals ?? []).map(g => ({ pid: toPid(g), tipo: g.tipo ?? 'normal' })));
+      setGoals((d?.goals ?? []).map(g => ({ pid: toPid(g), tipo: g.tipo ?? 'normal', video: g.video ?? '' })));
       setCards((d?.cards ?? []).map(c => ({ pid: toPid(c), tipo: c.tipo ?? 'amarilla' })));
       setReady(true);
     }).catch(err => { if (!cancelled) { setError(err.message); setReady(true); } });
@@ -201,7 +205,9 @@ export default function MatchDetailFormMunicipal({ match, season, round, onSaved
     const detail = {
       [favSide]:   favPlayers,
       [rivalSide]: rivalPlayers,
-      goals: goals.filter(g => g.pid).map(g => ({ ...resolve(g.pid), tipo: g.tipo })).filter(g => g.nombre),
+      goals: goals.filter(g => g.pid)
+        .map(g => ({ ...resolve(g.pid), tipo: g.tipo, ...(g.video?.trim() && { video: g.video.trim() }) }))
+        .filter(g => g.nombre),
       cards: cards.filter(c => c.pid).map(c => ({ ...resolve(c.pid), tipo: c.tipo })).filter(c => c.nombre),
     };
 
@@ -235,7 +241,7 @@ export default function MatchDetailFormMunicipal({ match, season, round, onSaved
         <RivalPlayers rows={rival} setRows={setRival} captain={rivalCaptain} setCaptain={setRivalCaptain} />
       </div>
 
-      <EventList title="⚽ Goles" items={goals} setItems={setGoals} types={GOAL_TYPES} options={options} defaultType="normal" />
+      <EventList title="⚽ Goles" items={goals} setItems={setGoals} types={GOAL_TYPES} options={options} defaultType="normal" withVideo />
       <EventList title="🟨🟥 Tarjetas" items={cards} setItems={setCards} types={CARD_TYPES} options={options} defaultType="amarilla" />
 
       {error && <p className="mdf-error">{error}</p>}

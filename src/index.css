@@ -2831,3 +2831,7 @@ input  { font-family: inherit; }
 .mdf-error { color: var(--accent); font-size: .8rem; margin: 0; }
 .mdf-actions { display: flex; justify-content: flex-end; align-items: center; gap: .5rem; }
 .mdf-actions .btn-primary { width: auto; padding: .5rem 1rem; }
+.mdf-row--wrap { flex-wrap: wrap; }
+.mdf-video { flex: 1 1 100%; background: transparent; color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: .3rem .4rem; font-size: .78rem; }
+.md-inc-video { color: var(--accent); text-decoration: none; font-size: .8rem; margin-left: .25rem; }
+.md-video-link { display: block; color: var(--accent); text-decoration: none; font-size: .82rem; font-weight: 600; padding: .35rem 0; }
