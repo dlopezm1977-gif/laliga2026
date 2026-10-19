@@ -2808,3 +2808,26 @@ input  { font-family: inherit; }
   display: inline-block;
   flex-shrink: 0;
 }
+
+/* ── Formulario de detalle (Liga Municipal, admin) ─────────── */
+.mdf { padding: .6rem 1rem 1rem; display: flex; flex-direction: column; gap: 1rem; }
+.mdf-title { font-size: .78rem; font-weight: 700; letter-spacing: .03em; margin-bottom: .4rem; }
+.mdf-row { display: flex; align-items: center; gap: .35rem; margin-bottom: .3rem; }
+.mdf-row input[type="text"], .mdf-row input[type="number"], .mdf-select, .mdf-type {
+  background: var(--surface, transparent); color: var(--text); border: 1px solid var(--border);
+  border-radius: 6px; padding: .3rem .4rem; font-size: .8rem; min-width: 0;
+}
+.mdf-num { width: 3.2rem; }
+.mdf-name { flex: 1; }
+.mdf-select { flex: 1; }
+.mdf-flag { display: flex; align-items: center; gap: .15rem; font-size: .68rem; color: var(--muted); }
+.mdf-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: .85rem; }
+.mdf-add, .mdf-edit-btn, .mdf-cancel {
+  background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent);
+  border: none; border-radius: 999px; padding: .35rem .8rem; font-size: .75rem; font-weight: 600; cursor: pointer;
+}
+.mdf-cancel { background: transparent; color: var(--muted); }
+.mdf-hint { color: var(--muted); font-size: .78rem; margin: 0 0 .4rem; }
+.mdf-error { color: var(--accent); font-size: .8rem; margin: 0; }
+.mdf-actions { display: flex; justify-content: flex-end; align-items: center; gap: .5rem; }
+.mdf-actions .btn-primary { width: auto; padding: .5rem 1rem; }

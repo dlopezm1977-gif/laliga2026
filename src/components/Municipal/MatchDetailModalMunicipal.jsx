@@ -1,12 +1,60 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { isMunicipalAdmin } from '../../lib/municipalDetail';
+import MatchDetailFormMunicipal from './MatchDetailFormMunicipal';
 import { crestUrlMunicipal, crestUrlMunicipalFallback } from '../../lib/crests';
 import { useScrollLock } from '../../hooks/useScrollLock';
 import { useCampoRffm } from '../../hooks/useCampoRffm';
 
 const VENUE_CODE = 103;
+const FAVORITE_TEAM = 'ASTON BIRRA';
 
-export default function MatchDetailModalMunicipal({ match, onClose }) {
+const TABS = [
+  { id: 'campo',        label: 'Campo' },
+  { id: 'alineaciones', label: 'Alineación' },
+  { id: 'incidencias',  label: 'Incidencias' },
+];
+
+function LineupTeam({ label, players }) {
+  const sorted = [...(players ?? [])].sort((a, b) =>
+    (b.portero ? 1 : 0) - (a.portero ? 1 : 0) || (a.dorsal ?? 999) - (b.dorsal ?? 999)
+  );
+  return (
+    <div className="md-lineup-col">
+      <div className="md-lineup-header">{label}</div>
+      {sorted.length === 0 && <div className="md-lineup-player" style={{ opacity: .6 }}>Sin datos</div>}
+      {sorted.map((p, i) => (
+        <div key={i} className="md-lineup-player">
+          <span className="md-lineup-num">{p.dorsal ?? ''}</span>
+          <span className="md-lineup-name">{p.nombre}{p.capitan ? ' ©' : ''}</span>
+          {p.portero && <span className="md-lineup-pos md-lineup-pos--g">POR</span>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function IncSection({ title, home, away, renderItem }) {
+  if (!home.length && !away.length) return null;
+  return (
+    <div className="md-inc-section">
+      <div className="md-inc-section-title">{title}</div>
+      <div className="md-inc-cols">
+        <div className="md-inc-col">{home.map((it, i) => <div key={i}>{renderItem(it)}</div>)}</div>
+        <div className="md-inc-col md-inc-col--away">{away.map((it, i) => <div key={i}>{renderItem(it)}</div>)}</div>
+      </div>
+    </div>
+  );
+}
+
+export default function MatchDetailModalMunicipal({ match, season, round, onClose, onSaved }) {
   useScrollLock('match-detail-panel');
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState('campo');
+  const [editing, setEditing]     = useState(false);
+  const canEdit = isMunicipalAdmin(user)
+    && (match?.homeTeam === FAVORITE_TEAM || match?.awayTeam === FAVORITE_TEAM)
+    && season != null && round != null;
 
   const { campo } = useCampoRffm(VENUE_CODE);
 
@@ -79,7 +127,82 @@ export default function MatchDetailModalMunicipal({ match, onClose }) {
           </div>
         )}
 
-        <div className="md-section">
+        {match.detail && !editing && (
+          <div className="md-tabs">
+            {TABS.map(t => (
+              <button key={t.id} className={`md-tab-btn${activeTab === t.id ? ' active' : ''}`} onClick={() => setActiveTab(t.id)}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {editing && (
+          <MatchDetailFormMunicipal
+            match={match}
+            season={season}
+            round={round}
+            onCancel={() => setEditing(false)}
+            onSaved={detail => { setEditing(false); onSaved?.(detail); }}
+          />
+        )}
+
+        {!editing && match.detail && activeTab === 'alineaciones' && (
+          <div className="md-lineups">
+            <LineupTeam label={match.homeTeam} players={match.detail.home} />
+            <LineupTeam label={match.awayTeam} players={match.detail.away} />
+          </div>
+        )}
+
+        {!editing && match.detail && activeTab === 'incidencias' && (() => {
+          const goals = match.detail.goals ?? [];
+          const cards = match.detail.cards ?? [];
+          // Un gol en propia cuenta en la columna del equipo contrario
+          const goalCol = g => (g.tipo === 'pp' ? (g.team === 'home' ? 'away' : 'home') : g.team);
+          return (
+            <div className="md-incidents-v2">
+              <div className="md-inc-col-headers"><span>{match.homeTeam}</span><span>{match.awayTeam}</span></div>
+              <IncSection
+                title="⚽ Goles"
+                home={goals.filter(g => goalCol(g) === 'home')}
+                away={goals.filter(g => goalCol(g) === 'away')}
+                renderItem={g => (
+                  <div className="md-inc-item md-inc-item--goal">
+                    <span className="md-inc-player">⚽ {g.nombre}</span>
+                    {g.tipo === 'pp' && <span className="md-inc-note">(PP)</span>}
+                    {g.tipo === 'penalti' && <span className="md-inc-note">(P)</span>}
+                  </div>
+                )}
+              />
+              <IncSection
+                title="Tarjetas"
+                home={cards.filter(c => c.team === 'home')}
+                away={cards.filter(c => c.team === 'away')}
+                renderItem={c => (
+                  <div className="md-inc-item">
+                    <span className={`md-card md-card--${c.tipo === 'roja' ? 'red' : 'yellow'}`} style={{ margin: '0 .2rem' }} />
+                    <span className="md-inc-player">{c.nombre}</span>
+                  </div>
+                )}
+              />
+              {!goals.length && !cards.length && (
+                <p style={{ color: 'var(--muted)', textAlign: 'center', fontSize: '.82rem', padding: '.5rem 0' }}>
+                  Sin incidencias registradas.
+                </p>
+              )}
+            </div>
+          );
+        })()}
+
+        {canEdit && !editing && (
+          <div style={{ padding: '.6rem 1rem 0', textAlign: 'center' }}>
+            <button type="button" className="mdf-edit-btn" onClick={() => setEditing(true)}>
+              ✏️ {match.detail ? 'Editar detalle' : 'Añadir detalle'}
+            </button>
+          </div>
+        )}
+
+        {!editing && activeTab === 'campo' && <div className="md-section">
           {campo ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '.35rem', fontSize: '.82rem' }}>
               <span style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '.4rem' }}>
@@ -118,7 +241,7 @@ export default function MatchDetailModalMunicipal({ match, onClose }) {
               🏟 CANAL ISABEL II (HA) · Madrid
             </div>
           )}
-        </div>
+        </div>}
       </div>
     </div>
   );

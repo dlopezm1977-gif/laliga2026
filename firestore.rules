@@ -103,7 +103,8 @@ service cloud.firestore {
 
     match /matches_cache_municipal/{round} {
       allow read: if true;
-      allow write: if false;
+      allow write: if request.auth != null
+                   && request.auth.token.email == 'dlopezm1977@gmail.com';
     }
 
     match /standings_cache_municipal/{document} {

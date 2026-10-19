@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
@@ -18,11 +18,15 @@ export function useMatchesMunicipal(season = null) {
   const [currentRound, setCurrentRound]   = useState(1);
   const [totalRounds, setTotalRounds]     = useState(22);
   const [currentSeason, setCurrentSeason] = useState(null);
+  const [activeSeason, setActiveSeason]   = useState(null);
   const [seasons, setSeasons]             = useState([]);
   const [loading, setLoading]             = useState(true);
   const [error, setError]                 = useState(null);
 
+  const loadId = useRef(0);
+
   const load = useCallback(async () => {
+    const myId = ++loadId.current;
     setLoading(true);
     setError(null);
     try {
@@ -31,9 +35,11 @@ export function useMatchesMunicipal(season = null) {
         getDocs(collection(db, 'matches_cache_municipal')),
       ]);
 
+      if (myId !== loadId.current) return; // respuesta obsoleta de otra temporada
       const meta = metaSnap.exists() ? metaSnap.data() : {};
       const activeSeason = season ?? meta.currentSeason ?? null;
       setCurrentSeason(meta.currentSeason ?? null);
+      setActiveSeason(activeSeason);
       setSeasons(meta.seasons ?? (activeSeason ? [activeSeason] : []));
 
       const all = {};
@@ -65,7 +71,7 @@ export function useMatchesMunicipal(season = null) {
     } catch (err) {
       setError(err.message);
     } finally {
-      setLoading(false);
+      if (myId === loadId.current) setLoading(false);
     }
   }, [season]);
 
@@ -75,5 +81,5 @@ export function useMatchesMunicipal(season = null) {
     return roundData[rd] ?? [];
   }
 
-  return { roundData, currentRound, getMatches, totalRounds, currentSeason, seasons, loading, error, refresh: load };
+  return { roundData, currentRound, getMatches, totalRounds, currentSeason, activeSeason, seasons, loading, error, refresh: load };
 }

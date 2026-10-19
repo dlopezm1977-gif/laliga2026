@@ -79,6 +79,17 @@ async function syncMatches() {
   };
 
   for (const [rd, matches] of Object.entries(all)) {
+    // Conserva el detalle manual (alineación/incidencias) que no viene de la API
+    const ref = db.collection('matches_cache_municipal').doc(`${SEASON}_${rd}`);
+    const existing = await ref.get();
+    if (existing.exists) {
+      const key = m => `${m.fecha}|${m.hora}|${m.homeTeam}|${m.awayTeam}`;
+      const details = new Map((existing.data().matches ?? []).filter(m => m.detail).map(m => [key(m), m.detail]));
+      for (const m of matches) {
+        const d = details.get(key(m));
+        if (d) m.detail = d;
+      }
+    }
     batch.set(db.collection('matches_cache_municipal').doc(`${SEASON}_${rd}`), {
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       matches,

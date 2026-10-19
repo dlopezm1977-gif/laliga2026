@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useMatchesMunicipal } from '../../hooks/useMatchesMunicipal';
 import { crestUrlMunicipal, crestUrlMunicipalFallback } from '../../lib/crests';
 import LoadingSpinner from '../LoadingSpinner';
@@ -102,11 +102,14 @@ function MatchCard({ match, onClick }) {
 }
 
 export default function CalendarMunicipalTab({ season = null }) {
-  const { currentRound, getMatches, totalRounds, loading, error, refresh } = useMatchesMunicipal(season);
+  const { currentRound, getMatches, totalRounds, activeSeason, loading, error, refresh } = useMatchesMunicipal(season);
   const [jornada, setJornada]         = useState(null);
   const [collapsed, setCollapsed]     = useState(new Set());
   const [filterFav, setFilterFav]     = useState(false);
   const [selectedMatch, setSelectedMatch] = useState(null);
+
+  // Al cambiar de temporada se vuelve a la jornada actual de esa temporada
+  useEffect(() => { setJornada(null); setSelectedMatch(null); }, [season]);
 
   const toggleGroup = useCallback(label => {
     setCollapsed(prev => {
@@ -165,7 +168,13 @@ export default function CalendarMunicipalTab({ season = null }) {
       {selectedMatch && (
         <MatchDetailModalMunicipal
           match={selectedMatch}
+          season={activeSeason}
+          round={activeRound}
           onClose={() => setSelectedMatch(null)}
+          onSaved={detail => {
+            setSelectedMatch(m => ({ ...m, detail }));
+            refresh();
+          }}
         />
       )}
 

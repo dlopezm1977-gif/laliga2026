@@ -2,9 +2,6 @@ name: Sync Liga Municipal matches
 
 on:
   workflow_dispatch:
-  schedule:
-    # Cada 30 min sábados y domingos (UTC)
-    - cron: '*/30 * * * 6,0'
 
 jobs:
   sync:
