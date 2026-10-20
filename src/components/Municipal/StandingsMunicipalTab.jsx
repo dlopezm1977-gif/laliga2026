@@ -132,8 +132,12 @@ function EstadisticasView({ stats }) {
               </tr>
               {open === p.nombre && (
                 <tr>
-                  <td colSpan={6} style={{ padding: '4px 8px 10px' }}>
-                    {p.partidos.map(g => {
+                  <td colSpan={6} style={{ padding: '4px 8px 10px', maxWidth: 0, overflow: 'hidden' }}>
+                    {(() => {
+                      // Ancho fijo para los iconos, según el partido con más eventos de este jugador
+                      const maxIcons = Math.max(1, ...p.partidos.map(g => g.goles + g.amarillas + g.rojas));
+                      const iconsW = maxIcons * 1.35;
+                      return p.partidos.map(g => {
                       const won = g.gf != null && g.gc != null && g.gf > g.gc;
                       return (
                       <div key={g.round} style={{
@@ -142,16 +146,19 @@ function EstadisticasView({ stats }) {
                         ...(won && { background: 'color-mix(in srgb, var(--green) 8%, transparent)', borderLeft: '2px solid color-mix(in srgb, var(--green) 55%, transparent)', borderRadius: 4 }),
                       }}>
                         <span style={{ width: 28, fontWeight: 600 }}>J{g.round}</span>
-                        <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {g.rival} <span style={{ opacity: 0.7 }}>({g.gf ?? '–'}-{g.gc ?? '–'})</span>
+                        <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'left' }}>
+                          <span className="team-full">{g.rival}</span>
+                          <span className="team-abbr">{ABBR[g.rival] ?? g.rival.slice(0, 3).toUpperCase()}</span>
                         </span>
-                        <span title={g.jugado ? 'Jugó' : 'No jugó'}>{g.jugado ? '✅' : '❌'}</span>
-                        <span style={{ minWidth: 40, textAlign: 'right' }}>
+                        <span style={{ flexShrink: 0, width: '3.4em', textAlign: 'right', opacity: 0.7, whiteSpace: 'nowrap' }}>({g.gf ?? '–'}-{g.gc ?? '–'})</span>
+                        <span style={{ flexShrink: 0, width: '1.4em', textAlign: 'center' }} title={g.jugado ? 'Jugó' : 'No jugó'}>{g.jugado ? '✅' : '❌'}</span>
+                        <span style={{ flexShrink: 0, width: `${iconsW}em`, textAlign: 'left', whiteSpace: 'nowrap' }}>
                           {'⚽'.repeat(g.goles)}{'🟨'.repeat(g.amarillas)}{'🟥'.repeat(g.rojas)}
                         </span>
                       </div>
                       );
-                    })}
+                      });
+                    })()}
                   </td>
                 </tr>
               )}
