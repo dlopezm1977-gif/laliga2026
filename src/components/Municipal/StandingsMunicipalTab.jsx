@@ -1,4 +1,6 @@
+import { useState, Fragment } from 'react';
 import { useStandingsMunicipal } from '../../hooks/useStandingsMunicipal';
+import { useStatsMunicipal } from '../../hooks/useStatsMunicipal';
 import { crestUrlMunicipal, crestUrlMunicipalFallback } from '../../lib/crests';
 import LoadingSpinner from '../LoadingSpinner';
 
@@ -76,19 +78,121 @@ function LigaView({ standings }) {
   );
 }
 
+const SORTS = {
+  goles:     (a, b) => b.goles - a.goles || a.pj - b.pj,
+  pj:        (a, b) => b.pj - a.pj,
+  amarillas: (a, b) => b.amarillas - a.amarillas || b.rojas - a.rojas,
+  rojas:     (a, b) => b.rojas - a.rojas || b.amarillas - a.amarillas,
+};
+
+function EstadisticasView({ stats }) {
+  const [sort, setSort] = useState('pj');
+  const [open, setOpen] = useState(null);
+  const rows = [...stats].sort((a, b) => SORTS[sort](a, b) || a.nombre.localeCompare(b.nombre));
+
+  if (!rows.length) return (
+    <div className="empty-state">
+      <img src={`${import.meta.env.BASE_URL}icon-empty.png`} alt="" className="empty-icon" />
+      <p>No hay actas registradas todavía.</p>
+    </div>
+  );
+
+  const th = (key, text, title) => (
+    <th
+      className={`col-pts${sort === key ? ' sorted' : ''}`}
+      title={title}
+      style={{ cursor: 'pointer', ...(sort === key && { color: 'var(--accent)' }) }}
+      onClick={() => setSort(key)}
+    >{text}</th>
+  );
+
+  return (
+    <div className="standings">
+      <table className="standings-table scorers-table">
+        <thead>
+          <tr>
+            <th className="col-pos">#</th>
+            <th className="col-scorer-name">Jugador</th>
+            {th('pj', 'PJ', 'Partidos jugados')}
+            {th('goles', 'G', 'Goles')}
+            {th('amarillas', '🟨', 'Tarjetas amarillas')}
+            {th('rojas', '🟥', 'Tarjetas rojas')}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((p, i) => (
+            <Fragment key={p.nombre}>
+              <tr style={{ cursor: 'pointer' }} onClick={() => setOpen(open === p.nombre ? null : p.nombre)}>
+                <td className="col-pos">{i + 1}</td>
+                <td className="col-scorer-name">{open === p.nombre ? '▾' : '▸'} {p.nombre}</td>
+                <td className="col-pts">{p.pj}</td>
+                <td className="col-pts">{p.goles}</td>
+                <td className="col-pts">{p.amarillas}</td>
+                <td className="col-pts">{p.rojas}</td>
+              </tr>
+              {open === p.nombre && (
+                <tr>
+                  <td colSpan={6} style={{ padding: '4px 8px 10px' }}>
+                    {p.partidos.map(g => {
+                      const won = g.gf != null && g.gc != null && g.gf > g.gc;
+                      return (
+                      <div key={g.round} style={{
+                        display: 'flex', alignItems: 'center', gap: 8, padding: '3px 6px', fontSize: '0.85rem',
+                        opacity: g.jugado ? 1 : 0.55,
+                        ...(won && { background: 'color-mix(in srgb, var(--green) 8%, transparent)', borderLeft: '2px solid color-mix(in srgb, var(--green) 55%, transparent)', borderRadius: 4 }),
+                      }}>
+                        <span style={{ width: 28, fontWeight: 600 }}>J{g.round}</span>
+                        <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {g.rival} <span style={{ opacity: 0.7 }}>({g.gf ?? '–'}-{g.gc ?? '–'})</span>
+                        </span>
+                        <span title={g.jugado ? 'Jugó' : 'No jugó'}>{g.jugado ? '✅' : '❌'}</span>
+                        <span style={{ minWidth: 40, textAlign: 'right' }}>
+                          {'⚽'.repeat(g.goles)}{'🟨'.repeat(g.amarillas)}{'🟥'.repeat(g.rojas)}
+                        </span>
+                      </div>
+                      );
+                    })}
+                  </td>
+                </tr>
+              )}
+            </Fragment>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default function StandingsMunicipalTab({ season = null }) {
-  const { standings, loading, error } = useStandingsMunicipal(season);
+  const [view, setView] = useState('liga');
+  const { standings, loading: lStand, error: eStand } = useStandingsMunicipal(season);
+  const { stats, loading: lStats, error: eStats }     = useStatsMunicipal(season);
+
+  const loading = view === 'liga' ? lStand : lStats;
+  const error   = view === 'liga' ? eStand : eStats;
 
   return (
     <div className="standings-wrap">
-      {loading && <LoadingSpinner text="Cargando clasificación…" />}
+      <div className="standings-toggle">
+        <button
+          className={`toggle-btn${view === 'liga' ? ' active' : ''}`}
+          onClick={() => setView('liga')}
+        >Liga</button>
+        <button
+          className={`toggle-btn${view === 'estadisticas' ? ' active' : ''}`}
+          onClick={() => setView('estadisticas')}
+        >Estadísticas</button>
+      </div>
+
+      {loading && <LoadingSpinner text={view === 'liga' ? 'Cargando clasificación…' : 'Cargando estadísticas…'} />}
       {!loading && error && (
         <div className="empty-state">
           <img src={`${import.meta.env.BASE_URL}icon-error.png`} alt="" className="empty-icon" />
           <p style={{ color: 'var(--accent)' }}>Error al cargar los datos.<br />Inténtalo de nuevo.</p>
         </div>
       )}
-      {!loading && !error && <LigaView standings={standings} />}
+      {!loading && !error && view === 'liga'         && <LigaView standings={standings} />}
+      {!loading && !error && view === 'estadisticas' && <EstadisticasView stats={stats} />}
     </div>
   );
 }
