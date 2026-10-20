@@ -48,15 +48,23 @@ function detectCurrentMatchday(matchdayData) {
   }
   if (todayMd !== null) return todayMd;
 
-  // 3. Sin partidos hoy → jornada con el próximo partido pendiente
-  let earliest = Infinity, nextMd = null;
-  for (const md of mds) {
-    for (const m of matchdayData[md]) {
-      if (m.status === 'finished') continue;
-      const t = new Date(m.utcDate).getTime();
-      if (t < earliest) { earliest = t; nextMd = md; }
+  // 3. Sin partidos hoy → jornada con el próximo partido pendiente.
+  //    Se ignoran los pendientes con fecha ya pasada (p. ej. suspendidos sin fecha nueva)
+  //    para que no bloqueen la jornada; solo si no queda ninguno futuro se consideran todos.
+  const nowMs = now.getTime();
+  const nextPending = onlyFuture => {
+    let earliest = Infinity, md_ = null;
+    for (const md of mds) {
+      for (const m of matchdayData[md]) {
+        if (m.status === 'finished') continue;
+        const t = new Date(m.utcDate).getTime();
+        if (onlyFuture && t < nowMs) continue;
+        if (t < earliest) { earliest = t; md_ = md; }
+      }
     }
-  }
+    return md_;
+  };
+  const nextMd = nextPending(true) ?? nextPending(false);
   if (nextMd !== null) return nextMd;
 
   // 4. Todo jugado → última jornada

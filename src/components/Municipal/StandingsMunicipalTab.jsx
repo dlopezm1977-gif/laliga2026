@@ -146,6 +146,7 @@ function EstadisticasView({ stats }) {
                         ...(won && { background: 'color-mix(in srgb, var(--green) 8%, transparent)', borderLeft: '2px solid color-mix(in srgb, var(--green) 55%, transparent)', borderRadius: 4 }),
                       }}>
                         <span style={{ width: 28, fontWeight: 600 }}>J{g.round}</span>
+                        <img className="team-crest team-crest--sm" style={{ flexShrink: 0 }} src={crestUrlMunicipal(g.rival)} alt="" onError={e => { e.target.onerror = null; e.target.src = crestUrlMunicipalFallback(g.rival); }} />
                         <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'left' }}>
                           <span className="team-full">{g.rival}</span>
                           <span className="team-abbr">{ABBR[g.rival] ?? g.rival.slice(0, 3).toUpperCase()}</span>
