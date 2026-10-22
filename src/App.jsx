@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getDoc, doc } from 'firebase/firestore';
 import { db } from './lib/firebase';
 import { refreshDeviceToken } from './lib/notifications';
+import { RFFM_DEFAULT_SEASON, rffmSeasonConfig } from './lib/rffmSeasons';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Header  from './components/Layout/Header';
 import TabBar  from './components/Layout/TabBar';
@@ -53,6 +54,21 @@ function AppShell() {
       setMunicipalSeasons(meta.seasons ?? (cur ? [cur] : []));
       setMunicipalCurrentSeason(cur);
       setMunicipalSeason(s => s ?? cur);
+    }).catch(() => {});
+  }, [league]);
+
+  const [rffmSeason, setRffmSeason]               = useState(null);
+  const [rffmSeasons, setRffmSeasons]             = useState([]);
+  const [rffmCurrentSeason, setRffmCurrentSeason] = useState(null);
+
+  useEffect(() => {
+    if (league !== 'juvenil') return;
+    getDoc(doc(db, 'matches_cache_rffm', 'meta')).then(snap => {
+      const meta = snap.exists() ? snap.data() : {};
+      const cur = meta.currentSeason ?? RFFM_DEFAULT_SEASON;
+      setRffmSeasons([...new Set([...(meta.seasons ?? []), cur])].sort());
+      setRffmCurrentSeason(cur);
+      setRffmSeason(s => s ?? cur);
     }).catch(() => {});
   }, [league]);
 
@@ -114,6 +130,25 @@ function AppShell() {
           ))}
         </div>
       )}
+      {league === 'juvenil' && rffmSeasons.length > 1 && (
+        <>
+          <div className="season-selector season-selector--juvenil">
+            {[...rffmSeasons].reverse().map(s => (
+              <button
+                key={s}
+                className={`season-btn${rffmSeason === s ? ' active' : ''}`}
+                onClick={() => setRffmSeason(s)}
+              >
+                {s.slice(0, 2)}/{s.slice(2)}
+                {s === rffmCurrentSeason && <span className="season-btn__now" />}
+              </button>
+            ))}
+          </div>
+          <div className="season-competition">
+            {rffmSeasonConfig(rffmSeason ?? rffmCurrentSeason).competition}
+          </div>
+        </>
+      )}
       <main className="main-content">
         {league === 'primera' && tab === 'calendar'       && <CalendarTab />}
         {league === 'primera' && tab === 'standings'      && <StandingsTab />}
@@ -122,8 +157,8 @@ function AppShell() {
         {league === 'primera' && tab === 'history'        && <HistoryTab />}
         {league === 'segunda' && tab === 'resultados'     && <CalendarSegundaTab />}
         {league === 'segunda' && tab === 'clasificacion'  && <StandingsSegundaTab />}
-        {league === 'juvenil'   && tab === 'resultados'     && <CalendarRffmTab />}
-        {league === 'juvenil'   && tab === 'clasificacion'  && <StandingsRffmTab />}
+        {league === 'juvenil'   && tab === 'resultados'     && <CalendarRffmTab season={rffmSeason} />}
+        {league === 'juvenil'   && tab === 'clasificacion'  && <StandingsRffmTab season={rffmSeason} />}
         {league === 'municipal' && tab === 'resultados'     && <CalendarMunicipalTab season={municipalSeason} />}
         {league === 'municipal' && tab === 'clasificacion'  && <StandingsMunicipalTab season={municipalSeason} />}
       </main>

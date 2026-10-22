@@ -4,21 +4,19 @@ import { useScorersRffm }   from '../../hooks/useScorersRffm';
 import { crestUrlRffm }        from '../../lib/crests';
 import { shortName, abbr } from '../../lib/rffmTeams';
 import LoadingSpinner from '../LoadingSpinner';
+import { useMatchesRffm } from '../../hooks/useMatchesRffm';
+import { rffmSeasonConfig } from '../../lib/rffmSeasons';
 
-const FAVORITE_TEAM = 'S.A.D. OCIO Y DEPORTE CANAL A';
-
-const PROMO_SPOTS = 2;
-const REL_SPOTS   = 4;
-
-function rowClass(pos, total, isFav) {
+function rowClass(pos, total, isFav, cfg) {
   const zones = [];
-  if (pos <= PROMO_SPOTS)                   zones.push('zone-hm-promo');
-  if (!isFav && pos > total - REL_SPOTS)    zones.push('zone-rel');
+  if (pos <= cfg.promoSpots)                                zones.push('zone-hm-promo');
+  else if (cfg.maybePromoSpots && pos <= cfg.promoSpots + cfg.maybePromoSpots) zones.push('zone-hm-playoff');
+  if (cfg.relSpots && pos > total - cfg.relSpots)           zones.push('zone-rel');
   if (isFav)                                zones.push('zone-rffm-fav');
   return zones.join(' ');
 }
 
-function LigaView({ standings }) {
+function LigaView({ standings, cfg }) {
   if (!standings.length) return (
     <div className="empty-state">
       <img src={`${import.meta.env.BASE_URL}icon-empty.png`} alt="" className="empty-icon" />
@@ -47,7 +45,7 @@ function LigaView({ standings }) {
         </thead>
         <tbody>
           {standings.map((t, i) => (
-            <tr key={t.code} className={rowClass(i + 1, total, t.name === FAVORITE_TEAM)}>
+            <tr key={t.code} className={rowClass(i + 1, total, t.name === cfg.favorite, cfg)}>
               <td className="col-pos">{i + 1}</td>
               <td className="col-team">
                 <img className="team-crest team-crest--sm" src={crestUrlRffm(t.logo)} alt="" />
@@ -67,20 +65,26 @@ function LigaView({ standings }) {
         </tbody>
       </table>
       <div className="standings-legend">
-        <span className="legend-dot zone-hm-promo" />Ascenso
-        <span className="legend-dot zone-rel" />Descenso
+        {cfg.promoSpots > 0 && <><span className="legend-dot zone-hm-promo" />Ascenso</>}
+        {cfg.maybePromoSpots > 0 && <><span className="legend-dot zone-hm-playoff" />Ascenso si es de los mejores sextos</>}
+        {cfg.relSpots   > 0 &&<><span className="legend-dot zone-rel" />Descenso</>}
       </div>
     </div>
   );
 }
 
-function scorerCrest(s) {
+// El escudo descargado puede tener otra extensión que la de la API de goleadores,
+// así que se prefiere el de la clasificación (mismo codigo de equipo).
+function scorerCrest(s, logoByCode) {
+  const fromStandings = logoByCode[String(s.codigo_equipo)];
+  if (fromStandings) return crestUrlRffm(fromStandings);
   if (!s.escudo_equipo || !s.codigo_equipo) return crestUrlRffm(null);
   const ext = s.escudo_equipo.split('.').pop().toLowerCase() || 'jpg';
   return crestUrlRffm(`crests-rffm/${s.codigo_equipo}.${ext}`);
 }
 
-function GoleadoresView({ scorers }) {
+function GoleadoresView({ scorers, standings }) {
+  const logoByCode = Object.fromEntries(standings.filter(t => t.logo).map(t => [String(t.code), t.logo]));
   if (!scorers.length) return (
     <div className="empty-state">
       <img src={`${import.meta.env.BASE_URL}icon-empty.png`} alt="" className="empty-icon" />
@@ -105,7 +109,7 @@ function GoleadoresView({ scorers }) {
               <td className="col-pos">{i + 1}</td>
               <td className="col-scorer-name">{s.jugador ?? '—'}</td>
               <td className="col-scorer-team">
-                <img className="team-crest team-crest--sm" src={scorerCrest(s)} alt="" />
+                <img className="team-crest team-crest--sm" src={scorerCrest(s, logoByCode)} alt="" />
                 <span className="team-full">{shortName(s.nombre_equipo ?? '')}</span>
                 <span className="team-abbr">{abbr(s.nombre_equipo ?? '')}</span>
               </td>
@@ -118,12 +122,14 @@ function GoleadoresView({ scorers }) {
   );
 }
 
-export default function StandingsRffmTab() {
+export default function StandingsRffmTab({ season = null }) {
   const [view, setView] = useState('liga');
-  const { standings, loading: lStand, error: eStand } = useStandingsRffm();
-  const { scorers,   loading: lScore, error: eScore  } = useScorersRffm();
+  const { currentSeason } = useMatchesRffm(season);
+  const cfg = rffmSeasonConfig(season ?? currentSeason);
+  const { standings, loading: lStand, error: eStand } = useStandingsRffm(season);
+  const { scorers,   loading: lScore, error: eScore  } = useScorersRffm(season);
 
-  const loading = view === 'liga' ? lStand : lScore;
+  const loading = view === 'liga' ? lStand : (lScore || lStand);
   const error   = view === 'liga' ? eStand : eScore;
 
   return (
@@ -148,8 +154,8 @@ export default function StandingsRffmTab() {
         </div>
       )}
 
-      {!loading && !error && view === 'liga'        && <LigaView standings={standings} />}
-      {!loading && !error && view === 'goleadores'  && <GoleadoresView scorers={scorers} />}
+      {!loading && !error && view === 'liga'        && <LigaView standings={standings} cfg={cfg} />}
+      {!loading && !error && view === 'goleadores'  && <GoleadoresView scorers={scorers} standings={standings} />}
     </div>
   );
 }

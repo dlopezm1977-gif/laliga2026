@@ -40,5 +40,161 @@ export const SHORT = {
   'S.A.D. OCIO Y DEPORTE CANAL A':          'Canal A',
 };
 
+// Segunda Juvenil Gr.27 (temporada 25/26)
+Object.assign(ABBR, {
+  'A.D. EL PARDO':                       'PAR',
+  'A.D. ESPERANZA D':                    'ESP',
+  'A.D. SAN PASCUAL-MONTPELLIER B':      'SPM',
+  'C.D. CANILLAS D':                     'CNL',
+  'C.D. CHAMBERI DE MADRID':             'CHB',
+  'C.D. SPARTAC DE MANOTERAS C':         'SPA',
+  'C.D.E. CHAMARTIN ATHLETIC B':         'CHA',
+  'C.D.E. MALASAÑA F.C. B':              'MAL',
+  'C.F. AGUILAS DEL LUCERO B':           'AGU',
+  'C.F. VALDEBEBAS B':                   'VAL',
+  'CDB UNION DEPORTIVA ARGANZUELA D':    'ARG',
+  'CDE CHAMARTIN F.C.':                  'CHF',
+  'CELTIC CASTILLA C.F. B':              'CEB',
+  'NTRA. SRA. DEL BUEN CONSEJO':         'BCO',
+  'S.A.D. FUNDACIÓN C.D. RECUERDO B':    'REB',
+  'S.A.D. OCIO Y DEPORTE CANAL B':       'CNB',
+});
+Object.assign(SHORT, {
+  'A.D. EL PARDO':                       'El Pardo',
+  'A.D. ESPERANZA D':                    'Esperanza D',
+  'A.D. SAN PASCUAL-MONTPELLIER B':      'San Pascual B',
+  'C.D. CANILLAS D':                     'Canillas D',
+  'C.D. CHAMBERI DE MADRID':             'Chamberí',
+  'C.D. SPARTAC DE MANOTERAS C':         'Spartac C',
+  'C.D.E. CHAMARTIN ATHLETIC B':         'Chamartín Athletic B',
+  'C.D.E. MALASAÑA F.C. B':              'Malasaña B',
+  'C.F. AGUILAS DEL LUCERO B':           'Águilas Lucero B',
+  'C.F. VALDEBEBAS B':                   'Valdebebas B',
+  'CDB UNION DEPORTIVA ARGANZUELA D':    'Arganzuela D',
+  'CDE CHAMARTIN F.C.':                  'Chamartín F.C.',
+  'CELTIC CASTILLA C.F. B':              'Celtic B',
+  'NTRA. SRA. DEL BUEN CONSEJO':         'Buen Consejo',
+  'S.A.D. FUNDACIÓN C.D. RECUERDO B':    'Fund. Recuerdo B',
+  'S.A.D. OCIO Y DEPORTE CANAL B':       'Canal B',
+});
+
+// Primera Cadete Gr.14 (temporada 24/25)
+Object.assign(ABBR, {
+  'A.D. CALA POZUELO B':               'CAL',
+  'A.D. RAYO LATINA A':                'RLA',
+  'AGRUPACION C.D. LUCERO LINCES B':   'LIN',
+  'C.D. BETIS SAN ISIDRO A':           'BET',
+  'C.D. GOYA A':                       'GOY',
+  'C.D. LOS YEBENES-SAN BRUNO B':      'YEB',
+  'C.D. NUEVO BOADILLA F':             'BOA',
+  'C.D. PUERTA BONITA B':              'PBO',
+  'C.D. SPORTING LAGUNA':              'LAG',
+  'C.D.E. MALASAÑA F.C. A':            'MAA',
+  'C.F. POZUELO DE ALARCON D':         'POZ',
+  'CLUB SAN AGUSTIN B':                'SAB',
+});
+Object.assign(SHORT, {
+  'A.D. CALA POZUELO B':               'Cala Pozuelo B',
+  'A.D. RAYO LATINA A':                'Rayo Latina A',
+  'AGRUPACION C.D. LUCERO LINCES B':   'Lucero Linces B',
+  'C.D. BETIS SAN ISIDRO A':           'Betis San Isidro A',
+  'C.D. GOYA A':                       'Goya A',
+  'C.D. LOS YEBENES-SAN BRUNO B':      'Yébenes B',
+  'C.D. NUEVO BOADILLA F':             'Nuevo Boadilla F',
+  'C.D. PUERTA BONITA B':              'Puerta Bonita B',
+  'C.D. SPORTING LAGUNA':              'Sporting Laguna',
+  'C.D.E. MALASAÑA F.C. A':            'Malasaña A',
+  'C.F. POZUELO DE ALARCON D':         'Pozuelo D',
+  'CLUB SAN AGUSTIN B':                'San Agustín B',
+});
+
+// Segunda Cadete Gr.31 (temporada 23/24)
+Object.assign(ABBR, {
+  'A.D. FUNDACION C':                  'FUC',
+  'A.D. PARQUE ARGANZUELA':            'PAR',
+  'C.D. ESC.FUT. VILLA DE MADRID B':   'VIL',
+  'C.D. GOYA C':                       'GOC',
+  'C.D. LOS YEBENES-SAN BRUNO C':      'YBC',
+  'C.D. PRODET POZUELO C':             'PRO',
+  'C.D. RUPE SAHAGUN D':               'RUP',
+  'C.D.E. MALASAÑA F.C. B':            'MAL',
+  'ESC.MUN.FUT. ALUCHE D':             'ALU',
+  'R.C.D. ESPANYOL DE MADRID':         'ESP',
+  'REAL C.D. CARABANCHEL E':           'CRB',
+  'U.D. ARROYOFRESNO C':               'ARF',
+});
+Object.assign(SHORT, {
+  'A.D. FUNDACION C':                  'Fundación C',
+  'A.D. PARQUE ARGANZUELA':            'Parque Arganzuela',
+  'C.D. ESC.FUT. VILLA DE MADRID B':   'Villa de Madrid B',
+  'C.D. GOYA C':                       'Goya C',
+  'C.D. LOS YEBENES-SAN BRUNO C':      'Yébenes C',
+  'C.D. PRODET POZUELO C':             'Prodet Pozuelo C',
+  'C.D. RUPE SAHAGUN D':               'Rupe Sahagún D',
+  'C.D.E. MALASAÑA F.C. B':            'Malasaña B',
+  'ESC.MUN.FUT. ALUCHE D':             'Aluche D',
+  'R.C.D. ESPANYOL DE MADRID':         'Espanyol Madrid',
+  'REAL C.D. CARABANCHEL E':           'Carabanchel E',
+  'U.D. ARROYOFRESNO C':               'Arroyofresno C',
+});
+
+// Preferente Infantil Gr.3 (temporada 22/23)
+Object.assign(ABBR, {
+  'A.D. ESPERANZA A':                  'ESA',
+  'A.D. SPORTING HORTALEZA B':         'SPH',
+  'A.D. UNION ADARVE B':               'ADB',
+  'ARAVACA C.F. - Bhhs Spain B':       'ARB',
+  'C.D. BARAJAS A':                    'BAR',
+  'C.D. CANILLAS B':                   'CNB',
+  'C.D. HIGHLANDS EL ENCINAR':         'HIG',
+  'C.D. RUPE SAHAGUN A':               'RSA',
+  'C.D. UNION EL PARQUE':              'UEP',
+  'ESC.FUT.BARRIO PILAR A':            'PIL',
+  'PERISO CLUB DE FUTBOL B':           'PER',
+  'U.D. ARROYOFRESNO A':               'ARA',
+  'U.D. SAN SEBASTIAN REYES C':        'SSR',
+});
+Object.assign(SHORT, {
+  'A.D. ESPERANZA A':                  'Esperanza A',
+  'A.D. SPORTING HORTALEZA B':         'Sporting Hortaleza B',
+  'A.D. UNION ADARVE B':               'Adarve B',
+  'ARAVACA C.F. - Bhhs Spain B':       'Aravaca B',
+  'C.D. BARAJAS A':                    'Barajas A',
+  'C.D. CANILLAS B':                   'Canillas B',
+  'C.D. HIGHLANDS EL ENCINAR':         'Highlands Encinar',
+  'C.D. RUPE SAHAGUN A':               'Rupe Sahagún A',
+  'C.D. UNION EL PARQUE':              'Unión El Parque',
+  'ESC.FUT.BARRIO PILAR A':            'Barrio Pilar A',
+  'PERISO CLUB DE FUTBOL B':           'Periso B',
+  'U.D. ARROYOFRESNO A':               'Arroyofresno A',
+  'U.D. SAN SEBASTIAN REYES C':        'San Sebastián Reyes C',
+});
+
+// Primera Infantil Gr.11 (temporada 21/22)
+Object.assign(ABBR, {
+  'A.D. FUNDACION B':                  'FUB',
+  'ARAVACA C.F. C':                    'ARC',
+  'C.D. MASRIVER A':                   'MAS',
+  'C.D. VIRGEN DE MIRASIERRA':         'VMI',
+  'COLEGIO EL PRADO':                  'PRA',
+  'ESCUELA EUROPEA C.F.':              'EUR',
+  'S.A.D. CODEC DE MADRID A':          'COD',
+  'S.A.D. COLEGIO VALDELUZ A':         'VLZ',
+  'U.D. SAN LORENZO B':                'SLO',
+  'UNION ZONA NORTE C':                'UZN',
+});
+Object.assign(SHORT, {
+  'A.D. FUNDACION B':                  'Fundación B',
+  'ARAVACA C.F. C':                    'Aravaca C',
+  'C.D. MASRIVER A':                   'Masriver A',
+  'C.D. VIRGEN DE MIRASIERRA':         'Virgen Mirasierra',
+  'COLEGIO EL PRADO':                  'Colegio El Prado',
+  'ESCUELA EUROPEA C.F.':              'Escuela Europea',
+  'S.A.D. CODEC DE MADRID A':          'Codec Madrid A',
+  'S.A.D. COLEGIO VALDELUZ A':         'Valdeluz A',
+  'U.D. SAN LORENZO B':                'San Lorenzo B',
+  'UNION ZONA NORTE C':                'Unión Zona Norte C',
+});
+
 export const shortName = name => SHORT[name] ?? name;
 export const abbr      = name => ABBR[name]  ?? name.slice(0, 3).toUpperCase();

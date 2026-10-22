@@ -5,6 +5,7 @@
 const fs   = require('fs');
 const path = require('path');
 const admin = require('firebase-admin');
+const { computeStandings } = require('./standings-rffm');
 const { handleSendError } = require('./fcm-utils');
 
 if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
@@ -29,6 +30,7 @@ const LOGO_BASE   = 'https://appweb.rffm.es';
 const ID_GROUP       = '26737720';
 const ID_COMPETITION = '26737718';
 const TOTAL_ROUNDS = 34;
+const CURRENT_SEASON = '2627';
 const CRESTS_DIR  = path.join(__dirname, '../public/crests-rffm');
 
 const FAVORITE_TEAM_RFFM = 'S.A.D. OCIO Y DEPORTE CANAL A';
@@ -194,39 +196,7 @@ async function syncMatchesAndStandings() {
   const nextRound = rounds.find(rd => allRounds[rd].some(m => m.status !== 'finished' && m.fecha && m.fecha.slice(0, 10) >= today));
   if (nextRound && !todayRound) currentRound = nextRound;
 
-  // Calcular clasificación a partir de resultados
-  const teams = {};
-  for (const rd of rounds) {
-    for (const m of allRounds[rd]) {
-      if (m.homeScore === null) continue;
-
-      const h = m.homeCode, a = m.awayCode;
-      if (!teams[h]) teams[h] = { code: h, name: m.homeTeam, logo: m.homeLogo, pj:0, pg:0, pe:0, pp:0, gf:0, gc:0, pts:0 };
-      if (!teams[a]) teams[a] = { code: a, name: m.awayTeam, logo: m.awayLogo, pj:0, pg:0, pe:0, pp:0, gf:0, gc:0, pts:0 };
-
-      const hg = m.homeScore, ag = m.awayScore;
-      teams[h].pj++; teams[h].gf += hg; teams[h].gc += ag;
-      teams[a].pj++; teams[a].gf += ag; teams[a].gc += hg;
-
-      if (hg > ag)       { teams[h].pg++; teams[h].pts += 3; teams[a].pp++; }
-      else if (hg === ag) { teams[h].pe++; teams[h].pts++;    teams[a].pe++; teams[a].pts++; }
-      else               { teams[a].pg++; teams[a].pts += 3; teams[h].pp++; }
-    }
-  }
-
-  // Si no hay resultados aún, poblar equipos desde fixtures
-  if (Object.keys(teams).length === 0) {
-    for (const rd of rounds) {
-      for (const m of allRounds[rd]) {
-        if (!teams[m.homeCode]) teams[m.homeCode] = { code: m.homeCode, name: m.homeTeam, logo: m.homeLogo, pj:0, pg:0, pe:0, pp:0, gf:0, gc:0, pts:0 };
-        if (!teams[m.awayCode]) teams[m.awayCode] = { code: m.awayCode, name: m.awayTeam, logo: m.awayLogo, pj:0, pg:0, pe:0, pp:0, gf:0, gc:0, pts:0 };
-      }
-    }
-  }
-
-  const standings = Object.values(teams)
-    .map(t => ({ ...t, gd: t.gf - t.gc }))
-    .sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf || a.name.localeCompare(b.name));
+  const standings = computeStandings(allRounds);
 
   // Detectar cambios de horario y finales de partido: leer datos actuales de Firestore y comparar
   const roundKeys = Object.keys(allRounds);
@@ -278,7 +248,9 @@ async function syncMatchesAndStandings() {
     updatedAt:    admin.firestore.FieldValue.serverTimestamp(),
     currentRound,
     totalRounds:  Object.keys(allRounds).length,
-  });
+    currentSeason: CURRENT_SEASON,
+    seasons: admin.firestore.FieldValue.arrayUnion(CURRENT_SEASON),
+  }, { merge: true });
   ops++;
 
   await flush();

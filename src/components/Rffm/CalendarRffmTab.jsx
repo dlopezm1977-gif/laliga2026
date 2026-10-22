@@ -1,13 +1,11 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useMatchesRffm } from '../../hooks/useMatchesRffm';
 import { useMatchDetailRffm } from '../../hooks/useMatchDetailRffm';
 import { crestUrlRffm } from '../../lib/crests';
 import { shortName } from '../../lib/rffmTeams';
 import MatchDetailModalRffm from './MatchDetailModalRffm';
 import LoadingSpinner from '../LoadingSpinner';
-
-const FAVORITE_TEAM = 'S.A.D. OCIO Y DEPORTE CANAL A';
-const FAVORITE_LOGO = 'crests-rffm/6819372.png';
+import { rffmSeasonConfig } from '../../lib/rffmSeasons';
 
 function formatDateLabel(fecha) {
   if (!fecha) return '';
@@ -45,17 +43,13 @@ function StatusBadge({ status }) {
   return <span className="status-badge scheduled">Próximo</span>;
 }
 
-function isFavMatch(match) {
-  return match.homeTeam === FAVORITE_TEAM || match.awayTeam === FAVORITE_TEAM;
-}
-
-function MatchCard({ match, onClick }) {
+function MatchCard({ match, onClick, isFav }) {
   const isFinished = match.status === 'finished';
   const isLive     = match.status === 'live';
 
   return (
     <div
-      className={`match-card${isFavMatch(match) ? ' match-card--favorite' : ''}`}
+      className={`match-card${isFav ?' match-card--favorite' : ''}`}
       onClick={onClick}
       style={{ cursor: 'pointer' }}
     >
@@ -89,15 +83,20 @@ function MatchCard({ match, onClick }) {
 }
 
 
-export default function CalendarRffmTab() {
-  const { currentRound, getMatches, totalRounds, loading, error, refresh } = useMatchesRffm();
+export default function CalendarRffmTab({ season = null }) {
+  const { currentRound, getMatches, totalRounds, currentSeason, loading, error, refresh } = useMatchesRffm(season);
+  const cfg = rffmSeasonConfig(season ?? currentSeason);
+  const isFavMatch = m => m.homeTeam === cfg.favorite || m.awayTeam === cfg.favorite;
   const { detail, lineups, incidents, referees, loading: detailLoading, error: detailError, open: openDetail, close: closeDetail } = useMatchDetailRffm();
   const [jornada, setJornada]             = useState(null);
   const [collapsed, setCollapsed]         = useState(new Set());
   const [filterFav, setFilterFav]         = useState(false);
   const [selectedMatch, setSelectedMatch] = useState(null);
 
-  const toggleGroup = useCallback(label => {
+  // Al cambiar de temporada se vuelve a la jornada actual de esa temporada
+  useEffect(() => { setJornada(null); setSelectedMatch(null); setCollapsed(new Set()); }, [season]);
+
+  const toggleGroup =useCallback(label => {
     setCollapsed(prev => {
       const next = new Set(prev);
       next.has(label) ? next.delete(label) : next.add(label);
@@ -151,8 +150,8 @@ export default function CalendarRffmTab() {
           className={`fav-filter-btn${filterFav ? ' active' : ''}`}
           onClick={() => setFilterFav(v => !v)}
         >
-          <img src={crestUrlRffm(FAVORITE_LOGO)} alt="Ocio y Deporte Canal" />
-          {filterFav ? 'Solo Ocio y Deporte Canal' : 'Ocio y Deporte Canal'}
+          <img src={crestUrlRffm(cfg.favoriteLogo)} alt={cfg.favoriteLabel} />
+          {filterFav ? `Solo ${cfg.favoriteLabel}` : cfg.favoriteLabel}
         </button>
         <button className="btn-refresh" onClick={refresh} disabled={loading} title="Actualizar partidos">↻ Actualizar</button>
       </div>
@@ -173,7 +172,7 @@ export default function CalendarRffmTab() {
                 <span className="date-group-chevron">{isCollapsed ? '›' : '‹'}</span>
               </div>
               {!isCollapsed && visible.map((m, i) => (
-                <MatchCard key={m.matchId ?? i} match={m} onClick={() => {
+                <MatchCard key={m.matchId ?? i} match={m} isFav={isFavMatch(m)} onClick={() => {
                   setSelectedMatch(m);
                   if (m.actaCerrada) openDetail(m.matchId);
                 }} />

@@ -2694,7 +2694,21 @@ input  { font-family: inherit; }
   background: var(--surface);
   border-bottom: 1px solid var(--border);
 }
+.season-selector {
+  overflow-x: auto;
+}
+.season-competition {
+  padding: 4px 16px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--fg-muted);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+}
 .season-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
   padding: 3px 12px;
   border-radius: 14px;
   border: 1px solid var(--border);
@@ -2704,6 +2718,11 @@ input  { font-family: inherit; }
   font-weight: 500;
   cursor: pointer;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.season-selector--juvenil .season-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
 }
 .season-selector--municipal .season-btn.active {
   background: var(--municipal-accent);
