@@ -58,7 +58,7 @@ const MONTHLY_CATEGORIES = [
 
 function getSign(h, a) { return h > a ? 'H' : a > h ? 'A' : 'D'; }
 
-function computeUserScore(userPreds, monthlyPreds, matchdayData, monthlyResults) {
+function computeUserScore(userPreds, monthlyPreds, matchdayData, monthlyResults, minigameResults, minigameConfigs) {
   let totalPoints = 0;
   const byMatchday = {};
 
@@ -105,6 +105,12 @@ function computeUserScore(userPreds, monthlyPreds, matchdayData, monthlyResults)
     });
     if (!hasAnyResult) return;
     totalPoints += mPts;
+  });
+
+  // Minijuegos: puntos de los juegos iniciados/completados (espejo del cliente)
+  Object.entries(minigameConfigs || {}).forEach(([gameId]) => {
+    const result = (minigameResults || {})[gameId];
+    if (result?.started) totalPoints += result.points ?? 0;
   });
 
   return { totalPoints, byMatchday, matchdaysPlayed: Object.keys(byMatchday).length };
@@ -496,10 +502,14 @@ async function main() {
 
   // ── Modo resumen de jornada ────────────────────────────────────────────
   // Leer partidos y resultados mensuales
-  const [cacheSnap, monthlyResultsSnap] = await Promise.all([
+  const [cacheSnap, monthlyResultsSnap, minigamesSnap] = await Promise.all([
     db.collection('matches_cache').get(),
     db.collection('monthly_results').get(),
+    db.collection('minigames').get(),
   ]);
+
+  const minigameConfigs = {};
+  minigamesSnap.forEach(d => { minigameConfigs[d.id] = d.data(); });
 
   const matchdayData = {};
   cacheSnap.forEach(d => { matchdayData[Number(d.id)] = d.data().matches || []; });
@@ -509,17 +519,20 @@ async function main() {
 
   // Calcular ranking desde las predicciones (no depende de la colección 'scores')
   const ranking = await Promise.all(usuarios.map(async u => {
-    const [predsSnap, monthlySnap] = await Promise.all([
+    const [predsSnap, monthlySnap, minigameSnap] = await Promise.all([
       db.collection('predictions').doc(u.uid).collection('matchdays').get(),
       db.collection('monthly_predictions').doc(u.uid).collection('months').get(),
+      db.collection('minigame_results').doc(u.uid).collection('games').get(),
     ]);
+    const minigameResults = {};
+    minigameSnap.forEach(d => { minigameResults[d.id] = d.data(); });
     const userPreds = {};
     predsSnap.forEach(d => { userPreds[d.id] = d.data(); });
     const monthlyPreds = {};
     monthlySnap.forEach(d => { monthlyPreds[d.id] = d.data(); });
 
     const { totalPoints, byMatchday, matchdaysPlayed } =
-      computeUserScore(userPreds, monthlyPreds, matchdayData, monthlyResults);
+      computeUserScore(userPreds, monthlyPreds, matchdayData, monthlyResults, minigameResults, minigameConfigs);
     return { ...u, totalPoints, matchdaysPlayed, byMatchday };
   }));
   ranking.sort((a, b) => b.totalPoints - a.totalPoints);
