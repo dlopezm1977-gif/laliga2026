@@ -142,7 +142,7 @@ export default function PredictTab() {
   const [savedOnce, setSavedOnce]       = useState(false);
   const [loadingPreds, setLoadingPreds] = useState(false);
 
-  const { visibleMinigames, userResults: minigameResults, refresh: refreshMinigames } = useMinigames(user?.uid);
+  const { minigames, visibleMinigames, userResults: minigameResults, refresh: refreshMinigames } = useMinigames(user?.uid);
   const [showingMinigames, setShowingMinigames] = useState(null); // null | Game[]
   const hasAutoNavigated = useRef(false);
 
@@ -269,9 +269,21 @@ export default function PredictTab() {
           className={`toggle-btn${view === 'general' ? ' active' : ''}`}
           onClick={() => setView('general')}
         >General</button>
+        <button
+          className={`toggle-btn${view === 'juegos' ? ' active' : ''}`}
+          onClick={() => setView('juegos')}
+        >Juegos</button>
       </div>
 
-      {view === 'general' ? (
+      {view === 'juegos' ? (
+        minigames.length ? (
+          minigames.map(game => (
+            <MinigameCard key={game.id} game={game} uid={user?.uid} practice />
+          ))
+        ) : (
+          <div className="loading">Todavía no hay juegos disponibles</div>
+        )
+      ) : view === 'general' ? (
         <SeasonPredictTab />
       ) : view === 'mensual' ? (
         <MonthlyPredictTab />

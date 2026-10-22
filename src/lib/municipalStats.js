@@ -27,6 +27,7 @@ export function computeMunicipalStats(roundData) {
         gf: m[`${side}Score`],
         gc: m[`${rival}Score`],
         detail: m.detail,
+        match: m,
       });
     }
   }
@@ -59,7 +60,7 @@ export function computeMunicipalStats(roundData) {
   return [...players.values()].map(({ porPartido, ...p }) => ({
     ...p,
     partidos: games.map((g, gi) => ({
-      round: g.round, rival: g.rival, gf: g.gf, gc: g.gc,
+      round: g.round, rival: g.rival, gf: g.gf, gc: g.gc, match: g.match,
       ...(porPartido.get(gi) ?? { jugado: false, goles: 0, amarillas: 0, rojas: 0 }),
     })),
   }));

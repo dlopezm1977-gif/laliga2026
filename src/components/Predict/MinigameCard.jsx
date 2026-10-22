@@ -3,7 +3,7 @@ import MemoryPairsGame from './MemoryPairsGame';
 import SwapPuzzleGame from './SwapPuzzleGame';
 import SequenceRecallGame from './SequenceRecallGame';
 
-export default function MinigameCard({ game, result, uid, onResultUpdate }) {
+export default function MinigameCard({ game, result, uid, onResultUpdate, practice = false }) {
   const [playing, setPlaying] = useState(false);
   const [replay, setReplay]   = useState(false);
 
@@ -39,6 +39,26 @@ export default function MinigameCard({ game, result, uid, onResultUpdate }) {
       return <SequenceRecallGame game={game} uid={uid} onFinish={handleFinish} replay={replay} />;
     }
     return <MemoryPairsGame game={game} uid={uid} onFinish={handleFinish} replay={replay} />;
+  }
+
+  if (practice) {
+    const label = game.title || (game.type === 'puzzle' ? 'Puzle' : game.type === 'sequence' ? 'Secuencia' : 'Juego de Parejas');
+    return (
+      <div className="minigame-card">
+        <div className="minigame-card-inner">
+          <div className="minigame-card-left">
+            <span className="minigame-icon">🎮</span>
+            <div>
+              <div className="minigame-title">{label}</div>
+              <div className="minigame-meta">{game.weekLabel || `Semana ${game.afterMatchday}-${game.afterMatchday + 1}`} · Práctica, no suma puntos</div>
+            </div>
+          </div>
+          <div className="minigame-card-right">
+            <button className="minigame-play-btn" onClick={() => { setReplay(true); setPlaying(true); }}>Jugar →</button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

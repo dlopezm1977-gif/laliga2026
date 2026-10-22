@@ -3,6 +3,7 @@ import { useStandingsMunicipal } from '../../hooks/useStandingsMunicipal';
 import { useStatsMunicipal } from '../../hooks/useStatsMunicipal';
 import { crestUrlMunicipal, crestUrlMunicipalFallback } from '../../lib/crests';
 import LoadingSpinner from '../LoadingSpinner';
+import MatchDetailModalMunicipal from './MatchDetailModalMunicipal';
 
 const FAVORITE_TEAM = 'ASTON BIRRA';
 
@@ -85,7 +86,7 @@ const SORTS = {
   rojas:     (a, b) => b.rojas - a.rojas || b.amarillas - a.amarillas,
 };
 
-function EstadisticasView({ stats }) {
+function EstadisticasView({ stats, onOpenMatch }) {
   const [sort, setSort] = useState('pj');
   const [open, setOpen] = useState(null);
   const rows = [...stats].sort((a, b) => SORTS[sort](a, b) || a.nombre.localeCompare(b.nombre));
@@ -140,8 +141,8 @@ function EstadisticasView({ stats }) {
                       return p.partidos.map(g => {
                       const won = g.gf != null && g.gc != null && g.gf > g.gc;
                       return (
-                      <div key={g.round} style={{
-                        display: 'flex', alignItems: 'center', gap: 8, padding: '3px 6px', fontSize: '0.85rem',
+                      <div key={g.round} onClick={() => onOpenMatch(g)} style={{
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, padding: '3px 6px', fontSize: '0.85rem',
                         opacity: g.jugado ? 1 : 0.55,
                         ...(won && { background: 'color-mix(in srgb, var(--green) 8%, transparent)', borderLeft: '2px solid color-mix(in srgb, var(--green) 55%, transparent)', borderRadius: 4 }),
                       }}>
@@ -174,7 +175,8 @@ function EstadisticasView({ stats }) {
 export default function StandingsMunicipalTab({ season = null }) {
   const [view, setView] = useState('liga');
   const { standings, loading: lStand, error: eStand } = useStandingsMunicipal(season);
-  const { stats, loading: lStats, error: eStats }     = useStatsMunicipal(season);
+  const { stats, activeSeason, refresh, loading: lStats, error: eStats } = useStatsMunicipal(season);
+  const [selected, setSelected] = useState(null);
 
   const loading = view === 'liga' ? lStand : lStats;
   const error   = view === 'liga' ? eStand : eStats;
@@ -200,7 +202,19 @@ export default function StandingsMunicipalTab({ season = null }) {
         </div>
       )}
       {!loading && !error && view === 'liga'         && <LigaView standings={standings} />}
-      {!loading && !error && view === 'estadisticas' && <EstadisticasView stats={stats} />}
+      {!loading && !error && view === 'estadisticas' && <EstadisticasView stats={stats} onOpenMatch={setSelected} />}
+      {selected && (
+        <MatchDetailModalMunicipal
+          match={selected.match}
+          season={activeSeason}
+          round={selected.round}
+          onClose={() => setSelected(null)}
+          onSaved={detail => {
+            setSelected(s => ({ ...s, match: { ...s.match, detail } }));
+            refresh();
+          }}
+        />
+      )}
     </div>
   );
 }

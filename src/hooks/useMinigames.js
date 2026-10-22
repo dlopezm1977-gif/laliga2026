@@ -35,12 +35,8 @@ export function useMinigames(uid) {
 
   const now = Date.now();
 
-  // Minigames visible to the user: active now OR ended in last 14 days
-  const visibleMinigames = minigames.filter(g => {
-    const start = g.startDate?.toMillis?.() ?? 0;
-    const end = g.endDate?.toMillis?.() ?? 0;
-    return now >= start && now <= end + 14 * 24 * 3600 * 1000;
-  });
+  // Minigames visible to the user: every one already started (los finalizados siguen en su hueco de la navegación)
+  const visibleMinigames = minigames.filter(g => now >= (g.startDate?.toMillis?.() ?? 0));
 
   const activeMinigame = minigames.find(g => {
     const start = g.startDate?.toMillis?.() ?? 0;
