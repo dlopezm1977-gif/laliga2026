@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { isMunicipalAdmin } from '../../lib/municipalDetail';
 import MatchDetailFormMunicipal from './MatchDetailFormMunicipal';
+import MatchVideos from '../MatchVideos';
+import { municipalVideoKey } from '../../lib/matchVideos';
 import { crestUrlMunicipal, crestUrlMunicipalFallback } from '../../lib/crests';
 import { useScrollLock } from '../../hooks/useScrollLock';
 import { useCampoRffm } from '../../hooks/useCampoRffm';
@@ -127,6 +129,13 @@ export default function MatchDetailModalMunicipal({ match, season, round, onClos
           </div>
         )}
 
+        {!editing && (
+          <MatchVideos
+            videoKey={municipalVideoKey(season, match.jornada ?? round, match.homeTeam, match.awayTeam)}
+            canEdit={canEdit}
+          />
+        )}
+
         {match.detail && !editing && (
           <div className="md-tabs">
             {TABS.map(t => (
@@ -171,9 +180,6 @@ export default function MatchDetailModalMunicipal({ match, season, round, onClos
                     <span className="md-inc-player">⚽ {g.nombre}</span>
                     {g.tipo === 'pp' && <span className="md-inc-note">(PP)</span>}
                     {g.tipo === 'penalti' && <span className="md-inc-note">(P)</span>}
-                    {g.video && (
-                      <a className="md-inc-video" href={g.video} target="_blank" rel="noopener noreferrer" title="Ver vídeo del gol">▶</a>
-                    )}
                   </div>
                 )}
               />

@@ -48,7 +48,14 @@ function detectCurrentRound(roundData) {
   const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
   const todayRound = rounds.find(rd => roundData[rd].some(m => m.fecha === today));
   if (todayRound) return todayRound;
-  const nextRound = rounds.find(rd => roundData[rd].some(m => m.status === 'scheduled' && m.fecha >= today));
+  // Jornada del partido pendiente más próximo (un aplazado reprogramado a lejos no secuestra la jornada)
+  let nextRound = null, nextDate = null;
+  for (const rd of rounds) {
+    for (const m of roundData[rd]) {
+      if (m.status !== 'scheduled' || !m.fecha || m.fecha < today) continue;
+      if (nextDate === null || m.fecha < nextDate) { nextDate = m.fecha; nextRound = rd; }
+    }
+  }
   if (nextRound) return nextRound;
   return rounds[rounds.length - 1];
 }

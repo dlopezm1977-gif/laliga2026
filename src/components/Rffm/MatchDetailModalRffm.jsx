@@ -6,7 +6,8 @@ import LoadingSpinner from '../LoadingSpinner';
 import { useScrollLock } from '../../hooks/useScrollLock';
 import { useAuth } from '../../contexts/AuthContext';
 import { isMunicipalAdmin } from '../../lib/municipalDetail';
-import GoalVideosRffm from './GoalVideosRffm';
+import MatchVideos from '../MatchVideos';
+import { rffmVideoKey } from '../../lib/matchVideos';
 
 const FAVORITE_TEAM = 'S.A.D. OCIO Y DEPORTE CANAL A';
 
@@ -299,6 +300,11 @@ export default function MatchDetailModalRffm({ match, detail, lineups, incidents
           </div>
         )}
 
+        <MatchVideos
+          videoKey={rffmVideoKey(match.matchId)}
+          canEdit={isMunicipalAdmin(user) && (match.homeTeam === FAVORITE_TEAM || match.awayTeam === FAVORITE_TEAM)}
+        />
+
         {/* Tabs */}
         <div className="md-tabs">
           {TABS.map(t => (
@@ -362,11 +368,6 @@ export default function MatchDetailModalRffm({ match, detail, lineups, incidents
             ) : match.venue ? (
               <div className="md-meta">{match.venue}</div>
             ) : null}
-
-            <GoalVideosRffm
-              matchId={match.matchId}
-              canEdit={isMunicipalAdmin(user) && (match.homeTeam === FAVORITE_TEAM || match.awayTeam === FAVORITE_TEAM)}
-            />
 
             {referees?.length > 0 && (
               <div style={{ marginTop: '1.1rem', paddingTop: '.9rem', borderTop: '1px solid var(--border)' }}>

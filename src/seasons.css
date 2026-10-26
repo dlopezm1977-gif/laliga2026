@@ -1,0 +1,72 @@
+﻿/* ── Ambientación estacional (data-season en <html>) ─────────────────────── */
+
+/* Halloween */
+:root[data-season="halloween"] {
+  --bg: #0d0a14; --surface: #15101f; --surface2: #1e1630; --border: #2e2347;
+  --accent2: #a855f7;
+}
+:root[data-season="halloween"][data-theme="light"] {
+  --bg: #fdf5ec; --surface: #ffffff; --surface2: #fff9f2; --border: #e7cdb5;
+}
+:root[data-season="halloween"] .app-shell { --accent: #f97316; }
+:root[data-season="halloween"][data-theme="light"] .app-shell { --accent: #c2410c; }
+
+/* Navidad */
+:root[data-season="navidad"] {
+  --bg: #08121a; --surface: #0f1b24; --surface2: #162833; --border: #214050;
+  --accent2: #22c55e;
+}
+:root[data-season="navidad"][data-theme="light"] {
+  --bg: #f0f7f4; --surface: #ffffff; --surface2: #f6fbf9; --border: #bcd5cc;
+}
+:root[data-season="navidad"] .app-shell { --accent: #ef4444; }
+:root[data-season="navidad"][data-theme="light"] .app-shell { --accent: #b91c1c; }
+
+/* Detalles discretos: emoji junto al logo y filo decorado bajo la cabecera */
+.season-emoji { display: none; font-size: 1.05rem; line-height: 1; }
+:root[data-season] .season-emoji { display: inline; }
+:root[data-season] .app-header::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 2px;
+  pointer-events: none;
+}
+:root[data-season="halloween"] .app-header::after {
+  background: linear-gradient(90deg, #f97316, #a855f7, #f97316);
+}
+:root[data-season="navidad"] .app-header::after {
+  background: repeating-linear-gradient(90deg, #ef4444 0 14px, #22c55e 14px 28px);
+}
+
+/* Partículas: se reproducen una vez y desaparecen */
+.season-decor {
+  position: fixed; inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 90;
+}
+.season-particle {
+  position: absolute;
+  left: var(--x);
+  top: 0;
+  font-size: var(--s);
+  opacity: 0;
+  animation-duration: var(--t);
+  animation-delay: var(--d);
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+}
+.season-decor--fall .season-particle { animation-name: season-fall; }
+/* En móvil, menos partículas */
+.season-particle:nth-child(n+9) { display: none; }
+@media (min-width: 700px) {
+  .season-particle:nth-child(n+9) { display: block; }
+}
+
+@keyframes season-fall {
+  0%   { transform: translate(0, -2rem);          opacity: 0; }
+  10%  { opacity: .85; }
+  85%  { opacity: .85; }
+  100% { transform: translate(var(--dx), 105dvh); opacity: 0; }
+}

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useInstallPrompt } from '../../hooks/useInstallPrompt';
 import { useTheme } from '../../hooks/useTheme';
+import { SEASON_EMOJI } from '../../lib/seasonalTheme';
 import { crestUrl } from '../../lib/crests';
 import ProfileModal from '../Profile/ProfileModal';
 import InstructionsModal from '../Auth/InstructionsModal';
@@ -92,7 +93,7 @@ function LeagueDropdown({ current, onChange, onClose }) {
   );
 }
 
-export default function Header({ onLogin, league, onLeagueChange }) {
+export default function Header({ onLogin, league, onLeagueChange, season }) {
   const { profile, isGuest, logout } = useAuth();
   const { canInstall, install, isIos, isStandalone } = useInstallPrompt();
   const { theme, toggle: toggleTheme } = useTheme();
@@ -131,6 +132,7 @@ export default function Header({ onLogin, league, onLeagueChange }) {
             />
           )}
           <span>{isSegunda ? 'Hypermotion' : isJuvenil ? 'Pref. Juvenil' : isMunicipal ? 'Liga Municipal' : 'Quiniela 26/27'}</span>
+          {season && <span className="season-emoji" aria-hidden="true">{SEASON_EMOJI[season]}</span>}
           <span className="logo-chevron">▾</span>
           <span className="app-version">v{version}</span>
         </div>

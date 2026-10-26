@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { getRffmVideos, saveRffmVideos } from '../../lib/rffmVideos';
+import { getMatchVideos, saveMatchVideos, VIDEO_TYPES } from '../lib/matchVideos';
 
-export default function GoalVideosRffm({ matchId, canEdit }) {
+const EMPTY = { tipo: 'gol', label: '', url: '' };
+
+export default function MatchVideos({ videoKey, canEdit }) {
   const [videos, setVideos]   = useState([]);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft]     = useState([]);
@@ -9,25 +11,25 @@ export default function GoalVideosRffm({ matchId, canEdit }) {
   const [error, setError]     = useState(null);
 
   useEffect(() => {
-    if (!matchId) return;
+    if (!videoKey) return;
     let cancelled = false;
     setVideos([]);
-    getRffmVideos(matchId).then(v => { if (!cancelled) setVideos(v); }).catch(() => {});
+    getMatchVideos(videoKey).then(v => { if (!cancelled) setVideos(v); }).catch(() => {});
     return () => { cancelled = true; };
-  }, [matchId]);
+  }, [videoKey]);
 
-  if (!matchId || (!videos.length && !canEdit)) return null;
+  if (!videoKey || (!videos.length && !canEdit)) return null;
 
   const update = (i, patch) => setDraft(draft.map((v, j) => (j === i ? { ...v, ...patch } : v)));
 
   async function handleSave() {
     const clean = draft
-      .map(v => ({ label: v.label.trim(), url: v.url.trim() }))
+      .map(v => ({ tipo: v.tipo, label: v.label.trim(), url: v.url.trim() }))
       .filter(v => v.url);
     setSaving(true);
     setError(null);
     try {
-      await saveRffmVideos(matchId, clean);
+      await saveMatchVideos(videoKey, clean);
       setVideos(clean);
       setEditing(false);
     } catch (err) {
@@ -39,18 +41,24 @@ export default function GoalVideosRffm({ matchId, canEdit }) {
 
   return (
     <div className="md-section">
-      <h4 className="md-section-title">Vídeos de goles</h4>
-
-      {!editing && videos.map((v, i) => (
-        <a key={i} href={v.url} target="_blank" rel="noopener noreferrer" className="md-video-link">
-          ▶ {v.label || 'Ver gol'}
-        </a>
-      ))}
+      {!editing && VIDEO_TYPES.map(t => {
+        const list = videos.filter(v => (v.tipo ?? 'gol') === t.id);
+        return list.length > 0 && (
+          <div key={t.id}>
+            <h4 className="md-section-title">{t.title}</h4>
+            {list.map((v, i) => (
+              <a key={i} href={v.url} target="_blank" rel="noopener noreferrer" className="md-video-link">
+                ▶ {v.label || (t.id === 'gol' ? 'Ver gol' : 'Ver ocasión')}
+              </a>
+            ))}
+          </div>
+        );
+      })}
 
       {!editing && canEdit && (
-        <div style={{ marginTop: '.5rem' }}>
+        <div>
           <button type="button" className="mdf-edit-btn" onClick={() => {
-            setDraft(videos.length ? videos.map(v => ({ ...v })) : [{ label: '', url: '' }]);
+            setDraft(videos.length ? videos.map(v => ({ ...EMPTY, ...v })) : [{ ...EMPTY }]);
             setEditing(true);
           }}>
             ✏️ {videos.length ? 'Editar vídeos' : 'Añadir vídeos'}
@@ -59,9 +67,13 @@ export default function GoalVideosRffm({ matchId, canEdit }) {
       )}
 
       {editing && (
-        <div className="mdf" style={{ padding: '.5rem 0 0' }}>
+        <div className="mdf" style={{ padding: 0 }}>
+          <h4 className="md-section-title">Vídeos</h4>
           {draft.map((v, i) => (
             <div key={i} className="mdf-row mdf-row--wrap">
+              <select className="mdf-type" value={v.tipo} onChange={e => update(i, { tipo: e.target.value })}>
+                {VIDEO_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+              </select>
               <input className="mdf-name" type="text" placeholder="Descripción (ej. Gol de Pepe, min 23)" value={v.label}
                 onChange={e => update(i, { label: e.target.value })} />
               <button type="button" className="mdf-del" onClick={() => setDraft(draft.filter((_, j) => j !== i))}>✕</button>
@@ -69,7 +81,7 @@ export default function GoalVideosRffm({ matchId, canEdit }) {
                 onChange={e => update(i, { url: e.target.value })} />
             </div>
           ))}
-          <button type="button" className="mdf-add" onClick={() => setDraft([...draft, { label: '', url: '' }])}>+ Añadir</button>
+          <button type="button" className="mdf-add" onClick={() => setDraft([...draft, { ...EMPTY }])}>+ Añadir</button>
           {error && <p className="mdf-error">{error}</p>}
           <div className="mdf-actions">
             <button type="button" className="mdf-cancel" onClick={() => setEditing(false)} disabled={saving}>Cancelar</button>

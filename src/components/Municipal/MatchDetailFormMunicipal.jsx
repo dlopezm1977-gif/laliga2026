@@ -88,7 +88,7 @@ function RosterPlayers({ roster, setRoster, played, setPlayed, captain, setCapta
 
 /* ── Goles / tarjetas ──────────────────────────────────────── */
 
-function EventList({ title, items, setItems, types, options, defaultType, withVideo }) {
+function EventList({ title, items, setItems, types, options, defaultType }) {
   const update = (i, patch) => setItems(items.map((it, j) => (j === i ? { ...it, ...patch } : it)));
   return (
     <div className="mdf-section">
@@ -103,13 +103,9 @@ function EventList({ title, items, setItems, types, options, defaultType, withVi
             {types.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
           </select>
           <button type="button" className="mdf-del" onClick={() => setItems(items.filter((_, j) => j !== i))}>✕</button>
-          {withVideo && (
-            <input className="mdf-video" type="url" placeholder="Enlace de YouTube (opcional)" value={it.video ?? ''}
-              onChange={e => update(i, { video: e.target.value })} />
-          )}
         </div>
       ))}
-      <button type="button" className="mdf-add" onClick={() => setItems([...items, { pid: '', tipo: defaultType, video: '' }])}>
+      <button type="button" className="mdf-add" onClick={() => setItems([...items, { pid: '', tipo: defaultType }])}>
         + Añadir
       </button>
     </div>
@@ -164,7 +160,7 @@ export default function MatchDetailFormMunicipal({ match, season, round, onSaved
       setFavCaptain(capFav);
       setRival(rivalRows);
       setRivalCaptain(capRival >= 0 ? capRival : null);
-      setGoals((d?.goals ?? []).map(g => ({ pid: toPid(g), tipo: g.tipo ?? 'normal', video: g.video ?? '' })));
+      setGoals((d?.goals ?? []).map(g => ({ pid: toPid(g), tipo: g.tipo ?? 'normal' })));
       setCards((d?.cards ?? []).map(c => ({ pid: toPid(c), tipo: c.tipo ?? 'amarilla' })));
       setReady(true);
     }).catch(err => { if (!cancelled) { setError(err.message); setReady(true); } });
@@ -206,7 +202,7 @@ export default function MatchDetailFormMunicipal({ match, season, round, onSaved
       [favSide]:   favPlayers,
       [rivalSide]: rivalPlayers,
       goals: goals.filter(g => g.pid)
-        .map(g => ({ ...resolve(g.pid), tipo: g.tipo, ...(g.video?.trim() && { video: g.video.trim() }) }))
+        .map(g => ({ ...resolve(g.pid), tipo: g.tipo }))
         .filter(g => g.nombre),
       cards: cards.filter(c => c.pid).map(c => ({ ...resolve(c.pid), tipo: c.tipo })).filter(c => c.nombre),
     };
@@ -241,7 +237,7 @@ export default function MatchDetailFormMunicipal({ match, season, round, onSaved
         <RivalPlayers rows={rival} setRows={setRival} captain={rivalCaptain} setCaptain={setRivalCaptain} />
       </div>
 
-      <EventList title="⚽ Goles" items={goals} setItems={setGoals} types={GOAL_TYPES} options={options} defaultType="normal" withVideo />
+      <EventList title="⚽ Goles" items={goals} setItems={setGoals} types={GOAL_TYPES} options={options} defaultType="normal" />
       <EventList title="🟨🟥 Tarjetas" items={cards} setItems={setCards} types={CARD_TYPES} options={options} defaultType="amarilla" />
 
       {error && <p className="mdf-error">{error}</p>}

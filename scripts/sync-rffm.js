@@ -192,8 +192,15 @@ async function syncMatchesAndStandings() {
   const todayRound = rounds.find(rd => allRounds[rd].some(m => m.fecha?.slice(0, 10) === today));
   if (todayRound) currentRound = todayRound;
 
-  // Próxima jornada sin jugar
-  const nextRound = rounds.find(rd => allRounds[rd].some(m => m.status !== 'finished' && m.fecha && m.fecha.slice(0, 10) >= today));
+  // Jornada del partido pendiente más próximo (un aplazado reprogramado a lejos no secuestra la jornada)
+  let nextRound = null, nextDate = null;
+  for (const rd of rounds) {
+    for (const m of allRounds[rd]) {
+      const d = m.fecha?.slice(0, 10);
+      if (m.status === 'finished' || !d || d < today) continue;
+      if (nextDate === null || d < nextDate) { nextDate = d; nextRound = rd; }
+    }
+  }
   if (nextRound && !todayRound) currentRound = nextRound;
 
   const standings = computeStandings(allRounds);

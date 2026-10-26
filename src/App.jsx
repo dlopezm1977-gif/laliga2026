@@ -3,6 +3,8 @@ import { getDoc, doc } from 'firebase/firestore';
 import { db } from './lib/firebase';
 import { refreshDeviceToken } from './lib/notifications';
 import { RFFM_DEFAULT_SEASON, rffmSeasonConfig } from './lib/rffmSeasons';
+import { useSeason } from './hooks/useSeason';
+import SeasonDecor from './components/SeasonDecor';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Header  from './components/Layout/Header';
 import TabBar  from './components/Layout/TabBar';
@@ -25,7 +27,7 @@ const DEFAULT_TAB_SEGUNDA   = 'resultados';
 const DEFAULT_TAB_JUVENIL   = 'resultados';
 const DEFAULT_TAB_MUNICIPAL = 'resultados';
 
-function AppShell() {
+function AppShell({ season }) {
   const { user, isLoading, isGuest } = useAuth();
   const [league, setLeague] = useState(() => {
     const p = new URLSearchParams(location.search);
@@ -114,6 +116,7 @@ function AppShell() {
         onLogin={() => setShowAuth(true)}
         league={league}
         onLeagueChange={handleLeagueChange}
+        season={season}
       />
       <TabBar activeTab={tab} onTabChange={handleTabChange} league={league} />
       {league === 'municipal' && municipalSeasons.length >= 1 && (
@@ -167,9 +170,11 @@ function AppShell() {
 }
 
 export default function App() {
+  const season = useSeason();
   return (
     <AuthProvider>
-      <AppShell />
+      <AppShell season={season} />
+      <SeasonDecor season={season} />
     </AuthProvider>
   );
 }

@@ -46,14 +46,22 @@ function detectCurrentRound(roundData) {
   }
   if (todayRd !== null) return todayRd;
 
-  let earliest = Infinity, nextRd = null;
-  for (const rd of rounds) {
-    for (const m of roundData[rd]) {
-      if (m.status === FINISHED_STATUS) continue;
-      const t = new Date(m.utcDate).getTime();
-      if (t < earliest) { earliest = t; nextRd = rd; }
+  // Partido pendiente más próximo. Se ignoran los pendientes con fecha pasada (suspendidos sin
+  // fecha nueva) para que no bloqueen la jornada; solo si no queda ninguno futuro se consideran todos.
+  const nowMs = now.getTime();
+  const nextPending = onlyFuture => {
+    let earliest = Infinity, rd_ = null;
+    for (const rd of rounds) {
+      for (const m of roundData[rd]) {
+        if (m.status === FINISHED_STATUS) continue;
+        const t = new Date(m.utcDate).getTime();
+        if (onlyFuture && t < nowMs) continue;
+        if (t < earliest) { earliest = t; rd_ = rd; }
+      }
     }
-  }
+    return rd_;
+  };
+  const nextRd = nextPending(true) ?? nextPending(false);
   if (nextRd !== null) return nextRd;
 
   return rounds[rounds.length - 1] || 1;
