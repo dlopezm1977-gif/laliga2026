@@ -1,4 +1,4 @@
-const CACHE = 'quiniela-v42';
+const CACHE = 'quiniela-v43';
 const PRECACHE = ['/laliga2026/', '/laliga2026/index.html'];
 
 self.addEventListener('install', e => {
@@ -27,7 +27,7 @@ self.addEventListener('push', e => {
     self.registration.showNotification(title, {
       body,
       icon: icon ?? '/laliga2026/app-icon.png',
-      badge: '/laliga2026/app-icon.png',
+      badge: '/laliga2026/notification-badge.png',
       data: { url: url ?? '/laliga2026/' },
     })
   );
