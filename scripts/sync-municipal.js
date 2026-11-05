@@ -27,6 +27,63 @@ const SEASON        = '2627';
 const MATCHES_URL   = 'https://datos.madrid.es/api/3/action/datastore_search?resource_id=211549-0-juegos-deportivos-actual-csv&limit=500&q=30797';
 const STANDINGS_URL = 'https://datos.madrid.es/api/3/action/datastore_search?resource_id=211549-2-juegos-deportivos-actual-csv&limit=100&q=30797';
 
+// Plan B: si el datastore no responde (404 al dejar de publicarse sus metadatos), se descarga el CSV completo
+const GROUP_CODE    = '30797';
+const RESOURCE_SHOW = id => `https://datos.madrid.es/api/3/action/resource_show?id=${id}`;
+const MATCHES_RES   = '211549-0-juegos-deportivos-actual-csv';
+const STANDINGS_RES = '211549-2-juegos-deportivos-actual-csv';
+
+function parseCsv(text) {
+  const rows = [];
+  let row = [], field = '', quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (quoted) {
+      if (c === '"' && text[i + 1] === '"') { field += '"'; i++; }
+      else if (c === '"') quoted = false;
+      else field += c;
+    } else if (c === '"') quoted = true;
+    else if (c === ';') { row.push(field); field = ''; }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i + 1] === '\n') i++;
+      row.push(field); field = '';
+      if (row.length > 1 || row[0] !== '') rows.push(row);
+      row = [];
+    } else field += c;
+  }
+  if (field !== '' || row.length) { row.push(field); rows.push(row); }
+  return rows;
+}
+
+// Descarga el CSV vigente (la URL cambia con cada publicación) y devuelve los registros del grupo como objetos
+async function fetchCsvRecords(resourceId) {
+  const showRes = await fetch(RESOURCE_SHOW(resourceId));
+  if (!showRes.ok) throw new Error(`resource_show ${resourceId}: HTTP ${showRes.status}`);
+  const url = (await showRes.json()).result?.url;
+  if (!url) throw new Error(`resource_show ${resourceId}: sin url de descarga`);
+  const csvRes = await fetch(url);
+  if (!csvRes.ok) throw new Error(`CSV ${url}: HTTP ${csvRes.status}`);
+  const text = new TextDecoder('windows-1252').decode(await csvRes.arrayBuffer()).replace(/^﻿/, '');
+  const [header, ...rows] = parseCsv(text);
+  const col = header.indexOf('Codigo_grupo');
+  return rows
+    .filter(r => r[col] === GROUP_CODE)
+    .map(r => Object.fromEntries(header.map((h, i) => [h, r[i]])));
+}
+
+async function fetchRecords(apiUrl, resourceId) {
+  try {
+    const res = await fetch(apiUrl);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    if (json.success === false) throw new Error('success=false');
+    return json.result?.records ?? [];
+  } catch (err) {
+    console.warn(`API datastore no disponible (${err.message}); usando descarga CSV`);
+    return fetchCsvRecords(resourceId);
+  }
+}
+
 function normalizeMatch(r) {
   const finished = r.Estado === 'F';
   return {
@@ -62,9 +119,7 @@ function detectCurrentRound(roundData) {
 
 async function syncMatches() {
   console.log('\nFetching partidos de la Liga Municipal…');
-  const res     = await fetch(MATCHES_URL);
-  const json    = await res.json();
-  const records = json.result?.records ?? [];
+  const records = await fetchRecords(MATCHES_URL, MATCHES_RES);
 
   const all = {};
   for (const r of records) {
@@ -125,9 +180,7 @@ async function syncMatches() {
 
 async function syncStandings(matchData = {}) {
   console.log('\nFetching clasificación de la Liga Municipal…');
-  const res     = await fetch(STANDINGS_URL);
-  const json    = await res.json();
-  const records = json.result?.records ?? [];
+  const records = await fetchRecords(STANDINGS_URL, STANDINGS_RES);
 
   let standings;
   if (records.length > 0) {
