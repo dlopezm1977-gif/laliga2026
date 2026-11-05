@@ -68,7 +68,7 @@ async function fetchCsvRecords(resourceId) {
   const col = header.indexOf('Codigo_grupo');
   return rows
     .filter(r => r[col] === GROUP_CODE)
-    .map(r => Object.fromEntries(header.map((h, i) => [h, r[i]])));
+    .map(r => Object.fromEntries(header.map((h, i) => [h, (r[i] ?? '').trim()])));
 }
 
 async function fetchRecords(apiUrl, resourceId) {
