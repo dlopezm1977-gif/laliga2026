@@ -11,6 +11,7 @@ const DEFAULT_PREFS = {
   scheduleChange: { primera: 'disabled', segunda: 'disabled', rffm: 'disabled' },
   predReminder: false,
   newGame:      false,
+  municipal:    false,
 };
 
 function timeAgo(ts) {
@@ -213,6 +214,13 @@ export default function NotificationsTab() {
                 <div className="notif-simple-desc">Cuando se abra un nuevo minijuego</div>
               </div>
               <ToggleSwitch value={prefs.newGame ?? false} onChange={v => setPref('newGame', v)} />
+            </div>
+            <div className="notif-toggle-row" style={{ marginTop: '.75rem' }}>
+              <div>
+                <div className="notif-simple-title">🏘️ Liga Municipal</div>
+                <div className="notif-simple-desc">Cambios de horario y nuevos resultados del Aston Birra</div>
+              </div>
+              <ToggleSwitch value={prefs.municipal ?? false} onChange={v => setPref('municipal', v)} />
             </div>
           </div>
 

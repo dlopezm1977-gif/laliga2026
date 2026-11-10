@@ -5,6 +5,7 @@
 const fs   = require('fs');
 const path = require('path');
 const admin = require('firebase-admin');
+const { handleSendError } = require('./fcm-utils');
 
 if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
   try {
@@ -24,6 +25,8 @@ admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 const db = admin.firestore();
 
 const SEASON        = '2627';
+const FAVORITE_TEAM       = 'ASTON BIRRA';
+const NOTIF_URL_MUNICIPAL = '/laliga2026/?league=municipal&tab=resultados';
 const MATCHES_URL   = 'https://datos.madrid.es/api/3/action/datastore_search?resource_id=211549-0-juegos-deportivos-actual-csv&limit=500&q=30797';
 const STANDINGS_URL = 'https://datos.madrid.es/api/3/action/datastore_search?resource_id=211549-2-juegos-deportivos-actual-csv&limit=100&q=30797';
 
@@ -132,6 +135,8 @@ async function syncMatches() {
   const totalRounds = rounds.length > 0 ? Math.max(...rounds) : 22;
   const currentRound = detectCurrentRound(all);
 
+  const changes = [];   // cambios del equipo favorito a notificar
+
   const BATCH_SIZE = 400;
   let batch = db.batch();
   let ops   = 0;
@@ -146,10 +151,25 @@ async function syncMatches() {
     const existing = await ref.get();
     if (existing.exists) {
       const key = m => `${m.fecha}|${m.hora}|${m.homeTeam}|${m.awayTeam}`;
-      const details = new Map((existing.data().matches ?? []).filter(m => m.detail).map(m => [key(m), m.detail]));
+      const prevMatches = existing.data().matches ?? [];
+      const details = new Map(prevMatches.filter(m => m.detail).map(m => [key(m), m.detail]));
       for (const m of matches) {
         const d = details.get(key(m));
         if (d) m.detail = d;
+      }
+
+      // Cambios del equipo favorito respecto a lo ya guardado (horario o resultado nuevo)
+      const prevByTeams = new Map(prevMatches.map(m => [`${m.homeTeam}|${m.awayTeam}`, m]));
+      for (const m of matches) {
+        if (m.homeTeam !== FAVORITE_TEAM && m.awayTeam !== FAVORITE_TEAM) continue;
+        const prev = prevByTeams.get(`${m.homeTeam}|${m.awayTeam}`);
+        if (!prev) continue;
+        if (m.status === 'scheduled' && (prev.fecha !== m.fecha || prev.hora !== m.hora)) {
+          changes.push({ type: 'schedule', match: m });
+        } else if (m.status === 'finished' &&
+                   (prev.status !== 'finished' || prev.homeScore !== m.homeScore || prev.awayScore !== m.awayScore)) {
+          changes.push({ type: 'result', match: m });
+        }
       }
     }
     batch.set(db.collection('matches_cache_municipal').doc(`${SEASON}_${rd}`), {
@@ -175,7 +195,63 @@ async function syncMatches() {
   await flush();
 
   console.log(`Partidos sync: ${Object.keys(all).length} jornadas, jornada actual = ${currentRound}`);
-  return all;
+  return { all, changes };
+}
+
+function formatMatchWhen(fecha, hora) {
+  if (!fecha) return hora || '';
+  const d = new Date(fecha + 'T12:00:00');
+  const label = d.toLocaleDateString('es-ES', {
+    weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Europe/Madrid',
+  });
+  return hora ? `${label} · ${hora}` : label;
+}
+
+async function sendMunicipalNotifications(changes) {
+  if (changes.length === 0) return;
+
+  console.log(`\nCambios del ${FAVORITE_TEAM}: ${changes.length}`);
+  changes.forEach(({ type, match: m }) =>
+    console.log(`  · [${type}] J${m.jornada}: ${m.homeTeam} ${m.homeScore ?? ''}-${m.awayScore ?? ''} ${m.awayTeam} ${m.fecha} ${m.hora}`)
+  );
+
+  const usersSnap = await db.collection('users').get();
+  const recipients = [];
+  await Promise.all(usersSnap.docs.map(async doc => {
+    if (doc.data()?.notifPrefs?.municipal !== true) return;
+    const tokSnap = await db.collection('users').doc(doc.id).collection('fcmTokens').get();
+    tokSnap.forEach(t => {
+      const d = t.data();
+      if (d.enabled && d.token) recipients.push({ token: d.token, label: d.label, ref: t.ref });
+    });
+  }));
+
+  if (recipients.length === 0) { console.log('  Sin usuarios con la notificación municipal activada'); return; }
+
+  let totalOk = 0, totalErr = 0;
+  for (const { type, match: m } of changes) {
+    const isResult = type === 'result';
+    const title = isResult ? '⚽ Resultado — Liga Municipal' : '🗓️ Cambio de horario — Liga Municipal';
+    const body  = isResult
+      ? `${m.homeTeam} ${m.homeScore} - ${m.awayScore} ${m.awayTeam}`
+      : `${m.homeTeam} vs ${m.awayTeam} · ${formatMatchWhen(m.fecha, m.hora)}`;
+
+    const results = await Promise.all(recipients.map(async r => {
+      try {
+        await admin.messaging().send({
+          token: r.token,
+          webpush: {
+            headers: { Urgency: isResult ? 'high' : 'normal' },
+            data: { title, body, url: NOTIF_URL_MUNICIPAL },
+          },
+        });
+        return true;
+      } catch (e) { await handleSendError(r, e); return false; }
+    }));
+    totalOk  += results.filter(Boolean).length;
+    totalErr += results.filter(r => !r).length;
+  }
+  console.log(`  Notificaciones enviadas: ${totalOk} OK, ${totalErr} error(es)`);
 }
 
 async function syncStandings(matchData = {}) {
@@ -220,8 +296,9 @@ async function syncStandings(matchData = {}) {
 }
 
 async function main() {
-  const matchData = await syncMatches();
+  const { all: matchData, changes } = await syncMatches();
   await syncStandings(matchData);
+  await sendMunicipalNotifications(changes);
   console.log('\nSync Liga Municipal completado.');
 }
 
