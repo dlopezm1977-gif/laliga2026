@@ -172,8 +172,13 @@ async function syncEvents(events) {
       });
     }
 
+    // Partido reprogramado: llega con id nuevo, se compara con el anterior por equipos (aplazado)
+    const prevByTeams = prev?.matches
+      ? Object.fromEntries(prev.matches.map(m => [`${m.homeTeam}|${m.awayTeam}`, m]))
+      : {};
+
     for (const m of merged) {
-      const old = prevById[m.matchId];
+      const old = prevById[m.matchId] ?? prevByTeams[`${m.homeTeam}|${m.awayTeam}`];
       if (!old) continue;
       if (m.status === 'notstarted' && old.utcDate !== m.utcDate) changedMatches.push(m);
       if (m.status === 'finished' && old.status !== 'finished') finishedMatches.push(m);

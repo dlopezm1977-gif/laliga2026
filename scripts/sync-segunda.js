@@ -155,6 +155,10 @@ async function syncMatchDetails(events, { backfill = false } = {}) {
   console.log(`Match details synced: ${qualifying.length} partidos`);
 }
 
+// Un aplazamiento genera un evento nuevo (otro id) con la fecha reprogramada y deja el original
+// como 'postponed' en la misma jornada: se descartan los originales para no duplicar el partido.
+const EXCLUDED_STATUSES = new Set(['postponed', 'cancelled', 'abandoned']);
+
 async function syncEvents() {
   const events = await fetchAllEvents();
 
@@ -163,6 +167,7 @@ async function syncEvents() {
   for (const e of events) {
     const rd = e.round_number;
     if (!rd) continue;
+    if (EXCLUDED_STATUSES.has(e.status)) continue;
     if (!byRound[rd]) byRound[rd] = [];
     byRound[rd].push(normalizeEvent(e));
   }
@@ -198,8 +203,13 @@ async function syncEvents() {
       });
     }
 
+    // Partido reprogramado: llega con id nuevo, se compara con el anterior por equipos (aplazado)
+    const prevByTeams = prev?.matches
+      ? Object.fromEntries(prev.matches.map(m => [`${m.homeTeam}|${m.awayTeam}`, m]))
+      : {};
+
     for (const m of merged) {
-      const old = prevById[m.matchId];
+      const old = prevById[m.matchId] ?? prevByTeams[`${m.homeTeam}|${m.awayTeam}`];
       if (!old) continue;
       if (m.status === 'notstarted' && old.utcDate !== m.utcDate) changedMatches.push(m);
       if (m.status === 'finished' && old.status !== 'finished') finishedMatches.push(m);
