@@ -171,8 +171,8 @@ export default function CalendarMunicipalTab({ season = null }) {
           season={activeSeason}
           round={activeRound}
           onClose={() => setSelectedMatch(null)}
-          onSaved={detail => {
-            setSelectedMatch(m => ({ ...m, detail }));
+          onSaved={(detail, result) => {
+            setSelectedMatch(m => ({ ...m, detail, ...(result && { ...result, status: 'finished', manualResult: true }) }));
             refresh();
           }}
         />

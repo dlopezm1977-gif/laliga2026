@@ -129,6 +129,9 @@ export default function MatchDetailFormMunicipal({ match, season, round, onSaved
   const [rivalCaptain, setRivalCaptain] = useState(null);
   const [goals, setGoals]       = useState([]);
   const [cards, setCards]       = useState([]);
+  const finished = match.status === 'finished';
+  const [homeScore, setHomeScore] = useState(finished ? String(match.homeScore ?? '') : '');
+  const [awayScore, setAwayScore] = useState(finished ? String(match.awayScore ?? '') : '');
 
   // Carga la plantilla de la temporada y rellena el formulario con el detalle existente
   useEffect(() => {
@@ -207,12 +210,19 @@ export default function MatchDetailFormMunicipal({ match, season, round, onSaved
       cards: cards.filter(c => c.pid).map(c => ({ ...resolve(c.pid), tipo: c.tipo })).filter(c => c.nombre),
     };
 
+    const hasScore = homeScore !== '' || awayScore !== '';
+    if (hasScore && (homeScore === '' || awayScore === '' || Number(homeScore) < 0 || Number(awayScore) < 0)) {
+      setError('Introduce el marcador completo (ambos equipos) o déjalo vacío.');
+      return;
+    }
+    const result = hasScore ? { homeScore: Number(homeScore), awayScore: Number(awayScore) } : null;
+
     setSaving(true);
     setError(null);
     try {
       await saveRoster(season, cleanRoster);
-      await saveMatchDetail(season, round, match, detail);
-      onSaved(detail);
+      await saveMatchDetail(season, round, match, detail, result);
+      onSaved(detail, result);
     } catch (err) {
       setError(err.message);
       setSaving(false);
@@ -223,6 +233,22 @@ export default function MatchDetailFormMunicipal({ match, season, round, onSaved
 
   return (
     <div className="mdf">
+      <div className="mdf-section">
+        <div className="mdf-title">🏁 Resultado</div>
+        <div className="mdf-row">
+          <span className="mdf-name" style={{ flex: 1 }}>{match.homeTeam}</span>
+          <input className="mdf-num" type="number" min="0" placeholder="–" value={homeScore}
+            onChange={e => setHomeScore(e.target.value)} />
+          <span>:</span>
+          <input className="mdf-num" type="number" min="0" placeholder="–" value={awayScore}
+            onChange={e => setAwayScore(e.target.value)} />
+          <span className="mdf-name" style={{ flex: 1, textAlign: 'right' }}>{match.awayTeam}</span>
+        </div>
+        <p className="mdf-hint">
+          Al guardar con marcador, el partido pasa a finalizado. El sync del ayuntamiento solo lo cambia si publica un resultado distinto.
+        </p>
+      </div>
+
       <div className="mdf-section">
         <div className="mdf-title">{FAVORITE_TEAM} · jugadores del acta</div>
         <RosterPlayers

@@ -152,7 +152,7 @@ export default function MatchDetailModalMunicipal({ match, season, round, onClos
             season={season}
             round={round}
             onCancel={() => setEditing(false)}
-            onSaved={detail => { setEditing(false); onSaved?.(detail); }}
+            onSaved={(detail, result) => { setEditing(false); onSaved?.(detail, result); }}
           />
         )}
 

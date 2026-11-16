@@ -158,8 +158,21 @@ async function syncMatches() {
         if (d) m.detail = d;
       }
 
-      // Cambios del equipo favorito respecto a lo ya guardado (horario o resultado nuevo)
       const prevByTeams = new Map(prevMatches.map(m => [`${m.homeTeam}|${m.awayTeam}`, m]));
+
+      // Resultado introducido a mano por el admin: se mantiene mientras el ayuntamiento no publique
+      // el partido como finalizado. En cuanto lo publica, prevalece su resultado (y se pierde la marca manual).
+      for (const m of matches) {
+        const prev = prevByTeams.get(`${m.homeTeam}|${m.awayTeam}`);
+        if (prev?.manualResult && m.status !== 'finished') {
+          m.homeScore = prev.homeScore;
+          m.awayScore = prev.awayScore;
+          m.status = 'finished';
+          m.manualResult = true;
+        }
+      }
+
+      // Cambios del equipo favorito respecto a lo ya guardado (horario o resultado nuevo)
       for (const m of matches) {
         if (m.homeTeam !== FAVORITE_TEAM && m.awayTeam !== FAVORITE_TEAM) continue;
         const prev = prevByTeams.get(`${m.homeTeam}|${m.awayTeam}`);

@@ -15,7 +15,9 @@ function sameMatch(a, b) {
     && a.homeTeam === b.homeTeam && a.awayTeam === b.awayTeam;
 }
 
-export async function saveMatchDetail(season, round, match, detail) {
+// `result` ({ homeScore, awayScore }) es opcional: marca el partido como finalizado a mano.
+// El sync del ayuntamiento lo respeta hasta que publique su propio resultado, que prevalece.
+export async function saveMatchDetail(season, round, match, detail, result = null) {
   const ref  = doc(db, COLLECTION, `${season}_${round}`);
   const snap = await getDoc(ref);
   if (!snap.exists()) throw new Error('No existe la jornada en Firestore.');
@@ -24,7 +26,12 @@ export async function saveMatchDetail(season, round, match, detail) {
   const matches = (snap.data().matches ?? []).map(m => {
     if (!sameMatch(m, match)) return m;
     found = true;
-    return { ...m, detail };
+    const sameResult = m.status === 'finished'
+      && m.homeScore === result?.homeScore && m.awayScore === result?.awayScore;
+    const patch = result && !sameResult
+      ? { homeScore: result.homeScore, awayScore: result.awayScore, status: 'finished', manualResult: true }
+      : {};
+    return { ...m, ...patch, detail };
   });
   if (!found) throw new Error('No se encontró el partido en la jornada.');
 
