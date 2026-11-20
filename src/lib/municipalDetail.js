@@ -1,13 +1,13 @@
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './firebase';
 
-export const MUNICIPAL_ADMIN_EMAIL = 'dlopezm1977@gmail.com';
+import { ADMIN_EMAIL, isAdmin } from './admin';
+
+export const MUNICIPAL_ADMIN_EMAIL = ADMIN_EMAIL;
 
 const COLLECTION = 'matches_cache_municipal';
 
-export function isMunicipalAdmin(user) {
-  return user?.email?.toLowerCase() === MUNICIPAL_ADMIN_EMAIL;
-}
+export const isMunicipalAdmin = isAdmin;
 
 // Los partidos no tienen id: se identifican por fecha, hora y equipos.
 function sameMatch(a, b) {

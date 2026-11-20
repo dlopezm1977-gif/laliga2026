@@ -150,7 +150,14 @@ function ResultModal({ sec, result, preds, onClose }) {
 function AnnualSection({ preds, result }) {
   const [selected, setSelected] = useState(null);
   const selectedSec = SECTIONS.find(s => s.key === selected) ?? null;
-  const hasResults  = result !== null;
+  // Con el panel de administración el documento puede estar solo parcialmente relleno:
+  // el resultado se evalúa por categoría, no por existir el documento.
+  const secHasResult = sec => {
+    const v = result?.[sec.key];
+    return sec.type === 'multi' ? Array.isArray(v) && v.length > 0 : !!v;
+  };
+  const hasResults    = SECTIONS.some(secHasResult);
+  const selHasResult  = selectedSec ? secHasResult(selectedSec) : false;
 
   return (
     <div className="season-card" style={{ marginBottom: '1.25rem' }}>
@@ -197,10 +204,10 @@ function AnnualSection({ preds, result }) {
         );
       })}
 
-      {selected && !hasResults && (
+      {selected && !selHasResult && (
         <PredModal sec={selectedSec} preds={preds} onClose={() => setSelected(null)} />
       )}
-      {selected && hasResults && (
+      {selected && selHasResult && (
         <ResultModal sec={selectedSec} result={result} preds={preds} onClose={() => setSelected(null)} />
       )}
     </div>

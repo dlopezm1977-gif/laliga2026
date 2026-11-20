@@ -21,7 +21,11 @@ import CalendarRffmTab       from './components/Rffm/CalendarRffmTab';
 import StandingsRffmTab      from './components/Rffm/StandingsRffmTab';
 import CalendarMunicipalTab  from './components/Municipal/CalendarMunicipalTab';
 import StandingsMunicipalTab from './components/Municipal/StandingsMunicipalTab';
+import AdminVideosTab from './components/Admin/AdminVideosTab';
+import AdminPrizesTab from './components/Admin/AdminPrizesTab';
+import { isAdmin } from './lib/admin';
 
+const DEFAULT_TAB_ADMIN     = 'videos';
 const DEFAULT_TAB_PRIMERA   = 'calendar';
 const DEFAULT_TAB_SEGUNDA   = 'resultados';
 const DEFAULT_TAB_JUVENIL   = 'resultados';
@@ -31,7 +35,7 @@ function AppShell({ season }) {
   const { user, isLoading, isGuest } = useAuth();
   const [league, setLeague] = useState(() => {
     const p = new URLSearchParams(location.search);
-    return ['primera', 'segunda', 'juvenil', 'municipal'].includes(p.get('league')) ? p.get('league') : 'primera';
+    return ['primera', 'segunda', 'juvenil', 'municipal', 'admin'].includes(p.get('league')) ? p.get('league') : 'primera';
   });
   const [tab, setTab] = useState(() => {
     const p = new URLSearchParams(location.search);
@@ -43,6 +47,15 @@ function AppShell({ season }) {
   useEffect(() => {
     if (user) refreshDeviceToken(user.uid).catch(() => {});
   }, [user]);
+
+  // La liga de administración solo existe para el administrador (también si llega por URL)
+  const admin = isAdmin(user);
+  useEffect(() => {
+    if (!isLoading && league === 'admin' && !admin) {
+      setLeague('primera');
+      setTab(DEFAULT_TAB_PRIMERA);
+    }
+  }, [isLoading, league, admin]);
   const [municipalSeason, setMunicipalSeason]         = useState(null);
   const [municipalSeasons, setMunicipalSeasons]       = useState([]);
   const [municipalCurrentSeason, setMunicipalCurrentSeason] = useState(null);
@@ -97,6 +110,7 @@ function AppShell({ season }) {
       newLeague === 'segunda'   ? DEFAULT_TAB_SEGUNDA   :
       newLeague === 'juvenil'   ? DEFAULT_TAB_JUVENIL   :
       newLeague === 'municipal' ? DEFAULT_TAB_MUNICIPAL :
+      newLeague === 'admin'     ? DEFAULT_TAB_ADMIN     :
       DEFAULT_TAB_PRIMERA
     );
   }
@@ -164,6 +178,8 @@ function AppShell({ season }) {
         {league === 'juvenil'   && tab === 'clasificacion'  && <StandingsRffmTab season={rffmSeason} />}
         {league === 'municipal' && tab === 'resultados'     && <CalendarMunicipalTab season={municipalSeason} />}
         {league === 'municipal' && tab === 'clasificacion'  && <StandingsMunicipalTab season={municipalSeason} />}
+        {league === 'admin' && admin && tab === 'videos'    && <AdminVideosTab />}
+        {league === 'admin' && admin && tab === 'premios'   && <AdminPrizesTab />}
       </main>
     </div>
   );

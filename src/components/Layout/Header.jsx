@@ -4,6 +4,7 @@ import { useInstallPrompt } from '../../hooks/useInstallPrompt';
 import { useTheme } from '../../hooks/useTheme';
 import { SEASON_EMOJI } from '../../lib/seasonalTheme';
 import { crestUrl } from '../../lib/crests';
+import { isAdmin } from '../../lib/admin';
 import ProfileModal from '../Profile/ProfileModal';
 import InstructionsModal from '../Auth/InstructionsModal';
 import { version } from '../../../package.json';
@@ -36,7 +37,7 @@ function InstallBanner({ onDismiss, isIos }) {
   );
 }
 
-function LeagueDropdown({ current, onChange, onClose }) {
+function LeagueDropdown({ current, onChange, onClose, showAdmin }) {
   const ref = useRef(null);
 
   useEffect(() => {
@@ -89,12 +90,24 @@ function LeagueDropdown({ current, onChange, onClose }) {
           <span className="league-option-sub">Fútbol Sala</span>
         </div>
       </button>
+      {showAdmin && (
+        <button
+          className={`league-option${current === 'admin' ? ' active' : ''}`}
+          onClick={() => { onChange('admin'); onClose(); }}
+        >
+          <span className="league-option-logo league-option-logo--emoji">🛠️</span>
+          <div>
+            <span className="league-option-name">Administración</span>
+            <span className="league-option-sub">Solo visible para ti</span>
+          </div>
+        </button>
+      )}
     </div>
   );
 }
 
 export default function Header({ onLogin, league, onLeagueChange, season }) {
-  const { profile, isGuest, logout } = useAuth();
+  const { user, profile, isGuest, logout } = useAuth();
   const { canInstall, install, isIos, isStandalone } = useInstallPrompt();
   const { theme, toggle: toggleTheme } = useTheme();
   const [installBannerOpen, setInstallBannerOpen] = useState(false);
@@ -105,6 +118,7 @@ export default function Header({ onLogin, league, onLeagueChange, season }) {
   const isSegunda   = league === 'segunda';
   const isJuvenil   = league === 'juvenil';
   const isMunicipal = league === 'municipal';
+  const isAdminLeague = league === 'admin';
 
   return (
     <>
@@ -124,6 +138,8 @@ export default function Header({ onLogin, league, onLeagueChange, season }) {
             <img src={`${import.meta.env.BASE_URL}rffm-logo.png`} alt="RFFM" className="logo-laliga logo-laliga--rffm" />
           ) : isMunicipal ? (
             <img src={`${import.meta.env.BASE_URL}municipal-logo.png`} alt="JDM" className="logo-laliga logo-laliga--rffm" />
+          ) : isAdminLeague ? (
+            <span className="logo-admin-emoji" aria-hidden="true">🛠️</span>
           ) : (
             <img
               src={`${import.meta.env.BASE_URL}laliga-logo.png`}
@@ -131,7 +147,7 @@ export default function Header({ onLogin, league, onLeagueChange, season }) {
               className="logo-laliga"
             />
           )}
-          <span>{isSegunda ? 'Hypermotion' : isJuvenil ? 'Pref. Juvenil' : isMunicipal ? 'Liga Municipal' : 'Quiniela 26/27'}</span>
+          <span>{isSegunda ? 'Hypermotion' : isJuvenil ? 'Pref. Juvenil' : isMunicipal ? 'Liga Municipal' : isAdminLeague ? 'Administración' : 'Quiniela 26/27'}</span>
           {season && <span className="season-emoji" aria-hidden="true">{SEASON_EMOJI[season]}</span>}
           <span className="logo-chevron">▾</span>
           <span className="app-version">v{version}</span>
@@ -142,6 +158,7 @@ export default function Header({ onLogin, league, onLeagueChange, season }) {
             current={league}
             onChange={onLeagueChange}
             onClose={() => setLeagueOpen(false)}
+            showAdmin={isAdmin(user)}
           />
         )}
 
